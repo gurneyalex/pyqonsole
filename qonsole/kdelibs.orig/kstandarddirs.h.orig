@@ -1,0 +1,31 @@
+#ifndef KSTDDIRS_H 
+#define KSTDDIRS_H 
+
+#include <qstringlist.h>
+
+class KInstance
+{
+public:
+  KInstance() {}; //FIXME:fake
+ ~KInstance() {}; //FIXME:fake
+  QString instanceName() { return "konsole"; }; //FIXME:fake
+};
+
+static KInstance kins;
+
+class KGlobal
+{
+public:
+  static KGlobal* dirs() { return NULL; }; //FIXME:fake
+  QStringList findAllResources(char*,char*) { return NULL; }; //FIXME:fake
+  QString findResourceDir( const char *type, const QString& filename) const { return ""; }; //FIXME:fake
+  static QString staticQString(const char* s) { return s; }; //FIXME:fake
+  static KInstance* instance() { return &kins; }; //FIXME:fake
+};
+
+inline QString locate( const char *type, const QString& filename, const void* = 0) { return filename; } //FIXME:fake
+inline QString locateLocal( const char *type, const QString& filename, const void* = 0) { return filename; } //FIXME:fake
+
+inline int mkstemps (char* _template, int suffix_len) { return 0; }; //FIXME: fake
+
+#endif

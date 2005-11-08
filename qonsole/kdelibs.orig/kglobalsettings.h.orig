@@ -1,0 +1,5 @@
+class KGlobalSettings
+{
+public:
+  static int dndEventDelay() { return 0; }; //FIXME:missing
+};

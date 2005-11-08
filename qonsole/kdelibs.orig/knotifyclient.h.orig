@@ -1,0 +1,6 @@
+#include <qapplication.h>
+
+namespace KNotifyClient
+{
+  void beep() { QApplication::beep(); };
+};

@@ -1,0 +1,6 @@
+#define HAVE_SYS_STAT_H
+
+// UNIX PTYs
+#define HAVE_GRANTPT
+#define HAVE_PTSNAME
+#define HAVE_UNLOCKPT

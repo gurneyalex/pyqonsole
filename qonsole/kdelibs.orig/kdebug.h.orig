@@ -1,0 +1,11 @@
+#ifndef KDEBUG_H
+
+using namespace std;
+
+#include <iostream>
+
+inline ostream& kdDebug(int N=0) { return cerr; }
+
+#define HERE fprintf(stderr,"%s(%d): here\n",__FILE__,__LINE__);
+
+#endif

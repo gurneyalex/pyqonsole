@@ -1,0 +1,5 @@
+class KRun
+{
+public:
+  static void shellQuote(const char*) {}; //FIXME:fake
+};

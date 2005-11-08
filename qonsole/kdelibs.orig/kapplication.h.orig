@@ -1,0 +1,22 @@
+#ifndef KAPP_H
+#define KAPP_H
+
+#include <qstring.h>
+//#include "dcopclient.h"
+
+//static DCOPObject dcopc;
+
+class KApplication
+{
+public:
+  KApplication();
+ ~KApplication();
+public:
+  QString caption() { return "konsole"; }; //FIXME:fake
+//  DCOPObject* dcopClient() { return &dcopc; }; //FIXME:fake
+  static int random() { return 0; }; //FIXME:fake
+};
+
+extern KApplication* kapp;
+
+#endif

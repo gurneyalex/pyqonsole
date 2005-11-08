@@ -1,0 +1,4 @@
+#include <qobject.h>
+#include <qdict.h>
+
+#define i18n(X) QString(X)

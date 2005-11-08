@@ -1,0 +1,7 @@
+#include <qcursor.h>
+
+class KCursor : public QCursor
+{
+public:
+  static void KCursor::setAutoHideCursor(QWidget*, bool yes) {}; //FIXME:fake
+};

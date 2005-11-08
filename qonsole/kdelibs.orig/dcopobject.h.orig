@@ -1,0 +1,19 @@
+#ifndef DCOP_OBJECT
+#define DCOP_OBJECT
+
+class DCOPObject
+{
+public:
+  DCOPObject() {};
+  DCOPObject(const char*) {};
+  virtual ~DCOPObject() {};
+  QString appId() { return "konsole"; }; //FIXME:fake
+};
+
+#define K_DCOP
+
+#define k_dcop public
+
+#include "kapplication.h"
+
+#endif

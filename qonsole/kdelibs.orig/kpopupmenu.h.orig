@@ -1,0 +1,9 @@
+class KPopupMenu : public QWidget
+{
+public:
+  KPopupMenu(QWidget* p=0,char* n=0) {};
+ ~KPopupMenu() {};
+public:
+  void insertItem(QString,int) {}; //FIXME:fake
+  void popup(QPoint) {}; //FIXME:fake
+};
