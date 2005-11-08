@@ -1,0 +1,37 @@
+Fichiers C++                            Fichiers Python
+
+   296 BlockArray.cpp                
+    98 BlockArray.h 
+     6 config.h
+   141 default.keytab.h
+   674 keytrans.cpp                  31 keytrans.py
+   101 keytrans.h
+   312 kprocctrl.cpp
+   132 kprocctrl.h
+   995 kprocess.cpp
+   792 kprocess.h
+    65 main.cpp
+   132 qonsole_wcwidth.cpp          4 helpers.py 
+                                  155 helpers.c
+   109 TECommon.h                  53 ca.py
+   458 TEHistory.cpp              149 history.py
+   200 TEHistory.h
+   441 TEmulation.cpp             361 emulation.py
+   123 TEmulation.h
+  1353 TEmuVt102.cpp              971 emuVt102.py  
+   149 TEmuVt102.h
+   728 TEPty.cpp
+   126 TEPty.h
+  1406 TEScreen.cpp               893 screen.py
+   262 TEScreen.h
+   280 TESession.cpp
+   121 TESession.h
+  1473 TEWidget.cpp                47 widget.py      
+   225 TEWidget.h
+
+  138 cpp2py.py
+
+Donc il faut bosser un peu. 
+
+Mais je pense que ce n'est pas insurmontable, et qu'il me faudrait une
+dizaine de jours de boulot pour arriver à quelque chose qui tourne. 
