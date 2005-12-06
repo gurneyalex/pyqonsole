@@ -62,8 +62,8 @@ Based on the konsole code from Lars Doelle.
 
 import qt
 
-from keytrans import KeyTrans
-from screen import Screen
+from pyqonsole.keytrans import KeyTrans
+from pyqonsole.screen import Screen
 #from widget import Widget
 
 NOTIFYNORMAL = 0
@@ -95,16 +95,16 @@ class Emulation(qt.QObject):
         self.__bulkInCnt = 0 # Bulk counter
         self.__findPos = -1
         
-        self.connect(self.__bulkTimer, qt.SIGNAL("timeout()"), self__showBulk)
+        self.connect(self.__bulkTimer, qt.SIGNAL("timeout()"), self.__showBulk)
         self.connect(self._gui, qt.SIGNAL("changedImageSizedSignal(int, int)"), self.onImageSizeChange)
         self.connect(self._gui, qt.SIGNAL("changedHistoryCursor(int)"), self.onHistoryCursorChange)
         self.connect(self._gui, qt.SIGNAL("keyPressedSignal(QKeyEvent*)"), self.onKeyPress)
-        self.connect(self._gui, qt.SIGNAL("beginSelectionSignal(const int, const int)", self.onSelectionBegin))
-        self.connect(self._gui, qt.SIGNAL("extendSelectionSignal(const int, const int)", self.onSelectionExtend))
-        self.connect(self._gui, qt.SIGNAL("endSelectionSignal(const bool)", self.setSelection))
-        self.connect(self._gui, qt.SIGNAL("clearSelectionSignal()", self.clearSelection))
-        self.connect(self._gui, qt.SIGNAL("isBusySelecting(bool)", self.isBusySelecting))
-        self.connect(self._gui, qt.SIGNAL("testIsSelected(const int, const int, bool &)", self.testIsSelected))
+        self.connect(self._gui, qt.SIGNAL("beginSelectionSignal(const int, const int)"), self.onSelectionBegin)
+        self.connect(self._gui, qt.SIGNAL("extendSelectionSignal(const int, const int)"), self.onSelectionExtend)
+        self.connect(self._gui, qt.SIGNAL("endSelectionSignal(const bool)"), self.setSelection)
+        self.connect(self._gui, qt.SIGNAL("clearSelectionSignal()"), self.clearSelection)
+        self.connect(self._gui, qt.SIGNAL("isBusySelecting(bool)"), self.isBusySelecting)
+        self.connect(self._gui, qt.SIGNAL("testIsSelected(const int, const int, bool &)"), self.testIsSelected)
         
         self.setKeymap(0)
         
@@ -172,7 +172,7 @@ class Emulation(qt.QObject):
         elif ord(c) == 0x07:
             if self._connected:
                 self._gui.bell()
-            self.emit(qt.PYSIGNAL("notifySessionState(int)", NOTIFYBELL))
+            self.emit(qt.PYSIGNAL("notifySessionState(int)"), NOTIFYBELL)
         else:
            self._scr.showCharacter()
 
@@ -191,7 +191,7 @@ class Emulation(qt.QObject):
         if not self._listenTokenPress: # Someone else gets the keys
             return
         
-        self.emit(qt.PYSIGNAL("notifySessionState(int)", NOTIFYNORMAL))
+        self.emit(qt.PYSIGNAL("notifySessionState(int)"), NOTIFYNORMAL)
         if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty():
             self._scr.setHistCursor(self._scr.getHistLines())
         if not ev.text().isEmpty:
@@ -204,7 +204,7 @@ class Emulation(qt.QObject):
             self.emit(qt.PYSIGNAL("sndBlock(const char*,int)"), (ev.ascii(), 1))
             
     def onRcvBlock(self, s, len_):
-        self.emit(qt.PYSIGNAL("notifySessionState(int)", NOTIFYACTIVITY))
+        self.emit(qt.PYSIGNAL("notifySessionState(int)"), NOTIFYACTIVITY)
         
         self.__bulkStart()
         self.__bulkInCnt += 1
@@ -345,7 +345,7 @@ class Emulation(qt.QObject):
         self.__showBulk()
         
         # Propagate event to serial line
-        self.emit(qt.PYSIGNAL("imageSizeChanged(int, int)", (lines, columns)))
+        self.emit(qt.PYSIGNAL("imageSizeChanged(int, int)"), (lines, columns))
     
     def onHistoryCursorChange(self, cursor):
         if not self._connected:
@@ -357,6 +357,6 @@ class Emulation(qt.QObject):
         
         # This goes strange ways
         # Can we put this straight or explain it at least?
-        self.emit(qt.PYSIGNAL("changeColumns(int)", (columns)))
+        self.emit(qt.PYSIGNAL("changeColumns(int)"), columns)
         
         

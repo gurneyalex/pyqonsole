@@ -28,7 +28,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: screen.py,v 1.1 2005-11-08 13:41:41 alf Exp $"
+__revision__ = "$Id: screen.py,v 1.2 2005-12-06 11:11:32 syt Exp $"
 
 import ca
 from ca import Ca
@@ -38,9 +38,9 @@ from history import HistoryScrollNone
 MODE_Origin  = 0
 MODE_Wrap    = 1
 MODE_Insert  = 2
-Mode_Screen  = 3
-Mode_Cursor  = 4
-Mode_NewLine = 5
+MODE_Screen  = 3
+MODE_Cursor  = 4
+MODE_NewLine = 5
 MODES_SCREEN = 6
 
 BS_CLEARS = False
@@ -48,13 +48,14 @@ BS_CLEARS = False
 REVERSE_WRAPPED_LINES = True # For debug wrapped lines
 
 
-def loc(x, y):
-    return y*self.__columns+x
     
 
 class Screen:
     """ Screen class.
     """
+    def loc(self, x, y):
+        return y*self.__columns+x
+    
     def __init__(self, l=1, c=1):
         """ Init the Screen.
         """
@@ -110,9 +111,9 @@ class Screen:
         # Save modes
         self.__saveParm = {'mode': [None, None, None, None, None, None]}
         
-        self.____initTabStops()
-        self.__clearSelection()
-        self.__reset()
+        self.__initTabStops()
+        self.clearSelection()
+        self.reset()
 
     # Screen operations
     
@@ -257,7 +258,7 @@ class Screen:
         """
         self.__cuX = max(0, self.__cuX-1)
         if (BS_CLEARS):
-            self.__image[loc(self.__cuX, slef.__cuY)].c = ' '
+            self.__image[self.loc(self.__cuX, slef.__cuY)].c = ' '
         
     def clear(self):
         """ Clear the entire screen and home the cursor.
@@ -277,9 +278,9 @@ class Screen:
         self.saveMode(MODE_Origin)
         self.resetMode(MODE_Insert)  # Overstroke
         self.saveMode(MODE_Insert)
-        self.setMode(Mode_Cursor)    # Cursor visible
-        self.resetMode(Mode_Screen)  # Screen not inversed
-        self.resetMode(Mode_NewLine)
+        self.setMode(MODE_Cursor)    # Cursor visible
+        self.resetMode(MODE_Screen)  # Screen not inversed
+        self.resetMode(MODE_NewLine)
         
         self.__tMargin = 0
         self.__bMargin = self.__lines-1
@@ -293,22 +294,22 @@ class Screen:
         if n == 0:
             n = 1
         p = max(0, min(self.__cuX+n-1, self.__columns-1))
-        self.__clearImage(loc(self.__cuX, self.__cuY), loc(p, self.__cuY), ' ')
+        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(p, self.__cuY), ' ')
         
     def deleteChars(self, n):
         if n == 0:
             n = 1
         p = max(0, min(self.__cuX+n, self.__columns-1))
-        self.__moveImage(loc(self.__cuX, self.__cuY), loc(p, self.__cuY), loc(self.__columns-1, self.__cuY))
-        self.__clearImage(loc(self.__columns-n, self.__cuY), loc(self.__columns-1, self.__cuY), ' ')
+        self.__moveImage(self.loc(self.__cuX, self.__cuY), self.loc(p, self.__cuY), self.loc(self.__columns-1, self.__cuY))
+        self.__clearImage(self.loc(self.__columns-n, self.__cuY), self.loc(self.__columns-1, self.__cuY), ' ')
         
     def insertChars(self, n):
         if n == 0:
             n = 1
         p = max(0, min(self.__columns-1-n, self.__columns-1))
         q = max(0, min(self.__cuX+n, self.__columns-1))
-        self.__moveImage(loc(q, self.__cuY), loc(self.__cuX, self.__cuY), loc(p, self.__cuY))
-        self.__clearImage(loc(self.__cuX, self.__cuY), loc(q-1, self.__cuY), ' ')
+        self.__moveImage(self.loc(q, self.__cuY), self.loc(self.__cuX, self.__cuY), self.loc(p, self.__cuY))
+        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(q-1, self.__cuY), ' ')
         
     def deleteLines(self, n):
         if n == 0:
@@ -336,7 +337,7 @@ class Screen:
             self.__cuY = self.__tMargin
             
     def resetMode(self, m):
-        self.__currParm['mode'][m] = alse
+        self.__currParm['mode'][m] = False
         if m == MODE_Origin:
             self.__cuX = self.__cuY = 0
             
@@ -361,26 +362,26 @@ class Screen:
         self.__cuBg = self.__saCuBg
         self.__effectiveRendition()
         
-    def clearEntireScreen():
-        self.__clearImage(loc(0, 0), loc(self.__columns-1, self.__lines-1), ' ')
+    def clearEntireScreen(self):
+        self.__clearImage(self.loc(0, 0), self.loc(self.__columns-1, self.__lines-1), ' ')
         
     def clearToEndOfScreen(self):
-        self.__clearImage(loc(self.__cuX, self.__cuY), loc(self.__columns-1, self.__lines-1), ' ')
+        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(self.__columns-1, self.__lines-1), ' ')
         
     def clearToBeginOfScreen(self):
-        self.__clearImage(loc(0, 0), loc(self.__cuX, self.__cuY), ' ')
+        self.__clearImage(self.loc(0, 0), self.loc(self.__cuX, self.__cuY), ' ')
         
     def clearEntireLine(self):
-        self.__clearImage(loc(0, self.__cuY), loc(self.__columns-1, self.__cuY), ' ')
+        self.__clearImage(self.loc(0, self.__cuY), self.loc(self.__columns-1, self.__cuY), ' ')
         
     def clearToEndOfLine(self):
-        self.__clearImage(loc(self.__cuX, self.__cuY), loc(self.__columns-1, self.__cuY), ' ')
+        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(self.__columns-1, self.__cuY), ' ')
         
     def clearToBeginOfLine(self):
-        self.__clearImage(loc(0, self.__cuY), loc(self.__cuX, self.__cuY), ' ')
+        self.__clearImage(self.loc(0, self.__cuY), self.loc(self.__cuX, self.__cuY), ' ')
         
     def helpAlign(self):
-        self.__clearImage(loc(0, 0), loc(self.__columns-1, self.__lines-1), 'E')
+        self.__clearImage(self.loc(0, 0), self.loc(self.__columns-1, self.__lines-1), 'E')
         
     def setRendition(self, re):
         self.__cuRe = self.__cuRe | re
@@ -412,7 +413,7 @@ class Screen:
         self.__cuFg = ca.DEFAULT_FORE_COLOR
         self.__effectiveRendition()
         
-    def setForeColorToDefault(self):
+    def setBackColorToDefault(self):
         self.__cuBg = ca.DEFAULT_BACK_COLOR
         self.__effectiveRendition()
         
@@ -437,7 +438,7 @@ class Screen:
                 self.__cuX = self.__columns-w
         if self.getMode(MODE_Insert):
             self.insertChars(w);
-        i = loc(self.__cuX, self.__cuY)
+        i = self.loc(self.__cuX, self.__cuY)
         self.checkSelection(i, i)
         self.__image[i].c = c
         self.__image[i].f = self.__efFg
@@ -481,10 +482,10 @@ class Screen:
         cpColumns = min(newColumns, self.__columns)
         for y in xrange(newLines):
             for x in xrange(newColumns):
-                newImg[y*newColumns+x].c = self.__image[loc(x, y)].c
-                newImg[y*newColumns+x].f = self.__image[loc(x, y)].f
-                newImg[y*newColumns+x].b = self.__image[loc(x, y)].b
-                newImg[y*newColumns+x].r = self.__image[loc(x, y)].r
+                newImg[y*newColumns+x].c = self.__image[self.loc(x, y)].c
+                newImg[y*newColumns+x].f = self.__image[self.loc(x, y)].f
+                newImg[y*newColumns+x].b = self.__image[self.loc(x, y)].b
+                newImg[y*newColumns+x].r = self.__image[self.loc(x, y)].r
             newWrapped[y] = self.__lineWrapped[y]
         
         self.__image = newImg
@@ -537,12 +538,12 @@ class Screen:
                         if self.__lineWrapped[y+-self.__hist.getLines()+self.__histCursor]:
                             self.__reverseRendition(merged, p)
         
-        if self.getMode(Mode_Screen):
+        if self.getMode(MODE_Screen):
             for i in xrange(self.__lines*self.__columns):
                 self.__reverseRendition(merged, i)
         
-        loc_ = loc(self.__cuX, self.__cuY+self.__hist.getLines()-self.__histCursor)
-        if self.getMode(Mode_Cursor) and loc_ < self.__columns*self.__lines:
+        loc_ = self.loc(self.__cuX, self.__cuY+self.__hist.getLines()-self.__histCursor)
+        if self.getMode(MODE_Cursor) and loc_ < self.__columns*self.__lines:
             merged[loc_].r = merged[loc_].r | ca.RE_CURSOR
         
         return merged
@@ -587,7 +588,7 @@ class Screen:
         return self.__hist.hasScroll()
     
     def setSelBeginXY(self, x, y):
-        self.__selBegin = loc(x, y+self.__histCursor)
+        self.__selBegin = self.loc(x, y+self.__histCursor)
         if x == self.__columns:
             self.__selBegin -= 1
         self.__selBR = self.__selBegin
@@ -596,7 +597,7 @@ class Screen:
     def setSelExtentXY(self, x, y):
         if self.__selBegin == -1:
             return
-        l = loc(x, y+self.__histCursor)
+        l = self.loc(x, y+self.__histCursor)
         if l < self.__selBegin:
             self.__selTL = l
             self.__selBR = self.__selBegin
@@ -607,7 +608,7 @@ class Screen:
             self.__selBR = l
             
     def testIsSelected(self, x, y):
-        pos = loc(x, y+self.__hist)
+        pos = self.loc(x, y+self.__hist)
         return (pos >= self.__selTL and pos <= self.__selBR)
     
     def clearSelection(self):
@@ -621,7 +622,7 @@ class Screen:
     def getSelText(self, preserveLineBreak):
         if self.__selBegin == -1:
             return
-        histBR = loc(0, self.__hist.getLines())
+        histBR = self.loc(0, self.__hist.getLines())
         hY = self.__selTL / self.__columns
         hX = self.__selTL % self.__columns
         s = self.__selTL
@@ -739,21 +740,21 @@ class Screen:
         return tmp
     
     def getHistoryLine(self, no):
-        self.__selBegin = self.__selTL = loc(0, no)
-        self.__selBR = loc(self.__columns-1, no)
+        self.__selBegin = self.__selTL = self.loc(0, no)
+        self.__selBR = self.loc(self.__columns-1, no)
         return self.getSelText(False)
     
     def checkSelection(self, from_, to):
         if self.__selBegin == -1:
             return
-        scrTL = loc(0, self.__hist.getLines())
+        scrTL = self.loc(0, self.__hist.getLines())
         
         # Clear entire selection if overlaps region [from_, to]
         if self.__selBR > (from_+scrTL) and self.__selTL < (to+scrTL):
             self.clearSelection()
             
     def __clearImage(self, loca, loce, c):
-        scrTL = loc(0, self.__hist.getLines())
+        scrTL = self.loc(0, self.__hist.getLines())
          
         # Clear entire selection if overlaps region to be moved
         if self.__selBR > (loca+scrTL) and self.__selTL < (loce+scrTL):
@@ -777,7 +778,7 @@ class Screen:
             # Adjust selection to follow scroll
             beginIsSTL = (self.__selBegin == self.__selTL)
             diff = dst - loca # Scroll by this amount
-            scrTL = loc(0, self.__hist.getLines())
+            scrTL = self.loc(0, self.__hist.getLines())
             srca = loca + scrTL # Translate index from screen to global
             srce = loce + scrTL
             desta = srca + diff
@@ -807,16 +808,16 @@ class Screen:
     def __scrollUp(self, from_, n):
         if n >= 0 or from_+n > self.__bMargin:
             return
-        self.__moveImage(loc(0, from_), loc(0, from_+n), loc(self.__columns-1, self.__bMargin))
-        self.__clearImage(loc(0, self.__bMargin-n+1), loc(self.__columns-1, self.__bMargin), ' ')
+        self.__moveImage(self.loc(0, from_), self.loc(0, from_+n), self.loc(self.__columns-1, self.__bMargin))
+        self.__clearImage(self.loc(0, self.__bMargin-n+1), self.loc(self.__columns-1, self.__bMargin), ' ')
         
     def __scrollDown(self, from_, n):
         if n <= 0 or from_ > self.__bMargin:
             return
         if from_+n > self.__bMargin:
             n = self.__bMargin-from_
-        self.__moveImage(loc(0, from_+n), loc(0, from_), loc(self.__columns-1, self.__bMargin-n))
-        self.__clearImage(loc(0, from_), loc(self.__columns-1, from_+n-1), ' ')
+        self.__moveImage(self.loc(0, from_+n), self.loc(0, from_), self.loc(self.__columns-1, self.__bMargin-n))
+        self.__clearImage(self.loc(0, from_), self.loc(self.__columns-1, from_+n-1), ' ')
         
     def __addHistoryLine(self):
         assert(self.hasScroll() or self.__histCursor == 0)
@@ -852,7 +853,7 @@ class Screen:
             if self.__selBegin != -1:
                 
                 # Scroll selection in history up
-                topBR = loc(0, 1+newHistLines)
+                topBR = self.loc(0, 1+newHistLines)
                 if self.__selTL < topBR:
                     self.__selTL -= self.__columns
                 if self.__selBR < topBR:
