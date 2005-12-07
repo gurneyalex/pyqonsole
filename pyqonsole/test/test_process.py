@@ -46,12 +46,6 @@ class ProcessTC(unittest.TestCase):
         # process controller interaction
         #self.failUnless(not p in procctrl.theProcessController.process_list)
 
-
-class ShellProcessTC(ProcessTC):
-    def setUp(self):
-        self.process = p = process.ShellProcess()
-
-    #def test_shell(self):
         
 if __name__ == '__main__':
     unittest.main()

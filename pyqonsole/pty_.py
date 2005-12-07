@@ -70,11 +70,13 @@ import os
 import fcntl
 import resource
 import sys
+import termios
 
 from pyqonsole.process import Process, RUN_BLOCK, RUN_NOTIFYONEXIT, \
      COMM_STDOUT, COMM_NOREAD
 
 HAVE_UTEMPTER = os.path.exists("/usr/sbin/utempter")
+
 
 class UtmpProcess(Process):
 
@@ -90,6 +92,7 @@ class UtmpProcess(Process):
         os.dup2(self.cmd_fd, 3)
         return 1
 
+
 class Job:
     def __init__(self, string):
         self.start = 0
@@ -98,6 +101,7 @@ class Job:
 
     def finished(self):
         return self.start == len(self.string)
+
     
 class TEPty(Process):
 
@@ -130,7 +134,7 @@ class TEPty(Process):
 
     def startPgm(self, pgm, args, term):
         """only used internally. See `run' for interface"""
-        tt = self.makePty()
+        tt = self.makePty() # slave_fd
         # reset signal handlers for child process
         for i in range(signal.NSIG):
             signal.signal(i, signalSIG_DFL)
@@ -142,92 +146,55 @@ class TEPty(Process):
         # We need to close all remaining fd's.
         # Especially the one used by Process.start to see if we are running ok.
         for i in range(soft):
-            # FIXME: (result of merge) Check if not closing fd is OK)
-            if i != tt and i != self.master_fd):
-                os.close(i)
-
+            # FIXME: (result of merge) Check if (not) closing fd is OK)
+            if i != tt:# and i != self.master_fd):
+                try:
+                    os.close(i)
+                except OSError:
+                    continue
         dup2(tt, sys.stdin.fileno())
         dup2(tt, sys.stdout.fileno())
         dup2(tt, sys.stderr.fileno())
 
-          if (tt > 2) close(tt);
+        if tt > 2: close(tt)
 
-          # Setup job control #################
+        # Setup job control #################
 
-          # This is pretty obscure stuff which makes the session
-          # to be the controlling terminal of a process group.
+        # This is pretty obscure stuff which makes the session
+        # to be the controlling terminal of a process group.
+        os.setsid()
 
-          if (setsid() < 0) perror("failed to set process group"); # (vital for bash)
+        fcntl.ioctl(0, termios.TIOCSCTTY, '')
+        # This sequence is necessary for event propagation. Omitting this
+        # is not noticeable with all clients (bash,vi). Because bash
+        # heals this, use '-e' to test it.
+        pgrp = os.getpid()                          
+        fcntl.ioctl(0, termios.TIOCSPGRP, struct.pack('i', pgrp))
+        os.setpgid(0,0)
+        close(open(os.ttyname(tt), os.O_WRONLY))
+        setpgid(0,0)
 
-        #if defined(TIOCSCTTY)
-          ioctl(0, TIOCSCTTY, 0);
-        #endif
+        tty_attrs = termios.tcgetattr(0)
+        tty_attrs[-1][termios.VINTR] = CTRL('C')
+        tty_attrs[-1][termios.VQUIT] = CTRL('\\')
+        tty_attrs[-1][termios.VERASE] = 0177
+        termios.tcsetattr(0, termios.TCSANOW, tty_attrs);
 
-          int pgrp = getpid();                 # This sequence is necessary for
-        #ifdef _AIX
-          tcsetpgrp (0, pgrp);
-        #else
-          ioctl(0, TIOCSPGRP, (char *)&pgrp);  # event propagation. Omitting this
-        #endif
-          setpgid(0,0);                        # is not noticeable with all
-          close(open(ttynam, O_WRONLY, 0));       # clients (bash,vi). Because bash
-          setpgid(0,0);                        # heals this, use '-e' to test it.
+        #os.close(self.master_fd)
 
-          # without the '::' some version of HP-UX thinks, this declares
-             the struct in this class, in this method, and fails to find the correct
-             t[gc]etattr */
-          static struct ::termios ttmode;
-        #undef CTRL
-        #define CTRL(c) ((c) - '@')
+        # drop privileges
+        os.setgid(os.getgid())
+        os.setuid(os.getuid())
 
-        #if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__bsdi__)
-              ioctl(0,TIOCGETA,(char *)&ttmode);
-        #else
-        #   if defined (_HPUX_SOURCE) || defined(__Lynx__)
-              tcgetattr(0, &ttmode);
-        #   else
-              ioctl(0,TCGETS,(char *)&ttmode);
-        #   endif
-        #endif
-              ttmode.c_cc[VINTR] = CTRL('C');
-              ttmode.c_cc[VQUIT] = CTRL('\\');
-              ttmode.c_cc[VERASE] = 0177;
-        #if defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__bsdi__)
-              ioctl(0,TIOCSETA,(char *)&ttmode);
-        #else
-        #   ifdef _HPUX_SOURCE
-              tcsetattr(0, TCSANOW, &ttmode);
-        #   else
-              ioctl(0,TCSETS,(char *)&ttmode);
-        #   endif
-        #endif
+        # propagate emulation
+        if self.term:
+            os.ENVIRON['TERM' = term
+        fcntl.ioctl(0, termios.TIOCSWINSZ, struct('ii', *self.wsize))
 
-          close(fd);
-
-          # drop privileges
-          setgid(getgid()); setuid(getuid()); 
-
-          # propagate emulation
-          if (term and term[0]) setenv("TERM",term,1);
-
-          # convert QStrList into char*[]
-          unsigned int i;
-          char **argv = (char**)malloc(sizeof(char*)*(args.count()+1));
-        #  char **argv = (char**)malloc(sizeof(char*)*(args.count()+0));
-          for (i = 0; i<args.count(); i++) {
-             argv[i] = strdup(args[i]);
-             }
-
-          argv[i] = 0L;
-
-          ioctl(0,TIOCSWINSZ,(char *)&wsize);  # set screen size
-
-          # finally, pass to the new program
-          execvp(pgm, argv);
-          #execvp("/bin/bash", argv);
-          perror("exec failed");
-          exit(1);                             # control should never come here.
-        }
+        # finally, pass to the new program
+        os.execvp(pgm, args)
+        #execvp("/bin/bash", argv);
+        sys.exit(1) # control should never come here.
         
     def openPty():
         """"""
@@ -286,8 +253,8 @@ class TEPty(Process):
         self.wsize = (lines, columns)
         if self.master_fd is None:
             return
-        # XXX: TIOCSWINSZ not available from python ?
-        fcntl.ioctl(self.master_fd, TIOCSWINSZ, struct('ii', lines, columns))
+        fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ,
+                    struct('ii', lines, columns))
         
     def setupCommunication(self):
         """overriden from Process"""

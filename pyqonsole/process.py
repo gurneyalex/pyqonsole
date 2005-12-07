@@ -14,8 +14,6 @@ of Un*x specific implementation details
 //  version 0.3.1, Jan, 8th 1998
 //  (C) Christian Czezatke e9025461@student.tuwien.ac.at
 
-XXX: mixing fds with streams !
-
 XXX signals:
   /**
    * Emitted after the process has terminated when
@@ -100,43 +98,6 @@ def initgroups(user, group):
     user is a member.  The additional group group is also added to the
     list."""
     raise NotImplementedError
-
-def quote(string):
-    """This function can be used to quote an argument string such that
-    the shell processes it properly. This is e. g. necessary for
-    user-provided file names which may contain spaces or quotes.
-    It also prevents expansion of wild cards and environment variables.
-    """
-    return "'%s'" % string.replace("'", "'\"'\"'")
-
-def searchShell():
-    """Searches for a valid shell"""
-    shell = os.getenv("SHELL")
-    if not shell or not isExecutable(shell):
-        shell = "/bin/sh"
-    return shell.strip()
-
-def isExecutable(filename):
-    """Used by @ref searchShell in order to find out whether the shell found
-    is actually executable at all.
-    """
-    if not filename: return False
-    # we've got a valid filename, now let's see whether we can execute that file
-    try:
-        fileinfo = os.stat(filename)
-    except OSError:
-        # return False if the file does not exist
-        return False
-    # anyway, we cannot execute directories, block/character devices, fifos or sockets
-    if (stat.S_ISDIR(fileinfo.st_mode)  or
-        stat.S_ISCHR(fileinfo.st_mode)  or
-        stat.S_ISBLK(fileinfo.st_mode)  or
-        stat.S_ISSOCK(fileinfo.st_mode) or
-        stat.S_ISFIFO(fileinfo.st_mode) or
-        stat.S_ISDIR(fileinfo.st_mode) ):
-        return False
-    # now check for permission to execute the file
-    return os.access(filename, os.X_OK)
 
 
 ## Modes in which the communication channel can be opened.
@@ -894,66 +855,4 @@ class Process(qt.QObject):
             self._input_sent += os.write(self.in_[1].fileno(),
                                          self._input_data[self._input_sent:])
 
-
-
-
-class ShellProcess(Process):
-    """This class is similar to @ref Process. The only difference is that
-    ShellProcess runs the specified executable through a UN*X shell so
-    that standard shell mechanisms like wild card matching, use of pipes
-    and environment variable expansion will work.
-
-    For example, you could run commands like the following through
-    ShellProcess:
-
-    ls ~/HOME/ *.lyx | sort | uniq |wc -l
-
-    ShellProcess tries really hard to find a valid executable shell. Here
-    is the algorithm used for finding an executable shell:
-
-    * Try the executable pointed to by the "SHELL" environment
-      variable with white spaces stripped off
-
-    * If your process runs with uid != euid or gid != egid, a shell
-      not listed in /etc/shells will not used.
-
-    * If no valid shell could be found, "/bin/sh" is used as a last resort.
-    """
-    def __init__(self, shellname=None):
-        """By specifying the name of a shell (like "/bin/bash") you can override
-        the mechanism for finding a valid shell as described in the detailed
-        description of this class.
-        """
-        super(ShellProcess, self).__init__()
-        self.shell = shellname
-
-    def start(self, runmode, comm):
-        uid, gid = self._startInit(runmode, comm)
-        fd = [None, None]
-        self.pid = os.fork()
-        if 0 == self.pid:
-            shell = self.shell or searchShell()
-            if not isExecutable(shell):
-                raise Exception('Could not find a valid shell')
-            cmd = ' '.join([quote(arg) for arg in self._arguments])
-            arguments = [shell, '-c', cmd]
-            self._childStart(uid, gid, fd, arguments)            
-        else:
-            self._parentStart(fd)
-
-    def _parentStart(self, fd):
-        self._parentSetupCommunication()        
-        # Discard any data for stdin that might still be there
-        self._input_data = ''
-        if self.run_mode == RUN_BLOCK:
-            self.commClose()
-            # The SIGCHLD handler of the process controller will catch
-            # the exit and set the status
-            while self.running:
-                procctrl.theProcessController.slotDoHousekeeping(0)
-            self.running = False
-            self.emit(qt.PYSIGNAL("processExited(XXX)"), self)
-
-
 from pyqonsole import procctrl
-
