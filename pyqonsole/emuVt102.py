@@ -1,4 +1,12 @@
 # -*- coding: ISO-8859-1 -*-
+#
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
 """ Provide the EmuVt102 class.
 
 VT102 Terminal Emulation

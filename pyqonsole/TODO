@@ -1,0 +1,13 @@
+TODO list for pyqonsole
+-----------------------
+
+* qt signals
+
+* process / processcontroller interaction (+ more testing of those 2 modules)
+
+* complete emuVt102: XTermHack...
+
+* refactor procctrl, process, emuVt102:
+  * processcontroller singleton implementation
+
+* backport modules:
