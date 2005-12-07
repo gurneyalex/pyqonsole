@@ -103,7 +103,9 @@ class Job:
         return self.start == len(self.string)
 
     
-class TEPty(Process):
+class PtyProcess(Process):
+    """fork a process using a controlling terminal
+    """
 
     def __init__(self):
         self.wsize = (0, 0)
@@ -141,7 +143,6 @@ class TEPty(Process):
 
         # Don't know why, but his is vital for SIGHUP to find the child.
         # Could be, we get rid of the controling terminal by this.
-        # getrlimit is a getdtablesize() equivalent, more portable (David Faure)
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
         # We need to close all remaining fd's.
         # Especially the one used by Process.start to see if we are running ok.
@@ -170,9 +171,9 @@ class TEPty(Process):
         # heals this, use '-e' to test it.
         pgrp = os.getpid()                          
         fcntl.ioctl(0, termios.TIOCSPGRP, struct.pack('i', pgrp))
-        os.setpgid(0,0)
-        close(open(os.ttyname(tt), os.O_WRONLY))
-        setpgid(0,0)
+        os.setpgid(0, 0)
+        close(os.open(os.ttyname(tt), os.O_WRONLY))
+        setpgid(0, 0)
 
         tty_attrs = termios.tcgetattr(0)
         tty_attrs[-1][termios.VINTR] = CTRL('C')
@@ -196,7 +197,7 @@ class TEPty(Process):
         #execvp("/bin/bash", argv);
         sys.exit(1) # control should never come here.
         
-    def openPty():
+    def openPty(self):
         """"""
         self.master_fd, self.slave_fd = pty.openpty()
         fcntl.fcntl(self.master_fd, fcntl.F_SETFL, os.O_NDELAY)
@@ -248,7 +249,7 @@ class TEPty(Process):
             mode.st_mode &= ~(os.S_IWGRP|os.S_IWOTH)
         os.chmod(self.ttynam, mode)
                 
-    def setSize(int lines, int columns):
+    def setSize(self, lines, columns):
         """Informs the client program about the actual size of the window."""
         self.wsize = (lines, columns)
         if self.master_fd is None:
@@ -288,7 +289,7 @@ class TEPty(Process):
                          self.slotDoSendJobs)
         self.pending_send_job_timer.start(0)
 
-    def slotDoSendJobs():
+    def slotDoSendJobs(self):
         """"""
         written = 0
         while pending_send_jobs:
@@ -302,12 +303,12 @@ class TEPty(Process):
         if self.pending_send_job_timer:
             self.pending_send_job_timer->stop()
 
-    def slotDataReceived(int, int& len):
+    def slotDataReceived(self):
         """indicates that a block of data is received """
         buf = os.read(self.master_fd, 4096);
         self.emit(qt.SIGNAL('block_in(char*, int)', buf, len(buf))
               
-    def slotDonePty():
+    def slotDonePty(self):
         """"""
         status self.exitStatus()
         if HAVE_UTEMPTER:
