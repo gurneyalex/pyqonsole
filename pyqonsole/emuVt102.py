@@ -173,8 +173,7 @@ class EmuVt102(Emulation):
             self.__tbl[ord(s)] = self.__tbl[ord(s)] | GRP
 
         self.reset()
-
-        self.connect(self._gui, qt.SIGNAL("mouseSignal(int, int, int)"), self.onMouse)
+        self.connect(self._gui, qt.PYSIGNAL("mouseSignal"), self.onMouse)
         
     def reset(self):
         self.__resetToken()
@@ -316,7 +315,6 @@ class EmuVt102(Emulation):
             return
 
         if self.ces(cc, CTL):
-            
             # DEC HACK ALERT! Control Characters are allowed *within* esc sequences in VT100
             # This means, they do neither a resetToken nor a pushToToken. Some of them, do
             # of course. Guess this originates from a weakly layered handling of the X-on
@@ -327,7 +325,7 @@ class EmuVt102(Emulation):
                 self.tau(TY_CTL(chr(cc+ord('@'))), 0, 0)
                 return
       
-        #pushToToken(cc) # Advance the state
+        # Advance the state
         self.__pbuf.append(cc)
         
         s = self.__pbuf
@@ -431,7 +429,7 @@ class EmuVt102(Emulation):
         elif token == TY_CTL('G'):
             if self._connected: # VT100
                 self._gui.bell()
-                self.emit(qt.PYSIGNAL("notifySessionState(int)"), NOTIFYBELL)            
+                self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYBELL)
         elif token == TY_CTL('H') : self._scr.backSpace() # VT100
         elif token == TY_CTL('I') : self._scr.tabulate()  # VT100
         elif token == TY_CTL('J') : self._scr.newLine()   # VT100
@@ -725,7 +723,7 @@ class EmuVt102(Emulation):
             self.reportErrorToken(token, p, q);
 
     def sendString(self, s):
-        self.emit(qt.PYSIGNAL("sndBlock(const char*,int)"), s, len(s))
+        self.emit(qt.PYSIGNAL("sndBlock"), (s))
         
     def reportCursorPosition(self):
         self.sendString("\033[%d;%dR" % (self._scr.getCursorX()+1, self._scr.getCursorY()+1))
@@ -786,10 +784,10 @@ class EmuVt102(Emulation):
     def scrollLock(self, lock):
         if lock:
             self._holdScreen = True
-            self.emit(qt.PYSIGNAL("sndBlock(const char*,int)"), "\023", 1) # XOFF (^S)
+            self.emit(qt.PYSIGNAL("sndBlock"), "\023") # XOFF (^S)
         else:
             self._holdScreen = False
-            self.emit(qt.PYSIGNAL("sndBlock(const char*,int)"), "\021", 1) # XON (^Q)
+            self.emit(qt.PYSIGNAL("sndBlock"), "\021") # XON (^Q)
             
     def __onScrollLock(self):
         self.scrollLock(not self._holdScreen)
@@ -815,27 +813,27 @@ class EmuVt102(Emulation):
             elif cmd == kt.CMD_scrollLineDown:  self.__gui.doScroll(+1)
             elif cmd == kt.CMD_prevSession:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("nextSession()"))
+                    self.emit(qt.PYSIGNAL("nextSession"))
                 else:
-                    self.emit(qt.PYSIGNAL("prevSession()"))
+                    self.emit(qt.PYSIGNAL("prevSession"))
             elif cmd == kt.CMD_nextSession:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("prevSession()"))
+                    self.emit(qt.PYSIGNAL("prevSession"))
                 else:
-                    self.emit(qt.PYSIGNAL("nextSession()"))
-            elif cmd == kt.CMD_newSession: self.emit(qt.PYSIGNAL("newSession()"))
-            elif cmd == kt.CMD_renameSession: self.emit(qt.PYSIGNAL("renameSession()"))
-            elif cmd == kt.CMD_activateMenu: self.emit(qt.PYSIGNAL("activateMenu()"))
+                    self.emit(qt.PYSIGNAL("nextSession"))
+            elif cmd == kt.CMD_newSession: self.emit(qt.PYSIGNAL("newSession"))
+            elif cmd == kt.CMD_renameSession: self.emit(qt.PYSIGNAL("renameSession"))
+            elif cmd == kt.CMD_activateMenu: self.emit(qt.PYSIGNAL("activateMenu"))
             elif cmd == kt.CMD_moveSessionLeft:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("moveSessionRight()"))
+                    self.emit(qt.PYSIGNAL("moveSessionRight"))
                 else:
-                    self.emit(qt.PYSIGNAL("moveSessionLeft()"))
+                    self.emit(qt.PYSIGNAL("moveSessionLeft"))
             elif cmd == kt.CMD_moveSessionRight:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("moveSessionLeft()"))
+                    self.emit(qt.PYSIGNAL("moveSessionLeft"))
                 else:
-                    self.emit(qt.PYSIGNAL("moveSessionRight()"))
+                    self.emit(qt.PYSIGNAL("moveSessionRight"))
             elif cmd == kt.CMD_scrollLock: self.__onScrollLock()            
         except:
             pass
@@ -858,7 +856,7 @@ class EmuVt102(Emulation):
             #        latin1 locales at least. Please anyone find a clean solution (malte)
             if ev.state() & qt.QEvent.ControlButton:
                 s.fill(ev.ascii(), 1)
-            self.emit(qt.PYSIGNAL("sndBlock(char*, int)"), (s.data(), s.length()))
+            self.emit(qt.PYSIGNAL("sndBlock"), (s.data()))
 
     """
     -------------------------------------------------------------------------

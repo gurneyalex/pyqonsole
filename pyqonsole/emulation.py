@@ -78,8 +78,6 @@ class Emulation(qt.QObject):
     """ Emulation class.
     """
     def __init__(self, w):
-        """ Init the Emulation object.
-        """
         super(Emulation, self).__init__()
         self._gui = w
         self._screen = [Screen(self._gui.lines, self._gui.columns),
@@ -96,15 +94,15 @@ class Emulation(qt.QObject):
         self.__findPos = -1
         
         self.connect(self.__bulkTimer, qt.SIGNAL("timeout()"), self.__showBulk)
-        self.connect(self._gui, qt.SIGNAL("changedImageSizedSignal(int, int)"), self.onImageSizeChange)
-        self.connect(self._gui, qt.SIGNAL("changedHistoryCursor(int)"), self.onHistoryCursorChange)
-        self.connect(self._gui, qt.SIGNAL("keyPressedSignal(QKeyEvent*)"), self.onKeyPress)
-        self.connect(self._gui, qt.SIGNAL("beginSelectionSignal(const int, const int)"), self.onSelectionBegin)
-        self.connect(self._gui, qt.SIGNAL("extendSelectionSignal(const int, const int)"), self.onSelectionExtend)
-        self.connect(self._gui, qt.SIGNAL("endSelectionSignal(const bool)"), self.setSelection)
-        self.connect(self._gui, qt.SIGNAL("clearSelectionSignal()"), self.clearSelection)
-        self.connect(self._gui, qt.SIGNAL("isBusySelecting(bool)"), self.isBusySelecting)
-        self.connect(self._gui, qt.SIGNAL("testIsSelected(const int, const int, bool &)"), self.testIsSelected)
+        self.connect(self._gui, qt.PYSIGNAL("changedImageSizedSignal(int, int)"), self.onImageSizeChange)
+        self.connect(self._gui, qt.PYSIGNAL("changedHistoryCursor(int)"), self.onHistoryCursorChange)
+        self.connect(self._gui, qt.PYSIGNAL("keyPressedSignal"), self.onKeyPress)
+        self.connect(self._gui, qt.PYSIGNAL("beginSelectionSignal"), self.onSelectionBegin)
+        self.connect(self._gui, qt.PYSIGNAL("extendSelectionSignal"), self.onSelectionExtend)
+        self.connect(self._gui, qt.PYSIGNAL("endSelectionSignal"), self.setSelection)
+        self.connect(self._gui, qt.PYSIGNAL("clearSelectionSignal"), self.clearSelection)
+        self.connect(self._gui, qt.PYSIGNAL("isBusySelecting"), self.isBusySelecting)
+        self.connect(self._gui, qt.PYSIGNAL("testIsSelected"), self.testIsSelected)
         
         self.setKeymap(0)
         
@@ -172,7 +170,7 @@ class Emulation(qt.QObject):
         elif ord(c) == 0x07:
             if self._connected:
                 self._gui.bell()
-            self.emit(qt.PYSIGNAL("notifySessionState(int)"), NOTIFYBELL)
+            self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYBELL)
         else:
            self._scr.showCharacter()
 
@@ -191,7 +189,7 @@ class Emulation(qt.QObject):
         if not self._listenTokenPress: # Someone else gets the keys
             return
         
-        self.emit(qt.PYSIGNAL("notifySessionState(int)"), NOTIFYNORMAL)
+        self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYNORMAL)
         if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty():
             self._scr.setHistCursor(self._scr.getHistLines())
         if not ev.text().isEmpty:
@@ -199,12 +197,12 @@ class Emulation(qt.QObject):
             # A block og text
             # Note that the text is proper unicode. We should do a conversion here,
             # but since this routine will never be used, we simply emit plain ascii.
-            self.emit(qt.PYSIGNAL("sndBlock(const char*,int)"), (ev.text().ascii(), ev.text().length()))
+            self.emit(qt.PYSIGNAL("sndBlock"), (ev.text().ascii()))
         elif ev.ascii() > 0:
-            self.emit(qt.PYSIGNAL("sndBlock(const char*,int)"), (ev.ascii(), 1))
+            self.emit(qt.PYSIGNAL("sndBlock"), (ev.ascii()))
             
     def onRcvBlock(self, s, len_):
-        self.emit(qt.PYSIGNAL("notifySessionState(int)"), NOTIFYACTIVITY)
+        self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYACTIVITY)
         
         self.__bulkStart()
         self.__bulkInCnt += 1
@@ -345,7 +343,7 @@ class Emulation(qt.QObject):
         self.__showBulk()
         
         # Propagate event to serial line
-        self.emit(qt.PYSIGNAL("imageSizeChanged(int, int)"), (lines, columns))
+        self.emit(qt.PYSIGNAL("imageSizeChanged"), (lines, columns))
     
     def onHistoryCursorChange(self, cursor):
         if not self._connected:
@@ -354,9 +352,8 @@ class Emulation(qt.QObject):
         self.__showBulk()
         
     def _setColumns(self, columns):
-        
         # This goes strange ways
         # Can we put this straight or explain it at least?
-        self.emit(qt.PYSIGNAL("changeColumns(int)"), columns)
+        self.emit(qt.PYSIGNAL("changeColumns"), columns)
         
         
