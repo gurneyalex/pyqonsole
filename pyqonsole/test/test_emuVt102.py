@@ -94,7 +94,7 @@ ESC _ 	Application Program Command (APC is 0x9f)
         #self._test_sequence('\033W')
         #self._test_sequence('\033X')
         self._test_sequence('\033Z',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[?1;2c', 7))])
+                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
         
     def test_receive_single_char_functions(self):
         """Single-character functions
@@ -112,9 +112,9 @@ HT 	Horizontal Tab
 VT 	Vertical Tab same as LF
         """
         self._test_sequence('\05', # ENQ
-                            emu=[('9sndBlock(const char*,int)', ('', 0))])
+                            emu=[('9sndBlock', ('',))])
         self._test_sequence('\07', # BELL
-                            emu=[('9notifySessionState(int)', (1,))],      
+                            emu=[('9notifySessionState', (1,))],      
                             gui=[('getattr', 'bell'), ('call',)])
         self._test_sequence('\010', # BS
                             scr0=[('getattr', 'backSpace'), ('call',)])
@@ -444,17 +444,17 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                 <Pc> indicates the ROM cartridge registration number (always zero) 
         """
         self._test_sequence('\033[c',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[?1;2c', 7))])
+                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
         self._test_sequence('\033[0c',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[?1;2c', 7))])
+                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
         self._test_sequence('\033[1c',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[?1;2c', 7))])
+                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
         self._test_sequence('\033[>c',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[>0;115;0c', 11))])
+                            emu=[('9sndBlock', ('\x1b[>0;115;0c',))])
         self._test_sequence('\033[>0c',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[>0;115;0c', 11))])
+                            emu=[('9sndBlock', ('\x1b[>0;115;0c',))])
         self._test_sequence('\033[>1c',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[>0;115;0c', 11))])
+                            emu=[('9sndBlock', ('\x1b[>0;115;0c',))])
         
     def test_receive_csi_charater_attributes(self):
         """Functions using CSI - CSI <Pm> m 	Character Attributes (SGR)
@@ -601,7 +601,7 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                             emu=[('setMode', (emuVt102.MODE_AppCuKeys,))])
         #self._test_sequence('\033[?2h')
         self._test_sequence('\033[?3h',
-                            emu=[('9changeColumns(int)', (132,))])
+                            emu=[('9changeColumns', (132,))])
         self._test_sequence('\033[?4h')
         self._test_sequence('\033[?5h',
                             scr0=[('getattr', 'setMode'), ('call', (screen.MODE_Screen,))])
@@ -744,7 +744,7 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
 <Ps>=25 -> Hide Cursor (DECTCEM)
         """
         self._test_sequence('\033[?3l',
-                            emu=[('9changeColumns(int)', (80,))])
+                            emu=[('9changeColumns', (80,))])
         self._test_sequence('\033[?4l')
         self._test_sequence('\033[?5l',
                             scr0=[('getattr', 'resetMode'), ('call', (screen.MODE_Screen,))])
@@ -844,9 +844,9 @@ CSI <Ps> x 	Request Terminal Parameters (DECREQTPARM)
 		0 -> STP flags
         """
         self._test_sequence('\033[5n',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[0n', 4))])
+                            emu=[('9sndBlock', ('\x1b[0n',))])
         self._test_sequence('\033[6n',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[2;2R', 6))],
+                            emu=[('9sndBlock', ('\x1b[2;2R',))],
                             scr0=[('getattr', 'getCursorX'), ('getattr', 'getCursorY')])
         #self._test_sequence('\033[?6n')
         #self._test_sequence('\033[?15n')
@@ -854,11 +854,11 @@ CSI <Ps> x 	Request Terminal Parameters (DECREQTPARM)
         #self._test_sequence('\033[?26n')
         #self._test_sequence('\033[?53n')
         self._test_sequence('\033[x',                            # XXX \x1b[0 ?
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[2;1;1;112;112;1;0x', 20))])
+                            emu=[('9sndBlock', ('\x1b[2;1;1;112;112;1;0x',))])
         self._test_sequence('\033[0x',                           # XXX \x1b[0 ?
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[2;1;1;112;112;1;0x', 20))])
+                            emu=[('9sndBlock', ('\x1b[2;1;1;112;112;1;0x',))])
         self._test_sequence('\033[1x',                           # XXX \x1b[2 ?
-                            emu=[('9sndBlock(const char*,int)', ('\x1b[3;1;1;112;112;1;0x', 20))])
+                            emu=[('9sndBlock', ('\x1b[3;1;1;112;112;1;0x',))])
 
     def test_receive_csi_media_copy(self):
         """Functions using CSI - Media Copy
@@ -956,7 +956,11 @@ class EmuVt102OldTC(EmuVtTC):
         self._test_sequence('\033[3q')
         self._test_sequence('\033[4q')
 
-
+class EmuVtXTermHackTC(EmuVtTC):
+    def test(self):
+        self._test_sequence('\033]0;blablabla\07')
+        self._test_sequence('\033]1;blablabla\07')
+        self._test_sequence('\033]2;blablabla\07')
 
 class EmuVt52TC(EmuVtTC):
     
@@ -1012,13 +1016,14 @@ ESC < 		Exit VT52 mode (Enter VT100 mode).
         self._test_sequence('\033Y12',
                             scr0=[('getattr', 'setCursorYX'), ('call', (18, 19))]) # XXX
         self._test_sequence('\033Z',
-                            emu=[('9sndBlock(const char*,int)', ('\x1b/Z', 3))])
+                            emu=[('9sndBlock', ('\x1b/Z',))])
         self._test_sequence('\033=',
                             emu=[('setMode', (emuVt102.MODE_AppKeyPad,))])
         self._test_sequence('\033>',
                             emu=[('resetMode', (emuVt102.MODE_AppKeyPad,))])
         self._test_sequence('\033<',
                             emu=[('setMode', (emuVt102.MODE_Ansi,))])
-        
+
+
 if __name__ == '__main__':
     unittest.main()
