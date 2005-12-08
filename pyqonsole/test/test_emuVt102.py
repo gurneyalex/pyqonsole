@@ -18,14 +18,15 @@ Pt: A text parameter composed of printable characters.
 """
 
 import unittest
-from utils import NullScreen, NullGui, MyEmuVt102, register_logger, reset_logs
+from utils import NoScreenTC, NullGui, MyEmuVt102, register_logger, reset_logs
 
 from pyqonsole import emuVt102, emulation, ca, screen
 
-class EmuVtTC(unittest.TestCase):
+
+class EmuVtTC(NoScreenTC):
     
     def setUp(self):
-        emulation.Screen = NullScreen        
+        NoScreenTC.setUp(self)
         self.emu = MyEmuVt102(NullGui())
         self.emu._connected = True
         register_logger(self.emu)

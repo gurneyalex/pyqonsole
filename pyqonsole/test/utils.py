@@ -1,7 +1,8 @@
 import weakref
+import unittest
 
 import qt
-from pyqonsole import emuVt102
+from pyqonsole import emuVt102, emulation
 
 LOGGERS = []
 
@@ -89,3 +90,13 @@ class MyEmuVt102(emuVt102.EmuVt102):
     saveMode = logged(emuVt102.EmuVt102.saveMode, 'saveMode')
     setPrinterMode = logged(emuVt102.EmuVt102.setPrinterMode, 'setPrinterMode')
             
+
+_baseScreen = emulation.Screen
+
+class NoScreenTC(unittest.TestCase):
+    
+    def setUp(self):
+        emulation.Screen = NullScreen
+
+    def tearDown(self):
+        emulation.Screen = _baseScreen
