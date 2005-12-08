@@ -67,10 +67,15 @@ XXX  signals:
 """
 
 import os
-import fcntl
-import resource
 import sys
-import termios
+from pty import openpty
+from struct import pack
+from fcntl import ioctl, fcntl, F_SETFL
+from resource import getrlimit, RLIMIT_NOFILE
+from termios import tcgetattr, tcsetattr, VINTR, VQUIT, VERASE, \
+     TIOCSPGRP, TCSANOW, TIOCSWINSZ, TIOCSCTTY
+
+import qt
 
 from pyqonsole.process import Process, RUN_BLOCK, RUN_NOTIFYONEXIT, \
      COMM_STDOUT, COMM_NOREAD
@@ -115,10 +120,8 @@ class PtyProcess(Process):
         self.openPty()
         self.pending_send_jobs = []
         self.pending_send_job_timer = None
-        self.connect(self, qt.SIGNAL('receivedStdout(int, int &)'), self,
-                     self.slotDataReceived)
-        self.connect(self, qt.SIGNAL('processExited(Process *)'), self,
-                     self.slotDonePty)
+        self.connect(self, qt.PYSIGNAL('receivedStdout'), self.dataReceived)
+        self.connect(self, qt.PYSIGNAL('processExited'),  self.donePty)
         
     def run(self, pgm, args, term, addutmp):
         """start the client program
@@ -143,7 +146,7 @@ class PtyProcess(Process):
 
         # Don't know why, but his is vital for SIGHUP to find the child.
         # Could be, we get rid of the controling terminal by this.
-        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        soft, hard = getrlimit(RLIMIT_NOFILE)
         # We need to close all remaining fd's.
         # Especially the one used by Process.start to see if we are running ok.
         for i in range(soft):
@@ -165,21 +168,21 @@ class PtyProcess(Process):
         # to be the controlling terminal of a process group.
         os.setsid()
 
-        fcntl.ioctl(0, termios.TIOCSCTTY, '')
+        ioctl(0, TIOCSCTTY, '')
         # This sequence is necessary for event propagation. Omitting this
         # is not noticeable with all clients (bash,vi). Because bash
         # heals this, use '-e' to test it.
         pgrp = os.getpid()                          
-        fcntl.ioctl(0, termios.TIOCSPGRP, struct.pack('i', pgrp))
+        ioctl(0, TIOCSPGRP, pack('i', pgrp))
         os.setpgid(0, 0)
         close(os.open(os.ttyname(tt), os.O_WRONLY))
         setpgid(0, 0)
 
-        tty_attrs = termios.tcgetattr(0)
-        tty_attrs[-1][termios.VINTR] = CTRL('C')
-        tty_attrs[-1][termios.VQUIT] = CTRL('\\')
-        tty_attrs[-1][termios.VERASE] = 0177
-        termios.tcsetattr(0, termios.TCSANOW, tty_attrs);
+        tty_attrs = tcgetattr(0)
+        tty_attrs[-1][VINTR] = CTRL('C')
+        tty_attrs[-1][VQUIT] = CTRL('\\')
+        tty_attrs[-1][VERASE] = 0177
+        tcsetattr(0, TCSANOW, tty_attrs);
 
         #os.close(self.master_fd)
 
@@ -189,8 +192,8 @@ class PtyProcess(Process):
 
         # propagate emulation
         if self.term:
-            os.ENVIRON['TERM' = term
-        fcntl.ioctl(0, termios.TIOCSWINSZ, struct('ii', *self.wsize))
+            os.ENVIRON['TERM'] = term
+        ioctl(0, TIOCSWINSZ, pack('ii', *self.wsize))
 
         # finally, pass to the new program
         os.execvp(pgm, args)
@@ -199,8 +202,8 @@ class PtyProcess(Process):
         
     def openPty(self):
         """"""
-        self.master_fd, self.slave_fd = pty.openpty()
-        fcntl.fcntl(self.master_fd, fcntl.F_SETFL, os.O_NDELAY)
+        self.master_fd, self.slave_fd = openpty()
+        fcntl(self.master_fd, F_SETFL, os.O_NDELAY)
         return self.master_fd
         
     def makePty(self):
@@ -242,20 +245,20 @@ class PtyProcess(Process):
             
     def setWriteable(self, writeable):
         """set the slave pty writable"""
-        mode = stat(self.ttynam)
+        ttyname = os.ttyname(self.slave_fd)
+        mode = stat(ttyname)
         if writeable:
             mode.st_mode |= os.S_IWGRP
         else:
             mode.st_mode &= ~(os.S_IWGRP|os.S_IWOTH)
-        os.chmod(self.ttynam, mode)
+        os.chmod(ttyname, mode)
                 
     def setSize(self, lines, columns):
         """Informs the client program about the actual size of the window."""
         self.wsize = (lines, columns)
         if self.master_fd is None:
             return
-        fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ,
-                    struct('ii', lines, columns))
+        ioctl(self.master_fd, TIOCSWINSZ, pack('ii', lines, columns))
         
     def setupCommunication(self):
         """overriden from Process"""
@@ -285,12 +288,12 @@ class PtyProcess(Process):
         self.pending_send_jobs.append(Job(string))
         if not self.pending_send_job_timer:
             self.pending_send_job_timer = qt.QTimer()
-            self.connect(self.pending_send_job_timer, qt.SIGNAL('timeout()'), self,
-                         self.slotDoSendJobs)
+            self.connect(self.pending_send_job_timer, qt.SIGNAL('timeout()'),
+                         self.doSendJobs)
         self.pending_send_job_timer.start(0)
 
-    def slotDoSendJobs(self):
-        """"""
+    def doSendJobs(self):
+        """qt slot"""
         written = 0
         while pending_send_jobs:
             job = pending_send_jobs[0]
@@ -301,16 +304,15 @@ class PtyProcess(Process):
             if job.finished():
                 pending_send_jobs.remove(job)
         if self.pending_send_job_timer:
-            self.pending_send_job_timer->stop()
+            self.pending_send_job_timer.stop()
 
-    def slotDataReceived(self):
-        """indicates that a block of data is received """
+    def dataReceived(self):
+        """qt slot: indicates that a block of data is received """
         buf = os.read(self.master_fd, 4096);
-        self.emit(qt.SIGNAL('block_in(char*, int)', buf, len(buf))
+        self.emit(qt.PYSIGNAL('block_in'), (buf,))
               
-    def slotDonePty(self):
-        """"""
-        status self.exitStatus()
+    def donePty(self):
+        """qt slot"""
         if HAVE_UTEMPTER:
             utmp = UtmpProcess(self.master_fd, '-d', os.ttyname(self.slave_fd))
             utmp.start(RUN_BLOCK)
@@ -324,7 +326,7 @@ class PtyProcess(Process):
         #  }
         #endif
         #if (needGrantPty) chownpty(fd,False)
-        self.emit(qt.SIGNAL('done(int)', status))
+        self.emit(qt.PYSIGNAL('done', (self.exitStatus(),)))
 
 
 
