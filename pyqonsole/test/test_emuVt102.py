@@ -940,14 +940,14 @@ OSC <Ps> ; <Pt> BEL
 This is implemented as a 'XTerm hack' in emuVt102
         """
         self._test_sequence('\033]0;blablabla\07', # BELL is \007
-                            emu=[('9changeTitle', ((0, 'blablabla'),))])
+                            emu=[('9changeTitle', (0, 'blablabla'))])
         self._test_sequence('\033]1;blablabla\07',
-                            emu=[('9changeTitle', ((1, 'blablabla'),))])
+                            emu=[('9changeTitle', (1, 'blablabla'))])
         self._test_sequence('\033]2;blablabla\07',
-                            emu=[('9changeTitle', ((2, 'blablabla'),))])
+                            emu=[('9changeTitle', (2, 'blablabla'))])
 
 
-class EmuVt102OldTC(EmuVtTC):
+class EmuVtNOT102TC(EmuVtTC):
     
     CSI_PS_EXPECTED_LOGS = {
         # XXX not implemented

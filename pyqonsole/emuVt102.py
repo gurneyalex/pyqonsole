@@ -434,7 +434,7 @@ class EmuVt102(Emulation):
         elif token == TY_CTL('G'):
             if self._connected: # VT100
                 self._gui.bell()
-                self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYBELL)
+                self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYBELL,))
         elif token == TY_CTL('H') : self._scr.backSpace() # VT100
         elif token == TY_CTL('I') : self._scr.tabulate()  # VT100
         elif token == TY_CTL('J') : self._scr.newLine()   # VT100
@@ -728,7 +728,7 @@ class EmuVt102(Emulation):
             self.reportErrorToken(token, p, q);
 
     def sendString(self, s):
-        self.emit(qt.PYSIGNAL("sndBlock"), (s))
+        self.emit(qt.PYSIGNAL("sndBlock"), (s,))
         
     def reportCursorPosition(self):
         self.sendString("\033[%d;%dR" % (self._scr.getCursorX()+1, self._scr.getCursorY()+1))

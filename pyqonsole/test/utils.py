@@ -69,11 +69,13 @@ class NullScreen(NullObject, qt.QObject):
 
     
 class MyEmuVt102(emuVt102.EmuVt102):
-    def emit(self, signal, *args, **kwargs):
+    def emit(self, signal, args):
         try:
             self._logs.append( (signal, args) )
         except AttributeError:
             self._logs = [ (signal, args) ]
+        emuVt102.EmuVt102.emit(self, signal, args)
+        
     def reportErrorToken(self, token, p, q):
         try:
             self._logs.append( ('token error', token, p, q) )

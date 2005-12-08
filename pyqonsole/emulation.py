@@ -353,6 +353,6 @@ class Emulation(qt.QObject):
     def _setColumns(self, columns):
         # This goes strange ways
         # Can we put this straight or explain it at least?
-        self.emit(qt.PYSIGNAL("changeColumns"), columns)
+        self.emit(qt.PYSIGNAL("changeColumns"), (columns,))
         
         
