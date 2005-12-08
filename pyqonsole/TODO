@@ -1,17 +1,21 @@
 TODO list for pyqonsole
 -----------------------
 
-* process / processcontroller interaction (+ more testing of those 2 modules)
+* finish testing emuVt102: 
+  * mouse + keyboard handling (onMouse, onKeyPress, scrollLock)
+  * cleanup doc / test to see what's / what's not implemented from
+    codes.txt 
 
-* finish testing emuVt102: mouse + keyboard handling (onMouse,
-  onKeyPress, scrollLock)
-
-* refactor procctrl, process, emuVt102:
+* procctrl, process:
   * processcontroller singleton implementation
   * bad interaction between processcontroller and processes
     (C++ destructor vs python __del__)
 
-* backport modules: TESession, TEScreen...
+* backport modules: 
+  * TESession
+  * TEScreen
+  * TEWidget
 
-* kxb part of emuVt102 ?
+* see kxb part of emuVt102 ?
 
+* refactor to be more pythonic

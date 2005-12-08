@@ -27,16 +27,21 @@ VT102 Terminal Emulation
 
 Based on the konsole code from Lars Doelle.
 
-CSI: Control Sequence Introducer
+OSC: Operating System Controls (introduced by 'ESC[')
+CSI: Control Sequence Introducer (introduced by 'ESC]')
 
 @author: Lars Doelle
 @author: Benjamin Longuet
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
-@copyright: 2003
+@author: Sylvain Thenault
+@copyright: 2003, 2005
 @organization: CEA-Grenoble
-@license: ??
+@organization: Logilab
+@license: CECILL
 """
+
+__revision__ = '$Id: emuVt102.py,v 1.7 2005-12-08 18:09:09 syt Exp $'
 
 import os
 import qt
@@ -44,6 +49,7 @@ import qt
 import pyqonsole.keytrans as kt
 from pyqonsole.emulation import Emulation, NOTIFYBELL
 from pyqonsole import screen, ca
+
 
 MODE_AppScreen = screen.MODES_SCREEN+0
 MODE_AppCuKeys = screen.MODES_SCREEN+1
