@@ -1,3 +1,10 @@
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
 """ Provide the Emulation class.
 
 This class acts as the controler between the Screen class (Model) and
@@ -54,17 +61,21 @@ Based on the konsole code from Lars Doelle.
 @author: Benjamin Longuet
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
-@copyright: 2003
+@author: Sylvain Thenault
+@copyright: 2003, 2005
 @organization: CEA-Grenoble
-@license: ??
+@organization: Logilab
+@license: CECILL
 """
 
+__revision__ = '$Id: emulation.py,v 1.6 2005-12-08 18:08:55 syt Exp $'
 
 import qt
 
-from pyqonsole.keytrans import KeyTrans
+from pyqonsole import keytrans
 from pyqonsole.screen import Screen
-#from widget import Widget
+#from pyqonsole.widget import Widget
+
 
 NOTIFYNORMAL = 0
 NOTIFYBELL = 1
@@ -87,7 +98,7 @@ class Emulation(qt.QObject):
         self._listen_to_key_press = False
         self._codec = None
         self._decoder = None
-        self._keyTrans = KeyTrans()
+        self._key_trans = keytrans.find()
         self.__bulkTimer = qt.QTimer()
         self.__bulkNlCnt = 0 # Bulk new line counter
         self.__bulkInCnt = 0 # Bulk counter
@@ -134,18 +145,16 @@ class Emulation(qt.QObject):
         self._decoder = self._codec.makeDecoder()
         
     def setKeymap(self, no):
-        #self._keyTrans = KeyTrans.find(no)
-        pass
+        self._key_trans = keytrans.find(no)
         
     def setKeyMapById(self, id):
-        #self._keyTrans = KeyTrans.findById(id)
-        pass
+        self._key_trans = keytrans.find(id)
     
     def keymap(self):
-        return self._keyTrans.id()
+        return self._key_trans.id()
     
     def keymapNo(self):
-        return self._keyTrans.num()
+        return self._key_trans.num()
         
     # Interpreting Codes
     # This section deals with decoding the incoming character stream.
@@ -170,7 +179,7 @@ class Emulation(qt.QObject):
         elif ord(c) == 0x07:
             if self._connected:
                 self._gui.bell()
-            self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYBELL)
+            self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYBELL,))
         else:
            self._scr.showCharacter()
 
