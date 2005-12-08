@@ -883,6 +883,69 @@ CSI ? <Pm> i 	Media Copy (MC, DEC-specific)
         #self._test_sequence('\033[?10i')
         #self._test_sequence('\033[?11i')
 
+    def test_receive_osc(self):
+        """Operating System Controls
+        
+OSC <Ps> ; <Pt> ST 	
+OSC <Ps> ; <Pt> BEL 	
+		Set Text Parameters. For colors and font, if <Pt> is a "?", the
+		control sequence elicits a response which consists of the
+		control sequence which would set the corresponding value. The
+		dtterm control sequences allow you to determine the icon name
+		and window title.
+                
+<Ps>=0 -> Change Icon Name and Window Title to <Pt>
+<Ps>=1 -> Change Icon Name to <Pt>
+<Ps>=2 -> Change Window Title to <Pt>
+<Ps>=3 -> Set X property on top-level window. <Pt> should be in
+          the form "prop=value", or just "prop" to delete the property 
+<Ps>=4 ; c ; spec
+       -> Change Color Number c to the color
+          specified by spec, i.e., a name or RGB specification as per
+          XParseColor. Any number of c name pairs may be given. The color
+          numbers correspond to the ANSI colors 0-7, their bright versions 8-15,
+          and if supported, the remainder of the 88-color or 256-color table. If
+          a "?" is given rather than a name or RGB specification, xterm replies
+          with a control sequence of the same form which can be used to set the
+          corresponding color. Because more than one pair of color number and
+          specification can be given in one control sequence, xterm can make
+          more than one reply. The 8 colors which may be set using 1 0 through 1
+          7 are denoted dynamic colors, since the corresponding control
+          sequences were the first means for setting xterm's colors dynamically,
+          i.e., after it was started. They are not the same as the ANSI
+          colors. One or more parameters is expected for <Pt> . Each succesive
+          parameter changes the next color in the list. The value of <Ps> tells
+          the starting point in the list. The colors are specified by name or
+          RGB specification as per XParseColor. If a "?" is given rather than a
+          name or RGB specification, xterm replies with a control sequence of
+          the same form which can be used to set the corresponding dynamic
+          color. Because more than one pair of color number and specification
+          can be given in one control sequence, xterm can make more than one
+          reply. <Ps>=1 0 -> Change VT100 text foreground color to <Pt>
+<Ps>=11 -> Change VT100 text background color to <Pt>
+<Ps>=12 -> Change text cursor color to <Pt>
+<Ps>=13 -> Change mouse foreground color to <Pt>
+<Ps>=14 -> Change mouse background color to <Pt>
+<Ps>=15 -> Change Tektronix foreground color to <Pt>
+<Ps>=16 -> Change Tektronix background color to <Pt>
+<Ps>=17 -> Change highlight color to <Pt>
+<Ps>=18 -> Change Tektronix cursor color to <Pt>
+<Ps>=46 -> Change Log File to <Pt> (normally disabled by a compile-time option) 
+<Ps>=50 -> Set Font to <Pt> If <Pt> begins with a '#', index in
+           the font menu, relative (if the next character is a plus or minus
+           sign) or absolute. A number is expected but not required after the
+           sign (the default is the current entry for relative, zero for
+           absolute indexing).
+
+This is implemented as a 'XTerm hack' in emuVt102
+        """
+        self._test_sequence('\033]0;blablabla\07', # BELL is \007
+                            emu=[('9changeTitle', ((0, 'blablabla'),))])
+        self._test_sequence('\033]1;blablabla\07',
+                            emu=[('9changeTitle', ((1, 'blablabla'),))])
+        self._test_sequence('\033]2;blablabla\07',
+                            emu=[('9changeTitle', ((2, 'blablabla'),))])
+
 
 class EmuVt102OldTC(EmuVtTC):
     
@@ -971,18 +1034,17 @@ class EmuVt102PrinterModeTC(EmuVtTC):
        
     def test_hide_ctrl(self):
         self._test_sequence('\000\021\023') # 0, CNTL(Q), CNTL(S)
-
-        
-class EmuVtXTermHackTC(EmuVtTC):
     
-    def test(self):
-        """arg=0 changes title and icon, arg=1 only icon, arg=2 only title"""
-        self._test_sequence('\033]0;blablabla\07',
-                            emu=[('9changeTitle', ((0, 'blablabla'),))])
-        self._test_sequence('\033]1;blablabla\07',
-                            emu=[('9changeTitle', ((1, 'blablabla'),))])
-        self._test_sequence('\033]2;blablabla\07',
-                            emu=[('9changeTitle', ((2, 'blablabla'),))])
+    def test_receive_printable_chars(self):
+        """test onRcvChar(printable characters) in printer mode trigger nothing
+        (chars are written to the print_fd
+        """
+        for ch in range(32, 256):
+            if ch == 127:
+                continue
+            #print 'chr', ch, chr(ch)
+            self._test_sequence(chr(ch))
+            
 
 class EmuVt52TC(EmuVtTC):
     
