@@ -658,7 +658,7 @@ class Process(qt.QObject):
             comm = self.communication
         self.run_mode = runmode
         self.status = 0
-        self.setupCommunication(comm):
+        self.setupCommunication(comm)
         # We do this in the parent because if we do it in the child process
         # gdb gets confused when the application runs from gdb.
         uid = os.getuid()
