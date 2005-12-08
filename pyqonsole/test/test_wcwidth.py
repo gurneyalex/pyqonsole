@@ -1,11 +1,18 @@
 #!/usr/bin/env python2.4
 
-__revision__ = '$Id: test_wcwidth.py,v 1.2 2005-12-08 10:47:56 alf Exp $'
+__revision__ = '$Id: test_wcwidth.py,v 1.3 2005-12-08 14:28:45 alf Exp $'
 
 ## XXX FIXME: find out if the failing tests are caused by:
 ##  * Errors in the test
 ##  * Errors in the helpers.c module
 ##  * Errors in the unicodedata module from stdlib
+
+## TODO : use http://www.dpawson.co.uk/xsl/rev2/UnicodeCategories.html
+## for a better use of the category names
+
+## Also give a look at http://www.unicode.org/faq/specifications.html
+## for more info in finding who's wrong and who's right in the tests
+
 
 from pyqonsole.helpers import wcWidth
 import unittest
@@ -37,9 +44,12 @@ class Wcwidth_TC(unittest.TestCase):
 
     def check_range(self, codepoints, expected):
         for cp in codepoints:
+            unichar = unichr(cp)
             self.assertEquals(wcWidth(cp), expected,
-                              'codepoint %X [%s] width %d expected %d' % \
-                              (cp, unicodedata.name(unichr(cp), 'XXX Unknown Code Point'),
+                              'codepoint %X [%s] [%s] width %d expected %d' % \
+                              (cp,
+                               unicodedata.name(unichar, 'XXX Unknown Code Point'),
+                               unicodedata.category(unichar),
                                wcWidth(cp),
                                expected))
             
