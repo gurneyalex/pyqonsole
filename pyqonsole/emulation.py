@@ -84,7 +84,7 @@ class Emulation(qt.QObject):
                         Screen(self._gui.lines, self._gui.columns)]
         self._scr = self._screen[0]
         self._connected = False
-        self._listenTokenPress = False
+        self._listen_to_key_press = False
         self._codec = None
         self._decoder = None
         self._keyTrans = KeyTrans()
@@ -186,14 +186,13 @@ class Emulation(qt.QObject):
     # Keyboard handling
     
     def onKeyPress(self, ev):
-        if not self._listenTokenPress: # Someone else gets the keys
+        if not self._listen_to_key_press: # Someone else gets the keys
             return
         
         self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYNORMAL)
         if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty():
             self._scr.setHistCursor(self._scr.getHistLines())
-        if not ev.text().isEmpty:
-            
+        if not ev.text().isEmpty():            
             # A block og text
             # Note that the text is proper unicode. We should do a conversion here,
             # but since this routine will never be used, we simply emit plain ascii.
@@ -328,7 +327,7 @@ class Emulation(qt.QObject):
             self._scr.clearSelection()
 
     def setListenToKeyPress(self, l):
-        self._listenTokenPress = l
+        self._listen_to_key_press = l
             
     def onImageSizeChange(self, lines, columns):
         """Triggered by image size change of the TEWidget `gui'.

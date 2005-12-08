@@ -95,7 +95,7 @@ def epp(p, s):
 def egt(p, s):
     return p >= 3 and s[2] == ord('>')
 
-#def CNTL(c): return ord(c) - ord('@')
+def CNTL(c): return ord(c) - ord('@')
 
 
 class CharCodes:
@@ -112,7 +112,7 @@ class CharCodes:
         self.sa_graphic = False               # saved graphic
         self.sa_pound = False                 # saved pound
         self.sa_trans = [0, 0, 0, 0, 0, 0, 0] # saved pre-latin conversion
-
+        
     def reset(self):
         self.charset = [ord(c) for c in "BBBB"]
         self.cu_cs = 0
@@ -152,10 +152,11 @@ class EmuVt102(Emulation):
         
         self.__pbuf = []
         self.__argv = [0]
+        self._print_fd = None # file used while in print mode
         self._currParm = {'mode': [None, None, None, None, None, None]}
         self._saveParm = {'mode': [None, None, None, None, None, None]}
         self._charset = [CharCodes(), CharCodes()]
-        self._holdScreen = False
+        self._hold_screen = False
 
         # Init Tokenizer
         self.__tbl = 256*[0]
@@ -176,11 +177,11 @@ class EmuVt102(Emulation):
         self.connect(self._gui, qt.PYSIGNAL("mouseSignal"), self.onMouse)
         
     def reset(self):
-        self.__resetToken()
-        self.resetModes()
+        self._resetToken()
+        self._resetModes()
         self._resetCharset(0)
-        self._screen[0].reset()
         self._resetCharset(1)
+        self._screen[0].reset()
         self._screen[1].reset()
         self._setCodec(0)
 
@@ -266,14 +267,14 @@ class EmuVt102(Emulation):
        Note that they are kept internal in the tokenizer.
     """
 
-    def __resetToken(self):
+    def _resetToken(self):
         self.__pbuf = []
         self.__argv = [0]
 
-    def __addDigit(self, dig):
+    def _addDigit(self, dig):
         self.__argv[-1] = 10*self.__argv[-1] + dig;
 
-    def __addArgument(self):
+    def _addArgument(self):
         self.__argv.append(0)
 
 ##     def __pushToToken(self, cc):
@@ -311,6 +312,10 @@ class EmuVt102(Emulation):
     """
     
     def onRcvChar(self, cc):
+        if self._print_fd:
+            self.printScan(cc)
+            return
+
         if cc == 127: # VT100: ignore.
             return
 
@@ -319,8 +324,8 @@ class EmuVt102(Emulation):
             # This means, they do neither a resetToken nor a pushToToken. Some of them, do
             # of course. Guess this originates from a weakly layered handling of the X-on
             # X-off protocol, which comes really below this level.
-            if cc == (ord('X') - ord('@')) or cc == (ord('Z') - ord('@')) or cc == ESC: # VT100: CAN or SUB
-                self.__resetToken()
+            if cc == CNTL('X') or cc == CNTL('Z') or cc == ESC: # VT100: CAN or SUB
+                self._resetToken()
             if cc != ESC:
                 self.tau(TY_CTL(chr(cc+ord('@'))), 0, 0)
                 return
@@ -337,8 +342,8 @@ class EmuVt102(Emulation):
             elif self.les(p, s, 2, 1, GRP):
                 pass
             elif self.Xte(cc):
-                self.__XtermHack()
-                self.__resetToken()
+                self._XtermHack()
+                self._resetToken()
             elif self.Xpe():
                 pass
             elif lec(p,s, 3, 2, ord('?')):
@@ -347,27 +352,27 @@ class EmuVt102(Emulation):
                 pass
             elif lun(p, cc):
                 self.tau(TY_CHR, self._applyCharset(cc), 0)
-                self.__resetToken()
+                self._resetToken()
             elif lec(p, s, 2, 0, ESC):
                 self.tau(TY_ESC(chr(s[1])), 0, 0)
-                self.__resetToken()
+                self._resetToken()
             elif self.les(p, s, 3, 1, SCS):
                 self.tau(TY_ESC_CS(chr(s[1]), chr(s[2])), 0, 0)
-                self.__resetToken()
+                self._resetToken()
             elif lec(p, s, 3, 1, ord('#')):
                 self.tau(TY_ESC_DE(chr(s[2])), 0, 0)
-                self.__resetToken()
+                self._resetToken()
             elif self.eps(p, s, cc, CPN):
                 if len(self.__argv)> 1:
                     q = self.__argv[-1]
                 else:
                     q = None
                 self.tau(TY_CSI_PN(chr(cc)), self.__argv[0], q)
-                self.__resetToken()
+                self._resetToken()
             elif self.ees(p, cc, DIG):
-                self.__addDigit(cc - ord('0'))
+                self._addDigit(cc - ord('0'))
             elif eec(p, cc, ord(';')):
-                self.__addArgument()
+                self._addArgument()
             else:
                 for arg in self.__argv:
                     if epp(p, s):
@@ -376,24 +381,24 @@ class EmuVt102(Emulation):
                         self.tau(TY_CSI_PG(chr(cc)), 0, 0) # spec. elif token == for ESC]>0c or ESC]>c
                     else:
                         self.tau(TY_CSI_PS(chr(cc), arg), 0, 0)
-                self.__resetToken()
+                self._resetToken()
             
         else: # mode VT52
             if lec(p, s, 1, 0, ESC):
                 pass
             elif self.les(p, s, 1, 0, CHR):
                 self.tau(TY_CHR, s[0], 0)
-                self.__resetToken()
+                self._resetToken()
             elif lec(p, s, 2, 1, ord('Y')):
                 pass
             elif lec(p, s, 3, 1, ord('Y')):
                 pass
             elif p < 4:
                 self.tau(TY_VT52__(chr(s[1])), 0, 0)
-                self.__resetToken()
+                self._resetToken()
             else:
                 self.tau(TY_VT52__(chr(s[1])), s[2], s[3])
-                self.__resetToken()
+                self._resetToken()
 
 
     def tau(self, token, p, q):
@@ -729,14 +734,43 @@ class EmuVt102(Emulation):
         self.sendString("\033[%d;%dR" % (self._scr.getCursorX()+1, self._scr.getCursorY()+1))
     
     def setPrinterMode(self, on):
-        # XXX print_fd is not considered elsewhere, si TEmuVt102.cpp
         if on:
             cmd = os.getenv("PRINT_COMMAND", "cat > /dev/null")
-            self.print_fd = os.popen(cmd, "w");
+            self._print_fd = os.popen(cmd, "w")
         else:
-            #pclose(print_fd);
-            self.print_fd = None;
+            self._print_fd = None
             
+    def printScan(self, cc):
+        assert self._print_fd
+        if cc == CNTL('Q') or cc == CNTL('S') or cc == 0:
+            return
+        self.__pbuf.append(cc) # advance the state
+        s = self.__pbuf
+        p = len(self.__pbuf)
+        if lec(p, s, 1, 0, ESC): return
+        if lec(p, s, 2, 1, ord('[')): return
+        if lec(p, s, 3, 2, ord('4')): return
+        if lec(p, s, 3, 2, ord('5')): return
+        if lec(p, s, 4, 3, ord('i')) and s[2] == ord('4'):
+            self.setPrinterMode(False)
+            self._resetToken()
+            return
+        self._print_fd.write(''.join([chr(c) for c in s]))
+        self._resetToken()
+        
+    def _XtermHack(self):
+        i = 2
+        arg = ''
+        while ord('0') <= self.__pbuf[i] < ord('9'):
+            arg += chr(self.__pbuf[i])
+            i += 1
+        arg = int(arg)
+        if self.__pbuf[i] != ord(';'):
+            self.reportErrorToken('xterm hack', len(self.__pbuf), self.__pbuf[-1])
+        string = ''.join([chr(c) for c in self.__pbuf[i+1:-1]])
+        # arg=0 changes title and icon, arg=1 only icon, arg=2 only title
+        self.emit(qt.PYSIGNAL('changeTitle'), (arg, string))
+
     # Obsolete stuff
     
     def reportTerminalType(self):
@@ -781,21 +815,29 @@ class EmuVt102(Emulation):
             return
         self.sendString("\033[M%c%c%c" % (cb+040, cx+040, cy+040))
 
+    """
+    Keyboard Handling
+    """
+    
     def scrollLock(self, lock):
+        self._hold_screen = lock
         if lock:
-            self._holdScreen = True
             self.emit(qt.PYSIGNAL("sndBlock"), "\023") # XOFF (^S)
         else:
-            self._holdScreen = False
             self.emit(qt.PYSIGNAL("sndBlock"), "\021") # XON (^Q)
             
     def __onScrollLock(self):
-        self.scrollLock(not self._holdScreen)
+        self.scrollLock(not self._hold_screen)
         
     def onKeyPress(self, ev):
-        def encodeMode(M, B):
-            return (self.getMode(M) << B)
+        if not self._listen_to_key_press: # Someone else gets the keys
+            return        
+        self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYNORMAL)
         
+        def encodeMode(M, B):
+            return self.getMode(M) << B
+        def encodeStat(M, B):
+            return (ev.state() & M == M) << B
         cmd = kt.CMD_none
         try:
             cmd, txt, len, metaSpecified = self._keyTrans.findEntry(ev.key(),
@@ -846,10 +888,15 @@ class EmuVt102(Emulation):
             self._scr.setHistCursor(self._scr.getHistLines())
             
         if cmd == kt.CMD_send:
+            if ev.state() & qt.QEvent.AltButton and not metaSpecified:
+                self.sendString("\033") # ESC this is the ALT prefix
+            self.emit(qt.PYSIGNAL("sndBlock"), (txt))
+            return
+        # fall back handling
+        if not ev.text().isEmpty():
             if ev.state() & qt.QEvent.AltButton:
                 self.sendString("\033") # ESC this is the ALT prefix
             s = self._codec.fromUnicode(ev.text()) # Encode for application
-            
             # FIXME: In Qt 2, QKeyEvent::text() would return "\003" for Ctrl-C etc.
             #        while in Qt 3 it returns the actual key ("c" or "C") which caused
             #        the ControlButton to be ignored. This hack seems to work for
@@ -858,13 +905,8 @@ class EmuVt102(Emulation):
                 s.fill(ev.ascii(), 1)
             self.emit(qt.PYSIGNAL("sndBlock"), (s.data()))
 
-    """
-    -------------------------------------------------------------------------
+    """VT100 Charsets
 
-                                   VT100 Charsets
-
-    -------------------------------------------------------------------------
-    
     Character Set Conversion ------------------------------------------------
     
        The processing contains a VT100 specific code translation layer.
@@ -923,37 +965,34 @@ class EmuVt102(Emulation):
         CHARSET = self._charset[self._scr is self._screen[1]]
         CHARSET.cu_cs = n & 3
         CHARSET.graphic = (CHARSET.charset[n & 3] == '0')
-        CHARSET.pound = (CHARSET.charset[n & 3] == 'A')
-        CHARSET.trans_from_string("[\\]{|}~")
+        CHARSET.pound = (CHARSET.charset[n & 3] == 'A') # This mode is obsolete
+        CHARSET.trans_from_string("[\\]{|}~") # ancient mode, identical
+        # FIXME: we might better use octal strings below to prevent filter problems
         if CHARSET.charset[n & 3] == 'K':
-            CHARSET.trans_from_string("ÄÖÜäöüß")
+            CHARSET.trans_from_string("ÄÖÜäöüß") # ancient mode, german
         elif CHARSET.charset[n & 3] == 'R':
-            CHARSET.trans_from_string("°ç§éùè¨")
+            CHARSET.trans_from_string("°ç§éùè¨") # ancient mode, french
             
     def _setMargins(self, t, b):
         self._screen[0].setMargins(t, b)
         self._screen[1].setMargins(t, b)
         
     def _saveCursor(self):
+        """Save the cursor position and the rendition attribute settings"""
         CHARSET = self._charset[self._scr is self._screen[1]]
         CHARSET.sa_graphic = CHARSET.graphic
         CHARSET.sa_pound = CHARSET.pound
-        CHARSET.sa_trans = CHARSET.trans
+        CHARSET.sa_trans = CHARSET.trans[:]
         self._scr.saveCursor()
         
     def _restoreCursor(self):
         CHARSET = self._charset[self._scr is self._screen[1]]
         CHARSET.graphic = CHARSET.sa_graphic
         CHARSET.pound = CHARSET.sa_pound
-        CHARSET.trans = CHARSET.sa_trans
+        CHARSET.trans = CHARSET.sa_trans[:]
         self._scr.restoreCursor()
         
-    """
-    -------------------------------------------------------------------------
-
-    Mode Operations
-
-    -------------------------------------------------------------------------
+    """Mode Operations
 
     Some of the emulations state is either added to the state of the screens.
 
@@ -966,18 +1005,18 @@ class EmuVt102(Emulation):
     We decided on the precise precise extend, somehow.
     """
     
-    def resetModes(self):
+    def _resetModes(self):
+        """Mode related part of the state. These are all booleans."""
         self.resetMode(MODE_Mouse1000)
         self.saveMode(MODE_Mouse1000)
         self.resetMode(MODE_AppScreen)
         self.saveMode(MODE_AppScreen)
-        
         # Obsolete modes
         self.resetMode(MODE_AppCuKeys)
         self.saveMode(MODE_AppCuKeys)
         self.resetMode(screen.MODE_NewLine)
         self.setMode(MODE_Ansi)
-        self._holdScreen = False
+        self._hold_screen = False
         
     def setMode(self, m):
         self._currParm['mode'][m-screen.MODES_SCREEN] = True
@@ -1016,7 +1055,6 @@ class EmuVt102(Emulation):
     def setConnect(self, c):
         super(EmuVt102, self).setConnect(c)
         if c:
-            
             # Refresh mouse mode
             if self.getMode(MODE_Mouse1000):
                 self.setMode(MODE_Mouse1000)

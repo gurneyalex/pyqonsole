@@ -875,8 +875,8 @@ CSI ? <Pm> i 	Media Copy (MC, DEC-specific)
 		<Ps>=11 -> Print all pages
         """
         self._test_sequence('\033[0i')
-        self._test_sequence('\033[4i')#XXX, emu=[('setPrinterMode', (False,))])
         self._test_sequence('\033[5i', emu=[('setPrinterMode', (True,))])
+        self._test_sequence('\033[4i', emu=[('setPrinterMode', (False,))])
         #self._test_sequence('\033[?1i')
         #self._test_sequence('\033[?4i')
         #self._test_sequence('\033[?5i')
@@ -884,7 +884,6 @@ CSI ? <Pm> i 	Media Copy (MC, DEC-specific)
         #self._test_sequence('\033[?11i')
 
 
-       
 class EmuVt102OldTC(EmuVtTC):
     
     CSI_PS_EXPECTED_LOGS = {
@@ -956,11 +955,34 @@ class EmuVt102OldTC(EmuVtTC):
         self._test_sequence('\033[3q')
         self._test_sequence('\033[4q')
 
+
+class EmuVt102PrinterModeTC(EmuVtTC):
+    
+    def setUp(self):
+        EmuVtTC.setUp(self)
+        # set printer mode on
+        self._test_sequence('\033[5i', emu=[('setPrinterMode', (True,))])
+        self.failUnless(self.emu._print_fd)
+        reset_logs()
+
+    def test_set_printer_mode_off(self):
+        self._test_sequence('\033[4i', emu=[('setPrinterMode', (False,))])
+        self.failUnlessEqual(self.emu._print_fd, None)
+       
+    def test_hide_ctrl(self):
+        self._test_sequence('\000\021\023') # 0, CNTL(Q), CNTL(S)
+
+        
 class EmuVtXTermHackTC(EmuVtTC):
+    
     def test(self):
-        self._test_sequence('\033]0;blablabla\07')
-        self._test_sequence('\033]1;blablabla\07')
-        self._test_sequence('\033]2;blablabla\07')
+        """arg=0 changes title and icon, arg=1 only icon, arg=2 only title"""
+        self._test_sequence('\033]0;blablabla\07',
+                            emu=[('9changeTitle', ((0, 'blablabla'),))])
+        self._test_sequence('\033]1;blablabla\07',
+                            emu=[('9changeTitle', ((1, 'blablabla'),))])
+        self._test_sequence('\033]2;blablabla\07',
+                            emu=[('9changeTitle', ((2, 'blablabla'),))])
 
 class EmuVt52TC(EmuVtTC):
     
