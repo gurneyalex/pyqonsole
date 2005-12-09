@@ -11,11 +11,18 @@ TODO list for pyqonsole
   * bad interaction between processcontroller and processes
     (C++ destructor vs python __del__)
 
-* backport modules: 
-  * TESession
+* backport: 
+  * TECommon (ca.py)
+  * TEmulation (emulation.py)
   * TEScreen
   * TEWidget
-
-* see kxb part of emuVt102 ?
+  * BlockArray
+  * qonsole_wcwidth (_helpers.c)
+  * main
+  * HistoryScrollBlockArray n'a pas été backporté car il semble
+    incomplet et n'a pas l'air utilisé. Fallait ?
+  * voir l'interaction screen <-> history, la gestion de l'historique
+    ayant été réimplémenté 
+  * see kxb part of emuVt102 ?
 
 * refactor to be more pythonic
