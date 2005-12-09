@@ -77,6 +77,8 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
+__revision__ = '$Id: process.py,v 1.4 2005-12-09 09:11:13 alf Exp $'
+
 
 import os
 import pwd
@@ -305,7 +307,7 @@ class Process(qt.QObject):
         # child process (if it is running) after removing it from the
         # list of valid processes (if the process is not started as
         # "RUN_DONTCARE")
-        procctrl.theProcessController.removeProcess(this)
+        procctrl.theProcessController.removeProcess(self)
         # this must happen before we kill the child
         # TODO: block the signal while removing the current process from the process list
         if self.running and self.run_mode != RUN_DONTCARE:
@@ -324,7 +326,7 @@ class Process(qt.QObject):
         Note that the current process remains the parent process of the child
         process.
         """
-        procctrl.theProcessController.removeProcess(this)
+        procctrl.theProcessController.removeProcess(self)
         self.running = False
         self.pid = 0
         # clean up open fd's and socket notifiers.
@@ -594,13 +596,13 @@ class Process(qt.QObject):
                     if (ret == -1 and errno != EAGAIN) or ret == 0:
                         b_err = False
         if self.communication & COMM_STDIN:
-	    self.communication = self.communication & ~COMM_STDIN
+            self.communication = self.communication & ~COMM_STDIN
             self.in_[1].close()
         if self.communication & COMM_STDOUT:
-	    self.communication = self.communication & ~COMM_STDOUT
+            self.communication = self.communication & ~COMM_STDOUT
             self.out[0].close()
         if self.communication & COMM_STDERR:
-	    self.communication = self.communication & ~COMM_STDERR
+            self.communication = self.communication & ~COMM_STDERR
             self.err[0].close()
 
     def _childSetupEnvironment(self):

@@ -33,7 +33,7 @@ Based on the konsole code from Lars Doelle.
 @organization: CEA-Grenoble
 @license: ??
 """
-
+__revision__ = '$Id: widget.py,v 1.2 2005-12-09 09:11:13 alf Exp $'
 
 import qt
 

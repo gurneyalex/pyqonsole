@@ -65,6 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
+__revision__ = '$Id: pty_.py,v 1.5 2005-12-09 09:11:13 alf Exp $'
 
 import os
 import sys
@@ -74,6 +75,7 @@ from fcntl import ioctl, fcntl, F_SETFL
 from resource import getrlimit, RLIMIT_NOFILE
 from termios import tcgetattr, tcsetattr, VINTR, VQUIT, VERASE, \
      TIOCSPGRP, TCSANOW, TIOCSWINSZ, TIOCSCTTY
+import signal
 
 import qt
 
@@ -142,7 +144,7 @@ class PtyProcess(Process):
         tt = self.makePty() # slave_fd
         # reset signal handlers for child process
         for i in range(signal.NSIG):
-            signal.signal(i, signalSIG_DFL)
+            signal.signal(i, signal.SIG_DFL)
 
         # Don't know why, but his is vital for SIGHUP to find the child.
         # Could be, we get rid of the controling terminal by this.
@@ -156,11 +158,12 @@ class PtyProcess(Process):
                     os.close(i)
                 except OSError:
                     continue
-        dup2(tt, sys.stdin.fileno())
-        dup2(tt, sys.stdout.fileno())
-        dup2(tt, sys.stderr.fileno())
+        os.dup2(tt, sys.stdin.fileno())
+        os.dup2(tt, sys.stdout.fileno())
+        os.dup2(tt, sys.stderr.fileno())
 
-        if tt > 2: close(tt)
+        if tt > 2:
+            os.close(tt)
 
         # Setup job control #################
 
@@ -175,8 +178,8 @@ class PtyProcess(Process):
         pgrp = os.getpid()                          
         ioctl(0, TIOCSPGRP, pack('i', pgrp))
         os.setpgid(0, 0)
-        close(os.open(os.ttyname(tt), os.O_WRONLY))
-        setpgid(0, 0)
+        os.close(os.open(os.ttyname(tt), os.O_WRONLY))
+        os.setpgid(0, 0)
 
         tty_attrs = tcgetattr(0)
         tty_attrs[-1][VINTR] = CTRL('C')
@@ -192,7 +195,7 @@ class PtyProcess(Process):
 
         # propagate emulation
         if self.term:
-            os.ENVIRON['TERM'] = term
+            os.environ['TERM'] = term
         ioctl(0, TIOCSWINSZ, pack('ii', *self.wsize))
 
         # finally, pass to the new program
@@ -263,7 +266,7 @@ class PtyProcess(Process):
     def setupCommunication(self):
         """overriden from Process"""
         self.out[0] = self.master_fd
-        self.out[1] = dup(2) # Dummy
+        self.out[1] = os.dup(2) # Dummy
         self.communication = comm
         
     def _childSetupCommunication(self):
@@ -277,8 +280,8 @@ class PtyProcess(Process):
             self.appendSendJob(string)
         else:
             written = 0
-            while writen < len(string):
-                written += os.write(self.master_fd, string[writen:])
+            while written < len(string):
+                written += os.write(self.master_fd, string[written:])
                 #if ( errno==EAGAIN || errno==EINTR )
                 #      appendSendJob(s,len)
                 #      return

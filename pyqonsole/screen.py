@@ -28,7 +28,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: screen.py,v 1.2 2005-12-06 11:11:32 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.3 2005-12-09 09:11:13 alf Exp $"
 
 import ca
 from ca import Ca
@@ -180,7 +180,7 @@ class Screen:
             dy = 0
         self.__cuY = max(0, min(self.__lines-1, y+dy))
 
-    def setCursorXY(self, x):
+    def setCursorXY(self, x, y):
         self.setCursorX(x)
         self.setCursorY(y)
     
@@ -258,7 +258,7 @@ class Screen:
         """
         self.__cuX = max(0, self.__cuX-1)
         if (BS_CLEARS):
-            self.__image[self.loc(self.__cuX, slef.__cuY)].c = ' '
+            self.__image[self.loc(self.__cuX, self.__cuY)].c = ' '
         
     def clear(self):
         """ Clear the entire screen and home the cursor.
@@ -348,11 +348,11 @@ class Screen:
         self.__currParm['mode'][m] = self.__saveParm['mode'][m]
             
     def saveCursor(self):
-       self.__saCuX = self.__cuX
-       self.__saCuY = self.__cuY
-       self.__saCuRe = self.__cuRe
-       self.__saCuFg = self.__cuFg
-       self.__saCuBg = self.__cuBg
+        self.__saCuX = self.__cuX
+        self.__saCuY = self.__cuY
+        self.__saCuRe = self.__cuRe
+        self.__saCuFg = self.__cuFg
+        self.__saCuBg = self.__cuBg
        
     def restoreCursor(self):
         self.__cuX = min(self.__saCuX, self.__columns-1)
@@ -418,7 +418,7 @@ class Screen:
         self.__effectiveRendition()
         
     def getMode(self, n):
-        return self.__currParm['mode'][m]
+        return self.__currParm['mode'][n]
     
     def getCursorX(self):
         return self.__cuX
@@ -770,7 +770,7 @@ class Screen:
     def __moveImage(self, dest, loca, loce):
         if loce < loca:
             return
-        self.__image[dst:dst+(loce-loca+1)] = self.__image[loca:loca+(loce-loca+1)]
+        self.__image[dest:dest+(loce-loca+1)] = self.__image[loca:loca+(loce-loca+1)]
         for i in xrange((loce-loca+1)/self.__columns):
             self.__lineWrapped[dst/self.__columns+i] = self.__lineWrapped[loca/self.__columns+1]
         if self.__selBegin == -1:

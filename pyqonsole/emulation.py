@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.6 2005-12-08 18:08:55 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.7 2005-12-09 09:11:12 alf Exp $'
 
 import qt
 
@@ -181,7 +181,7 @@ class Emulation(qt.QObject):
                 self._gui.bell()
             self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYBELL,))
         else:
-           self._scr.showCharacter()
+            self._scr.showCharacter()
 
     def setMode(self):
         raise NotImplementedError
@@ -270,7 +270,7 @@ class Emulation(qt.QObject):
             if self.__findPos == -1:
                 start = 0
             else:
-                start = self.__finPos+1
+                start = self.__findPos+1
             for i in xrange(start, self._scr.getHistLines()+self._scr.getLines()):
                 string = self._scr.getHistoryLine(i)
                 pos = string.find(str_, 0) #, caseSensitive)
@@ -286,7 +286,7 @@ class Emulation(qt.QObject):
             if self.__findPos == -1:
                 start = self._scr.getHistLines()+self._scr.getLines()
             else:
-                start = self.__finPos-1
+                start = self.__findPos-1
             for i in xrange(start, -1, -1):
                 string = self._scr.getHistoryLine(i)
                 pos = string.find(str_, 0) #, caseSensitive)
@@ -330,7 +330,7 @@ class Emulation(qt.QObject):
     def setConnect(self, c):
         self._connected = c
         if self._connected:
-            self.onImageSizeChange(self._gui.lines, elf._gui.columns)
+            self.onImageSizeChange(self._gui.lines, self._gui.columns)
             self.__showBulk()
         else:
             self._scr.clearSelection()

@@ -13,7 +13,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: ca.py,v 1.1 2005-11-08 13:41:39 alf Exp $"
+__revision__ = "$Id: ca.py,v 1.2 2005-12-09 09:11:12 alf Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -34,7 +34,8 @@ RE_CURSOR = 2**4
 class Ca:
     """ Ca class.
     """
-    def __init__(self, c=' ', f=DEFAULT_FORE_COLOR, b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
+    def __init__(self, c=' ', f=DEFAULT_FORE_COLOR,
+                 b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
         """ Init a Ca instance.
         """
         self.c = c
@@ -45,9 +46,11 @@ class Ca:
     def __eq__(self, other):
         """ Implements the '==' operator
         """
-        return (self.c == other.c) and (self.f == other.f) and (self.b == other.b) and (self.r == other.r)
+        return (self.c == other.c) and (self.f == other.f) and \
+               (self.b == other.b) and (self.r == other.r)
     
     def __ne__(self, other):
         """ Implements the '!=' operator
         """
-        return (self.c != other.c) or (self.f != other.f) or (self.b != other.b) or (self.r != other.r)
+        return (self.c != other.c) or (self.f != other.f) or \
+               (self.b != other.b) or (self.r != other.r)

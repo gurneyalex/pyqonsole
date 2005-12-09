@@ -27,6 +27,7 @@ struct waitdata
 
 XXX review singleton aspect
 """
+__revision__ = '$Id: procctrl.py,v 1.2 2005-12-09 09:11:13 alf Exp $'
 
 import os
 import errno
@@ -47,7 +48,7 @@ def waitChildren():
     while 1:
         try:
             yield os.waitpid(-1, os.WNOHANG)
-        except OSError:
+        except OSError, ex:
             if ex.errno == errno.ECHILD:
                 break
             raise
@@ -183,7 +184,7 @@ class ProcessController(qt.QObject):
                     found = True
         if (not found and
             not self.old_sigCHLDHandler in (signal.SIG_IGN, signal.SIG_DFL)):
-              self.old_sigCHLDHandler(signal) # call the old handler
+            self.old_sigCHLDHandler(signal) # call the old handler
         # handle the rest
         if theProcessController:
             # XXX
@@ -214,9 +215,9 @@ class ProcessController(qt.QObject):
                                          "in ProcessController::slotDoHousekeeping\n") %ex.errno
                     return
         if len(bytes_read) != struct.calcsize('II'):
-              print >>sys.stderr, ("Error: Could not read info from signal handler %d <> %d!\n"
+            print >>sys.stderr, ("Error: Could not read info from signal handler %d <> %d!\n"
                                    % (len(bytes_read), struct.calcsize('II')))
-              return
+            return
         pid, status = struct.unpack('II', bytes_read)
         if pid == 0:
             self.delayed_children_cleanup_timer.start(100, True)
