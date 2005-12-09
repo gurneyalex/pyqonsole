@@ -1,4 +1,11 @@
-""" Provide History classes.
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
+"""Provides the History class.
 
 An arbitrary long scroll.
 
@@ -35,13 +42,19 @@ Based on the konsole code from Lars Doelle.
 @author: Benjamin Longuet
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
-@copyright: 2003
+@author: Sylvain Thenault
+@copyright: 2003, 2005
 @organization: CEA-Grenoble
-@license: ??
+@organization: Logilab
+@license: CECILL
+
+
+XXX getLineLen usefull
+XXX unification of addCells / addLine
+XXX use of the type classes ?
 """
 
-# Reasonable line size
-LINE_SIZE = 1024
+__revision__ = '$Id: history.py,v 1.2 2005-12-09 18:01:55 syt Exp $'
 
 
 class HistoryType(object):
@@ -53,43 +66,52 @@ class HistoryType(object):
     def getSize(self):
         return 0
     
-    def getScroll(self):
-        return HistoryScroll()
+    def getScroll(self, old=None):
+        raise NotImplementedError
     
     
 class HistoryTypeNone(HistoryType):
     """ History Type which does nothing.
     """
-    def getScroll(self):
+    def getScroll(self, old=None):
         return HistoryScrollNone()
         
 
 class HistoryTypeBuffer(HistoryType):
     """ History Type using a buffer.
     """
-    def __init__(self, nbLines):
+    def __init__(self, nb_lines):
         """ Init the History Type Buffer.
         """
         super(HistoryTypeBuffer, self).__init__()
-        self.__nbLines = nbLines
+        self.nb_lines = nb_lines
         
-    def getNbLines(self):
-        return self.__nbLines
-    
     def getSize(self):
-        return self.getNbLines()
+        self.nb_lines
         
-    #def getScroll(self):
-        #return HistoryScrollBuffer()
-        
+    def getScroll(self, old=None):
+        if not old:
+            return HistoryScrollBuffer(self.nb_lines)
+        if isinstance(old, HistoryScrollBuffer):
+            old.setMaxLines(self.nb_lines)
+            return old
+        scroll = HistoryScrollBuffer(self.nb_lines)
+        start = 0
+        if self.nb_lines < old.getLines():
+            start = old.getLines() - self.nb_lines
+        for i in xrange(start, old.getLines()):
+            scroll.addCells(old.getCells(i, 0))
+            scroll.addLine(old.isWrappedLine(i))
+        return scroll
 
+    
 class HistoryScroll(object):
     """ History Scroll abstract base class.
     """
     def __init__(self, type_):
         """ Init the History Scroll abstract base class.
         """
-        self.__histType = type_
+        self.type = type_
         
     def hasScroll(self):
         return True
@@ -100,24 +122,17 @@ class HistoryScroll(object):
     def getLineLen(self, lineno):
         return 0
     
-    def getCells(self, lineno, colno, count):
+    def getCells(self, lineno, colno, count=None):
         raise NotImplementedError
     
     def isWrappedLine(self, lineno):
         return False
     
-    # Backward compatibility. Obsolete
-    #def getCell(self, lineno, colno):
-        #return self.getCells(lineno, colno, 1)[0]
-    
-    def addCells(self, a, count):
+    def addCells(self, a):
         raise NotImplementedError
     
     def addLine(self, previousWrapped=False):
         raise NotImplementedError
-    
-    def getType(self):
-        return self.__histType
     
     
 class HistoryScrollNone(HistoryScroll):
@@ -131,10 +146,10 @@ class HistoryScrollNone(HistoryScroll):
     def hasScroll(self):
         return False
     
-    def getCells(self, lineno, colno, count):
+    def getCells(self, lineno, colno, count=None):
         return None
     
-    def addCells(self, a, count):
+    def addCells(self, a):
         pass
     
     def addLine(self, previousWrapped=False):
@@ -144,7 +159,94 @@ class HistoryScrollNone(HistoryScroll):
 class HistoryScrollBuffer(HistoryScroll):
     """ History Scroll using a buffer.
     """
-    def __init__(self):
+    def __init__(self, max_lines):
         """ Init the History Scroll Buffer.
         """
-        super (HistoryScrollBuffer, self).__init__(HistoryTypeBuffer())
+        super (HistoryScrollBuffer, self).__init__(HistoryTypeBuffer(max_lines))
+        self.max_lines = max_lines
+        self.nb_lines = 0
+        self.array_index = 0
+        self.buff_filled = False
+        self.hist_buffer = [None] * max_lines
+        self.wrapped_line = [False] * max_lines
+        
+    def addCells(self, a):
+        """a: list(Ca())"""
+        line = a[:] # XXX necessary ?
+        self.hist_buffer[self.array_index] = line
+        self.wrapped_line[self.array_index] = False
+        self.array_index += 1
+        if self.array_index >= self.max_lines:
+            self.array_index = 0
+            self.buff_filled = True
+        if self.nb_lines < self.max_lines - 1:
+            self.nb_lines += 1
+
+    def addLine(self, previous_wrapped):
+        self.wrapped_line[self.array_index-1] = previous_wrapped
+
+    def getLines(self):
+        return self.nb_lines
+
+    def getLineLen(self, lineno):
+        if lineno >= self.max_lines:
+            return 0
+        line = self.hist_buffer[self._adjustLineNo(lineno)]
+        if line is not None:
+            return len(line)
+        return 0
+
+    def isWrappedLine(self, lineno):
+        if lineno >= self.max_lines:
+            return 0
+        return self.wrapped_line[self._adjustLineNo(lineno)]
+
+    def getCells(self, lineno, colno, count=None):
+        assert lineno < self.max_lines
+        lineno = self._adjustLineNo(lineno)
+        line = self.hist_buffer[lineno]
+        if line is None:
+            return # XXX
+        assert colno < len(line)
+        if count is None:
+            count = len(line)
+        return line[colno:colno + count]
+
+    def setMaxLines(self, max_lines):
+        self._normalize()
+        if self.max_lines > max_lines:
+            start = max(0, self.array_index + 2 - max_lines)
+            end = start + max_lines
+            self.hist_buffer = self.hist_buffer[start:end]
+            self.wrapped_line = self.wrapped_line[start:end]
+            if self.array_index > max_lines:
+                self.array_index = max_lines - 2
+        else:
+            self.hist_buffer += [None] * (max_lines - self.max_lines)
+            self.wrapped_line += [False] * (max_lines - self.max_lines)
+        self.max_lines = max_lines
+        if self.nb_lines > max_lines - 2:
+            self.nb_lines = max_lines - 2
+        self.type = HistoryTypeBuffer(max_lines)
+
+    def _normalize(self):
+        if not self.buff_filled: # or not self.array_index:
+            return
+        max_lines = self.max_lines
+        hist_buffer = [None] * max_lines
+        wrapped_line = [False] * max_lines
+        for k, i in enumerate(xrange(self.array_index - 1, self.array_index-max_lines+1, -1)):
+            lineno = self._adjustLineNo(i-1)
+            hist_buffer[max_lines - 3 - k] = self.hist_buffer[i]
+            wrapped_line[max_lines - 3 - k] = self.wrapped_line[i]
+        self.hist_buffer = hist_buffer
+        self.wrapped_line = wrapped_line
+        self.array_index = max_lines - 2
+        self.buff_filled = False
+        self.nb_lines = max_lines - 2
+
+    def _adjustLineNo(self, lineno):
+        if self.buff_filled:
+            return (lineno + self.array_index + 2) % self.max_lines
+        else:
+            return lineno
