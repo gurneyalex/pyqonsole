@@ -3,6 +3,7 @@
 import unittest
 import time
 from utils import NullGui, NoScreenTC, register_logger, reset_logs
+from qt import QApplication
 
 from pyqonsole import session, emulation
 
@@ -20,14 +21,15 @@ class SessionTC(NoScreenTC):
         self.session = MySession(NullGui(), 'echo', ['coucou'], 'xterm')
         self.session._logs = []
         register_logger(self.session)
-        
 
     def test_monitor_silence(self):
+        app = QApplication([])
         session = self.session
         self.failUnlessEqual(session.monitor_silence, False)
         session.monitor_silence = True
         self.failUnlessEqual(session.monitor_timer.isActive(), True)
-        time.sleep(1) # > SILENCE_TIMEOUT
+        time.sleep(2e-3 ) # 2 * SILENCE_TIMEOUT (in seconds)
+        app.processEvents()
         self.failUnlessEqual(session._logs, [('9notifySessionState', (emulation.NOTIFYSILENCE,))])
         session.monitor_silence = False
         self.failUnlessEqual(session.monitor_timer.isActive(), False)
