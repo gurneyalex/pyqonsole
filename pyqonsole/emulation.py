@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.7 2005-12-09 09:11:12 alf Exp $'
+__revision__ = '$Id: emulation.py,v 1.8 2005-12-09 14:10:10 syt Exp $'
 
 import qt
 
@@ -147,14 +147,14 @@ class Emulation(qt.QObject):
     def setKeymap(self, no):
         self._key_trans = keytrans.find(no)
         
-    def setKeyMapById(self, id):
+    def setKeymapById(self, id):
         self._key_trans = keytrans.find(id)
     
     def keymap(self):
-        return self._key_trans.id()
+        return self._key_trans.id
     
     def keymapNo(self):
-        return self._key_trans.num()
+        return self._key_trans.num
         
     # Interpreting Codes
     # This section deals with decoding the incoming character stream.

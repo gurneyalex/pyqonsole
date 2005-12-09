@@ -22,7 +22,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.1 2005-12-08 18:06:21 syt Exp $'
+__revision__ = '$Id: session.py,v 1.2 2005-12-09 14:10:11 syt Exp $'
 
 import os
 
@@ -61,7 +61,7 @@ class Session(qt.QObject):
         
         self.sh = pty_.PtyProcess()
         self.em = emuVt102.EmuVt102(self.te)
-        self.monitor_timer = qt.QTimer()
+        self.monitor_timer = qt.QTimer(self)
 
         self.sh.setSize(self.te.lines, self.te.columns) # not absolutely necessary
         
@@ -109,7 +109,7 @@ class Session(qt.QObject):
             self.user_title = caption
         if what in (0, 1):
             self.icon_text = caption
-        self.emit(qt.PYSIGNAL('updateTitle'))
+        self.emit(qt.PYSIGNAL('updateTitle'), ())
 
     def fullTitle(self):
         if self.user_title:
@@ -119,11 +119,12 @@ class Session(qt.QObject):
     def testAndSetStateIconName(self, newname):
         if (newname != self.state_icon_name):
             self.state_icon_name = newname
-            return True;
-        return False;
+            return True
+        return False
 
 
     def monitorTimerDone(self):
+        print 'monitor timer done'
         self.emit(qt.PYSIGNAL('notifySessionState'), (emulation.NOTIFYSILENCE,))
         self.monitor_timer.start(SILENCE_TIMEOUT, True)
 
@@ -141,7 +142,8 @@ class Session(qt.QObject):
 
     def terminate(self):
         # XXX
-        del self
+        #del self
+        pass
 
     def sendSignal(self, signal):
         return self.sh.kill(signal)
@@ -160,7 +162,7 @@ class Session(qt.QObject):
         self.em.setKeymap(kn)
 
     def setKeymap(self, id):
-        self.em.setKeymap(id)
+        self.em.setKeymapById(id)
 
     def setHistory(self, history):
         self.em.setHistory(history)

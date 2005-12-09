@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.2 2005-12-08 18:06:21 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.3 2005-12-09 14:10:11 syt Exp $'
 
 
 import re
@@ -71,7 +71,7 @@ def find(ktid=0):
         except KeyError:
             pass
     for kt in _KEYMAPS.values():
-        if kt.m_id == ktid:
+        if kt.id == ktid:
             return kt
     return _KEYMAPS[0]
 
@@ -102,31 +102,32 @@ class KeyTrans:
     """
     
     def __init__(self, path='[buildin]'):
-        self.tableX = []
-        # XXX
-        #self.tableX.setAutoDelete(true)
-        self.m_hdr = ''
-        self.m_numb = 0
-        self.m_file_read = False
-        self.m_path = path
+        self.hdr = ''
+        self.num = 0
+        self.path = path
         if path == '[buildin]':
-            self.m_id = 'default'
+            self.id = 'default'
         else:
-            self.m_id = splitext(basename(path))[0]
+            self.id = splitext(basename(path))[0]
+        self._file_read = False
+        self._table = []
+        # XXX
+        #self._table.setAutoDelete(true)
             
     def addKeyTrans(self):
         """XXX why is this here ??"""
-        _KEYMAPS[count()] = self
+        self.num = count()
+        _KEYMAPS[self.num] = self
     
     def readConfig(self):
-        if self.m_file_read:
+        if self._file_read:
             return
-        self.m_file_read = True
-        if self.m_path == '[buildin]':
+        self._file_read = True
+        if self.path == '[buildin]':
             buf = open(DEFAULT_KEYTAB_FILE)
         else: 
-            buf = open(self.m_path)
-        ktr = KeytabReader(self.m_path, buf)
+            buf = open(self.path)
+        ktr = KeytabReader(self.path, buf)
         ktr.parseTo(self)
         
     def addEntry(self, ref, key, bits, mask, cmd, txt):
@@ -136,22 +137,22 @@ class KeyTrans:
         entry = self._findEntry(key, bits, mask)
         if entry: return entry
         entry = KeyEntry(ref, key, bits, mask, cmd, txt)
-        self.tableX.append(entry)
+        self._table.append(entry)
     
     def findEntry(self, key, bits):
-        if not self.m_file_read:
+        if not self._file_read:
             self.readConfig()
         return self._findEntry(key, bits)
     
     def _findEntry(self, key, bits, mask=0xffff):
-        for entry in self.tableX:
+        for entry in self._table:
             if entry.matches(key, bits, 0xffff):
                 return entry
     
     def hdr(self):
-        if not self.m_file_read:
+        if not self._file_read:
             self.readConfig()
-        return m_hdr
+        return hdr
 
 
 
@@ -368,7 +369,7 @@ class KeytabReader:
         if not (string[0] == '"' and string[-1] == '"'):
             self._reportError('malformed string %s' % string)
         else:
-            kt.m_hdr = string[1:-1] # unquote
+            kt.hdr = string[1:-1] # unquote
         
     def _parseKey(self, kt, string):
         '''example key lines
