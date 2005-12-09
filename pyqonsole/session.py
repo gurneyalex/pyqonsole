@@ -22,7 +22,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.2 2005-12-09 14:10:11 syt Exp $'
+__revision__ = '$Id: session.py,v 1.3 2005-12-09 18:02:14 syt Exp $'
 
 import os
 
@@ -124,7 +124,6 @@ class Session(qt.QObject):
 
 
     def monitorTimerDone(self):
-        print 'monitor timer done'
         self.emit(qt.PYSIGNAL('notifySessionState'), (emulation.NOTIFYSILENCE,))
         self.monitor_timer.start(SILENCE_TIMEOUT, True)
 

@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.3 2005-12-09 14:10:11 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.4 2005-12-09 18:02:15 syt Exp $'
 
 
 import re
@@ -111,8 +111,6 @@ class KeyTrans:
             self.id = splitext(basename(path))[0]
         self._file_read = False
         self._table = []
-        # XXX
-        #self._table.setAutoDelete(true)
             
     def addKeyTrans(self):
         """XXX why is this here ??"""
