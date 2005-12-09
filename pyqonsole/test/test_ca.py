@@ -2,7 +2,7 @@ import unittest
 import sys
 import os
 sys.path.append(os.pardir)
-from ca import *
+from pyqonsole.ca import *
 
 
 class CaTest(unittest.TestCase):
