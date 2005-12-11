@@ -23,7 +23,6 @@ class SessionTC(NoScreenTC):
         register_logger(self.session)
 
     def test_monitor_silence(self):
-        print 1
         app = QApplication([])
         session = self.session
         self.failUnlessEqual(session.monitor_silence, False)
@@ -35,7 +34,6 @@ class SessionTC(NoScreenTC):
         session.monitor_silence = False
         self.failUnlessEqual(session.monitor_timer.isActive(), False)
         app.quit()
-        print 2
 
     def test_monitor_activity(self):
         session = self.session
