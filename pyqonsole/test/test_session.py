@@ -23,16 +23,19 @@ class SessionTC(NoScreenTC):
         register_logger(self.session)
 
     def test_monitor_silence(self):
+        print 1
         app = QApplication([])
         session = self.session
         self.failUnlessEqual(session.monitor_silence, False)
         session.monitor_silence = True
         self.failUnlessEqual(session.monitor_timer.isActive(), True)
-        time.sleep(2e-3 ) # 2 * SILENCE_TIMEOUT (in seconds)
+        time.sleep(2e-3) # 2 * SILENCE_TIMEOUT (in seconds)
         app.processEvents()
-        self.failUnlessEqual(session._logs, [('9notifySessionState', (emulation.NOTIFYSILENCE,))])
+        self.failUnless(('9notifySessionState', (emulation.NOTIFYSILENCE,)) in session._logs)
         session.monitor_silence = False
         self.failUnlessEqual(session.monitor_timer.isActive(), False)
+        app.quit()
+        print 2
 
     def test_monitor_activity(self):
         session = self.session
