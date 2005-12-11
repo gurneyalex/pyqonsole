@@ -13,7 +13,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: ca.py,v 1.2 2005-12-09 09:11:12 alf Exp $"
+__revision__ = "$Id: ca.py,v 1.3 2005-12-11 20:04:26 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -38,10 +38,10 @@ class Ca:
                  b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
         """ Init a Ca instance.
         """
-        self.c = c
-        self.f = f
-        self.b = b
-        self.r = r
+        self.c = c # character
+        self.f = f # foreground color
+        self.b = b # background color
+        self.r = r # rendition
         
     def __eq__(self, other):
         """ Implements the '==' operator
@@ -54,3 +54,16 @@ class Ca:
         """
         return (self.c != other.c) or (self.f != other.f) or \
                (self.b != other.b) or (self.r != other.r)
+
+class ColorEntry:
+
+    def __init__(self, c=None, tr=False, b=False):
+        self.color = c
+        self.transparent = tr # if used on bg
+        self.bold = b # if used on fg
+        
+    # XXX
+    #void operator=(const ColorEntry& rhs) 
+    #     color = rhs.color; 
+    #     transparent = rhs.transparent; 
+    #     bold = rhs.bold; 
