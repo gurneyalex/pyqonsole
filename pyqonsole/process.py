@@ -77,7 +77,7 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.4 2005-12-09 09:11:13 alf Exp $'
+__revision__ = '$Id: process.py,v 1.5 2005-12-11 13:25:09 alf Exp $'
 
 
 import os
@@ -407,7 +407,7 @@ class Process(qt.QObject):
         self.commClose()
         # also emit a signal if the process was run Blocking
         if RUN_DONTCARE != self.run_mode:
-            self.emit(qt.PYSIGNAL('processExited(this)'), self)
+            self.emit(qt.PYSIGNAL('processExited(Process*)'), self)
 
     def childOutput(self, fdno):
         """Called by "slotChildOutput" this function copies data arriving from the
@@ -421,7 +421,7 @@ class Process(qt.QObject):
             buffer = os.read(fdno, 1024)
             len_ = len(buffer)
             if buffer:
-                self.emit(qt.PYSIGNAL("receivedStdout(XXX, char*, int)"), self, buffer, len_)
+                self.emit(qt.PYSIGNAL("receivedStdout(Process*, char*, int)"), self, buffer, len_)
         return len_
 
     def childError(self, fdno):
@@ -432,7 +432,7 @@ class Process(qt.QObject):
         buffer = os.read(fdno, 1024)
         len_ = len(buffer)
         if buffer:
-            self.emit(qt.PYSIGNAL("receivedStderr(XXX, char*, int)"), self, buffer, len_)
+            self.emit(qt.PYSIGNAL("receivedStderr(Process*, char*, int)"), self, buffer, len_)
         return len_
 
     # Functions for setting up the sockets for communication:
@@ -731,7 +731,7 @@ class Process(qt.QObject):
             # the exit and set the status
             while self.running: # XXX
                 procctrl.theProcessController.waitForProcessExit(10)
-            self.emit(qt.PYSIGNAL("processExited(XXX)"), self)
+            self.emit(qt.PYSIGNAL("processExited(Process*)"), self)
         
     def kill(self, signo):
         """Stop the process (by sending it a signal).
@@ -852,7 +852,7 @@ class Process(qt.QObject):
             self._innot.setEnabled(False)
             self._input_data = ''
             self._input_sent = 0
-            self.emit(qt.SIGNAL("wroteStdin(this)"), self)
+            self.emit(qt.SIGNAL("wroteStdin(Process*)"), self)
         else:
             self._input_sent += os.write(self.in_[1].fileno(),
                                          self._input_data[self._input_sent:])
