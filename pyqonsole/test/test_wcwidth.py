@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.4
 
-__revision__ = '$Id: test_wcwidth.py,v 1.4 2005-12-08 17:13:39 alf Exp $'
+__revision__ = '$Id: test_wcwidth.py,v 1.5 2005-12-13 10:16:41 alf Exp $'
 
 
 ## http://www.cl.cam.ac.uk/~mgk25/ucs/scw-proposal.html is the right place
@@ -8,6 +8,17 @@ __revision__ = '$Id: test_wcwidth.py,v 1.4 2005-12-08 17:13:39 alf Exp $'
 from pyqonsole.helpers import wcWidth
 import unittest
 import unicodedata as udata
+
+def widths():
+    """ toy function to explore the unicodedata module """
+    global CATS
+    for cat, chars in CATS.iteritems():
+        print '-'*80
+        print cat
+        print '-'*80
+        for c in chars:
+            print '%06X'%c, wcWidth(c), udata.east_asian_width(unichr(c))
+        print
 
 def makeCats():
     cats = {}
@@ -47,19 +58,8 @@ category_names = {'Cc': 'Other, control',
                   'Zp': 'Seaparator, paragraph',
                   'Zs': 'Separator, space',
                   }
-    
+print "Initializing test data..."
 CATS = makeCats()
-
-def widths():
-    """ toy function to explore the unicodedata module """
-    for cat, chars in CATS.iteritems():
-        print '-'*80
-        print cat
-        print '-'*80
-        for c in chars:
-            print '%06X'%c, wcWidth(c), udata.east_asian_width(unichr(c))
-        print
-
 single_width = []
 double_width = []
 for cp in xrange(33,0x110000):
@@ -84,6 +84,8 @@ for cp in xrange(33,0x110000):
         double_width.append(cp)
     else:
         single_width.append(cp)
+
+print "done"
 
 class Wcwidth_TC(unittest.TestCase):
     
@@ -128,7 +130,6 @@ class Wcwidth_TC(unittest.TestCase):
 
     def testWideChars(self):
         self.check_range(double_width, 2)
-
 
     def testRemainingChars(self):
         # This test fails because of problems in unidata
