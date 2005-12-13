@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.3 2005-12-11 20:04:27 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.4 2005-12-13 10:23:11 alf Exp $'
 
 import qt
 
@@ -180,7 +180,7 @@ class Widget(qt.QFrame):
         # widget size
         self.lines, self.columns = 1, 1
         self.image = None  # [lines][columns]
-        self image_size = 1 # lines * columns
+        self.image_size = 1 # lines * columns
         
         self.line_wrapped = [] # QBitArray
 
