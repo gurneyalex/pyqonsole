@@ -77,7 +77,7 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.5 2005-12-11 13:25:09 alf Exp $'
+__revision__ = '$Id: process.py,v 1.6 2005-12-13 10:22:03 alf Exp $'
 
 
 import os
@@ -750,7 +750,7 @@ class Process(qt.QObject):
     def resume(self):
         """Resume processing of data from stdout of the child process.
         """
-        if (communication & COMM_STDOUT) and self._outnot:
+        if (self.communication & COMM_STDOUT) and self._outnot:
             self._outnot.setEnabled(True)
 
     def setEnvironment(self, name, value):
@@ -821,7 +821,7 @@ class Process(qt.QObject):
         if not self._input_data:
             return False
 
-        if self.running and communication & COMM_STDIN:
+        if self.running and self.communication & COMM_STDIN:
             self._input_data = string
             self._input_sent = 0
             self.slotSendData(0)
