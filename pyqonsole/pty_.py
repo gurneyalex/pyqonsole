@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.8 2005-12-14 14:21:03 alf Exp $'
+__revision__ = '$Id: pty_.py,v 1.9 2005-12-14 19:02:28 alf Exp $'
 
 import os
 import sys
@@ -85,6 +85,9 @@ from pyqonsole.process import Process, RUN_BLOCK, RUN_NOTIFYONEXIT, \
 
 HAVE_UTEMPTER = os.path.exists("/usr/sbin/utempter")
 
+
+def CTRL(c):
+    return ord(c) - ord("@")
 
 class UtmpProcess(Process):
 
@@ -116,7 +119,9 @@ class PtyProcess(Process):
     """
 
     def __init__(self):
+        print "Q"*10
         super(PtyProcess, self).__init__()
+        print "z"*10
         self.wsize = (0, 0)
         self.addutmp = False
         self.term = None
@@ -124,8 +129,8 @@ class PtyProcess(Process):
         self.openPty()
         self.pending_send_jobs = []
         self.pending_send_job_timer = None
-        self.connect(self, qt.PYSIGNAL('receivedStdout'), self.dataReceived)
-        self.connect(self, qt.PYSIGNAL('processExited'),  self.donePty)
+        self.connect(self, qt.PYSIGNAL('receivedStdout(int, list)'), self.dataReceived)
+        self.connect(self, qt.PYSIGNAL('processExited(Process*)'),  self.donePty)
         
     def run(self, pgm, args, term, addutmp):
         """start the client program
@@ -182,9 +187,11 @@ class PtyProcess(Process):
         # heals this, use '-e' to test it.
         pgrp = os.getpid()                          
         ioctl(0, TIOCSPGRP, pack('i', pgrp))
-        os.setpgid(0, 0)
-        os.close(os.open(os.ttyname(tt), os.O_WRONLY))
-        os.setpgid(0, 0)
+
+        # XXX FIXME: the following crashes
+#        os.setpgid(0, 0)
+#        os.close(os.open(os.ttyname(tt), os.O_WRONLY))
+#        os.setpgid(0, 0)
 
         tty_attrs = tcgetattr(0)
         tty_attrs[-1][VINTR] = CTRL('C')
@@ -210,7 +217,11 @@ class PtyProcess(Process):
         
     def openPty(self):
         """"""
+        print "*"*80
+        print "openPty"
         self.master_fd, self.slave_fd = openpty()
+        print os.ttyname(self.master_fd)
+        print os.ttyname(self.slave_fd)
         fcntl(self.master_fd, F_SETFL, os.O_NDELAY)
         return self.master_fd
         
@@ -314,10 +325,17 @@ class PtyProcess(Process):
         if self.pending_send_job_timer:
             self.pending_send_job_timer.stop()
 
-    def dataReceived(self):
+    def dataReceived(self, fd, lenlist):
         """qt slot: indicates that a block of data is received """
-        buf = os.read(self.master_fd, 4096);
-        self.emit(qt.PYSIGNAL('block_in'), (buf,))
+        buf = os.read(fd, 4096)
+        lenlist[0] = len(buf)
+        if not buf:
+            return
+        f = open("pty.log", "a")
+        f.write(buf)
+        f.close()
+        sys.stdout.write(buf)
+        self.emit(qt.PYSIGNAL('block_in(buffer)'), (buf,))
               
     def donePty(self):
         """qt slot"""

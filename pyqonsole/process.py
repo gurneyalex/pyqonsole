@@ -77,7 +77,7 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.8 2005-12-14 14:22:18 alf Exp $'
+__revision__ = '$Id: process.py,v 1.9 2005-12-14 19:02:28 alf Exp $'
 
 
 import os
@@ -344,7 +344,7 @@ class Process(qt.QObject):
         if self.communication & COMM_STDIN:
             self.communication = self.communication & ~COMM_STDIN
             self._innot = None
-            self.in_[1].close()
+            os.close(self.in_[1])
             return True
         return False
 
@@ -358,7 +358,7 @@ class Process(qt.QObject):
         if self.communication & COMM_STDOUT:
             self.communication = self.communication & ~COMM_STDOUT
             self._outnot = None
-            self.out[0].close()
+            os.close(self.out[0])
             return True
         return False
 
@@ -407,7 +407,7 @@ class Process(qt.QObject):
         self.commClose()
         # also emit a signal if the process was run Blocking
         if RUN_DONTCARE != self.run_mode:
-            self.emit(qt.PYSIGNAL('processExited(Process*)'), self)
+            self.emit(qt.SIGNAL('processExited(Process*)'), (self,))
 
     def childOutput(self, fdno):
         """Called by "slotChildOutput" this function copies data arriving from the
@@ -416,15 +416,18 @@ class Process(qt.QObject):
         """
         if self.communication & COMM_NOREAD:
             len_ = -1
-            # XXX We have a problem here: the slot is supposed to change the value of len_
-            # at least, dataReceived does it in the c++ version
-            # Don't know how to do this in Python. 
-            self.emit(qt.PYSIGNAL("receivedStdout(int, int&)"), fdno, len_)
+            # NB <alf>:the slot is supposed to change the value of
+            # len_ at least, dataReceived does it in the c++
+            # version. I emulate this by passing a list
+            lenlist = [len_]
+            self.emit(qt.PYSIGNAL("receivedStdout(int, list)"), (fdno, lenlist))
+            len_ = lenlist[0]
         else:
             buffer = os.read(fdno, 1024)
             len_ = len(buffer)
             if buffer:
-                self.emit(qt.PYSIGNAL("receivedStdout(Process*, char*, int)"), self, buffer, len_)
+                self.emit(qt.PYSIGNAL("receivedStdout(Process*, char*, int)"),
+                          (self, buffer, len_))
         return len_
 
     def childError(self, fdno):
@@ -435,7 +438,8 @@ class Process(qt.QObject):
         buffer = os.read(fdno, 1024)
         len_ = len(buffer)
         if buffer:
-            self.emit(qt.PYSIGNAL("receivedStderr(Process*, char*, int)"), self, buffer, len_)
+            self.emit(qt.PYSIGNAL("receivedStderr(Process*, char*, int)"),
+                      (self, buffer, len_))
         return len_
 
     # Functions for setting up the sockets for communication:
@@ -459,11 +463,11 @@ class Process(qt.QObject):
         network communication, for example.
         """
         if comm & COMM_STDIN:
-            self.in_ = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)
+            self.in_ = [s.fileno() for s in socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)]
         if comm & COMM_STDOUT:
-            self.out = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)
+            self.out = [s.fileno() for s in socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)]
         if comm & COMM_STDERR:
-            self.err = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)
+            self.err = [s.fileno() for s in socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)]
         self.communication = comm
 
     def _childSetupCommunication(self):
@@ -478,11 +482,11 @@ class Process(qt.QObject):
         the background.
         """
         if self.communication & COMM_STDIN:
-            self.in_[1].close()
+            os.close(self.in_[1])
         if self.communication & COMM_STDOUT:
-            self.out[0].close()
+            os.close(self.out[0])
         if self.communication & COMM_STDERR:
-            self.err[0].close()
+            os.close(self.err[0])
         # stdin
         if self.communication & COMM_STDIN:
             os.dup2(self.in_[0].fileno(), sys.stdin.fileno())
@@ -492,7 +496,7 @@ class Process(qt.QObject):
             os.close(null_fd)
         # stdout
         if self.communication & COMM_STDOUT:
-            os.dup2(self.out[1].fileno(), sys.stdout.fileno())
+            os.dup2(self.out[1], sys.stdout.fileno())
             self.out[1].setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
                                    struct.pack('ii', 0, 0))
         else:
@@ -501,7 +505,7 @@ class Process(qt.QObject):
             os.close(null_fd)
         # stderr
         if self.communication & COMM_STDERR:
-            os.dup2(self.err[1].fileno(), sys.stderr.fileno())
+            os.dup2(self.err[1], sys.stderr.fileno())
             self.err[1].setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
                                    struct.pack('ii', 0, 0))
         else:
@@ -563,10 +567,10 @@ class Process(qt.QObject):
             # Once one or other of the channels has reached EOF (or given an error) go back
             # to the usual mechanism.
             if b_out:
-                fcntl.fcntl(self.out[0].fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
+                fcntl.fcntl(self.out[0], fcntl.F_SETFL, os.O_NONBLOCK)
                 self._outnot = None
             if b_err:
-                fcntl.fcntl(self.err[0].fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
+                fcntl.fcntl(self.err[0], fcntl.F_SETFL, os.O_NONBLOCK)
                 self._errnot = None
             while b_out or b_err:
                 # * If the process is still running we block until we
@@ -589,24 +593,24 @@ class Process(qt.QObject):
                 if b_out and self.out[0] in rlist:
                     ret = 1
                     while ret > 0:
-                        ret = self.childOutput(self.out[0].fileno())
+                        ret = self.childOutput(self.out[0])
                     if (ret == -1 and errno != EAGAIN) or ret == 0:
                         b_out = False
                 if b_err and self.err[0] in rlist:
                     ret = 1
                     while ret > 0:
-                        ret = self.childError(err[0].fileno())
+                        ret = self.childError(err[0])
                     if (ret == -1 and errno != EAGAIN) or ret == 0:
                         b_err = False
         if self.communication & COMM_STDIN:
             self.communication = self.communication & ~COMM_STDIN
-            self.in_[1].close()
+            os.close(self.in_[1])
         if self.communication & COMM_STDOUT:
             self.communication = self.communication & ~COMM_STDOUT
-            self.out[0].close()
+            os.close(self.out[0])
         if self.communication & COMM_STDERR:
             self.communication = self.communication & ~COMM_STDERR
-            self.err[0].close()
+            os.close(self.err[0])
 
     def _childSetupEnvironment(self):
         """Sets up the environment according to the data passed via
@@ -646,6 +650,7 @@ class Process(qt.QObject):
         # note that we use fork() and not vfork() because vfork() has unclear
         # semantics and is not standardized.
         self.pid = os.fork()
+        print 'pid', self.pid
         if 0 == self.pid:
             self._childStart(uid, gid, fd, self._arguments)            
         else:
@@ -734,7 +739,8 @@ class Process(qt.QObject):
             # the exit and set the status
             while self.running: # XXX
                 procctrl.theProcessController.waitForProcessExit(10)
-            self.emit(qt.PYSIGNAL("processExited(Process*)"), self)
+            self.emit(qt.PYSIGNAL("processExited(Process*)"),
+                      (self,))
         
     def kill(self, signo):
         """Stop the process (by sending it a signal).
@@ -855,9 +861,9 @@ class Process(qt.QObject):
             self._innot.setEnabled(False)
             self._input_data = ''
             self._input_sent = 0
-            self.emit(qt.SIGNAL("wroteStdin(Process*)"), self)
+            self.emit(qt.SIGNAL("wroteStdin(Process*)"), (self,))
         else:
-            self._input_sent += os.write(self.in_[1].fileno(),
+            self._input_sent += os.write(self.in_[1],
                                          self._input_data[self._input_sent:])
 
 from pyqonsole import procctrl

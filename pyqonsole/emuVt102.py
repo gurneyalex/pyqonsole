@@ -41,13 +41,13 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.7 2005-12-08 18:09:09 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.8 2005-12-14 19:02:28 alf Exp $'
 
 import os
 import qt
 
 import pyqonsole.keytrans as kt
-from pyqonsole.emulation import Emulation, NOTIFYBELL
+from pyqonsole.emulation import Emulation, NOTIFYBELL, NOTIFYNORMAL
 from pyqonsole import screen, ca
 
 
@@ -733,6 +733,9 @@ class EmuVt102(Emulation):
         else:
             self.reportErrorToken(token, p, q);
 
+    def reportErrorToken(self, token, p, q):
+        print 'undecodable', token, p, q
+
     def sendString(self, s):
         self.emit(qt.PYSIGNAL("sndBlock"), (s,))
         
@@ -828,9 +831,9 @@ class EmuVt102(Emulation):
     def scrollLock(self, lock):
         self._hold_screen = lock
         if lock:
-            self.emit(qt.PYSIGNAL("sndBlock"), "\023") # XOFF (^S)
+            self.emit(qt.PYSIGNAL("sndBlock"), ("\023",)) # XOFF (^S)
         else:
-            self.emit(qt.PYSIGNAL("sndBlock"), "\021") # XON (^Q)
+            self.emit(qt.PYSIGNAL("sndBlock"), ("\021",)) # XON (^Q)
             
     def __onScrollLock(self):
         self.scrollLock(not self._hold_screen)
@@ -838,7 +841,7 @@ class EmuVt102(Emulation):
     def onKeyPress(self, ev):
         if not self._listen_to_key_press: # Someone else gets the keys
             return        
-        self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYNORMAL)
+        self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
         
         def encodeMode(M, B):
             return self.getMode(M) << B
@@ -861,27 +864,27 @@ class EmuVt102(Emulation):
             elif cmd == kt.CMD_scrollLineDown:  self.__gui.doScroll(+1)
             elif cmd == kt.CMD_prevSession:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("nextSession"))
+                    self.emit(qt.PYSIGNAL("nextSession"), ())
                 else:
-                    self.emit(qt.PYSIGNAL("prevSession"))
+                    self.emit(qt.PYSIGNAL("prevSession"), ())
             elif cmd == kt.CMD_nextSession:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("prevSession"))
+                    self.emit(qt.PYSIGNAL("prevSession"), ())
                 else:
                     self.emit(qt.PYSIGNAL("nextSession"))
-            elif cmd == kt.CMD_newSession: self.emit(qt.PYSIGNAL("newSession"))
-            elif cmd == kt.CMD_renameSession: self.emit(qt.PYSIGNAL("renameSession"))
-            elif cmd == kt.CMD_activateMenu: self.emit(qt.PYSIGNAL("activateMenu"))
+            elif cmd == kt.CMD_newSession: self.emit(qt.PYSIGNAL("newSession"), ())
+            elif cmd == kt.CMD_renameSession: self.emit(qt.PYSIGNAL("renameSession"), ())
+            elif cmd == kt.CMD_activateMenu: self.emit(qt.PYSIGNAL("activateMenu"), ())
             elif cmd == kt.CMD_moveSessionLeft:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("moveSessionRight"))
+                    self.emit(qt.PYSIGNAL("moveSessionRight"), ())
                 else:
-                    self.emit(qt.PYSIGNAL("moveSessionLeft"))
+                    self.emit(qt.PYSIGNAL("moveSessionLeft"), ())
             elif cmd == kt.CMD_moveSessionRight:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("moveSessionLeft"))
+                    self.emit(qt.PYSIGNAL("moveSessionLeft"), ())
                 else:
-                    self.emit(qt.PYSIGNAL("moveSessionRight"))
+                    self.emit(qt.PYSIGNAL("moveSessionRight"), ())
             elif cmd == kt.CMD_scrollLock: self.__onScrollLock()            
         except:
             pass
@@ -896,7 +899,7 @@ class EmuVt102(Emulation):
         if cmd == kt.CMD_send:
             if ev.state() & qt.QEvent.AltButton and not metaSpecified:
                 self.sendString("\033") # ESC this is the ALT prefix
-            self.emit(qt.PYSIGNAL("sndBlock"), (txt))
+            self.emit(qt.PYSIGNAL("sndBlock"), (txt,))
             return
         # fall back handling
         if not ev.text().isEmpty():
@@ -909,7 +912,7 @@ class EmuVt102(Emulation):
             #        latin1 locales at least. Please anyone find a clean solution (malte)
             if ev.state() & qt.QEvent.ControlButton:
                 s.fill(ev.ascii(), 1)
-            self.emit(qt.PYSIGNAL("sndBlock"), (s.data()))
+            self.emit(qt.PYSIGNAL("sndBlock"), (s.data(),))
 
     """VT100 Charsets
 

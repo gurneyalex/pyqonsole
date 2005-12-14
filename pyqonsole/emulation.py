@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.9 2005-12-14 12:59:03 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.10 2005-12-14 19:02:28 alf Exp $'
 
 import qt
 
@@ -202,7 +202,7 @@ class Emulation(qt.QObject):
         if not self._listen_to_key_press: # Someone else gets the keys
             return
         
-        self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYNORMAL)
+        self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
         if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty():
             self._scr.setHistCursor(self._scr.getHistLines())
         if not ev.text().isEmpty():            
@@ -213,16 +213,16 @@ class Emulation(qt.QObject):
         elif ev.ascii() > 0:
             self.emit(qt.PYSIGNAL("sndBlock"), (ev.ascii(),))
             
-    def onRcvBlock(self, s, len_):
-        self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYACTIVITY)
+    def onRcvBlock(self, block):
+        self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYACTIVITY,))
         
         self.__bulkStart()
         self.__bulkInCnt += 1
-        for i in xrange(len_):
-            result = self._decoder.toUnicode(s[i], 1)
-            for j in xrange(result.length()):
-                self.onRcvChar(result[j].unicode())
-            if s[i] == '\n':
+        for c in block:
+            result = self._decoder.toUnicode(c , 1)
+            for byte in str(result):
+                self.onRcvChar(ord(byte))
+            if c == '\n':
                 self.__bulkNewLine()
         self.__bulkEnd()
         

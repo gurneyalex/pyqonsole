@@ -28,7 +28,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: screen.py,v 1.4 2005-12-14 12:59:04 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.5 2005-12-14 19:02:28 alf Exp $"
 
 import ca
 from ca import Ca
@@ -427,7 +427,7 @@ class Screen:
         return self.__cuY
 
     def showCharacter(self, c):
-        w = wcWidth(c)
+        w = wcWidth(c) 
         if w <= 0:
             return;
         if self.__cuX+w > self.__columns:

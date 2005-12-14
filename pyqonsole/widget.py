@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.8 2005-12-14 13:43:52 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.9 2005-12-14 19:02:28 alf Exp $'
 
 import qt
 
@@ -244,11 +244,11 @@ class Widget(qt.QFrame):
         self.setBackgroundMode(self.NoBackground)
 
 
-    def __del__(self):
-        # FIXME: make proper destructor
-        self._qapp.removeEventFilter( self )
-        #if self.image:
-        #    free(self.image)
+##     def __del__(self):
+##         # FIXME: make proper destructor
+##         self._qapp.removeEventFilter( self )
+##         #if self.image:
+##         #    free(self.image)
                 
     def getDefaultBackColor(self):
         return self.color_table[DEFAULT_BACK_COLOR].color
@@ -258,7 +258,7 @@ class Widget(qt.QFrame):
     def setColorTable(self, table):
         for i in xrange(TABLE_COLORS):
             self.color_table[i] = table[i]
-        pm = self.paletteBackgroundPixmap() # XXX
+        pm = self.paletteBackgroundPixmap() 
         if not pm:
             self.setPaletteBackgroundColor(self.color_table[DEFAULT_BACK_COLOR].color)
         self.update()
@@ -353,6 +353,7 @@ class Widget(qt.QFrame):
                 self.has_blinker |= ca.r & RE_BLINK
                 if ca == self.image[y*self.columns+x]:#lcl[x]:
                     continue
+                
                 c = ca.c
                 if not c:
                     continue
@@ -372,6 +373,16 @@ class Widget(qt.QFrame):
                         cal == self.image[y*self.columns + x + len]):#lcl[x+len]):
                         break
                     disstrU.append(c)
+                print "disstrU", disstrU
+                # XXX FIXME : the join below crashes because sometimes
+                # there are chars in the list and simetimes there are
+                # ints. The loop here is an ugly hack.  The root of
+                # the problem is that in C you can handle chars like
+                # integers, and this is not possible in Python
+                for i,c in enumerate(disstrU):
+                    if type(c) == int:
+                        disstrU[i] = chr(c)
+                    
                 unistr = qt.QString(''.join(disstrU))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*len,self.font_h),
@@ -669,7 +680,7 @@ class Widget(qt.QFrame):
         """
         pm = self.paletteBackgroundPixmap()
         self.setUpdatesEnabled(False)
-        # XXX paint ?
+        paint = qt.QPainter()
         paint.begin(self)
         paint.setBackgroundMode(self.TransparentMode)
         # Note that the actual widget size can be slightly larger
@@ -694,7 +705,7 @@ class Widget(qt.QFrame):
             x = lux
             if not c and x:
                 x -= 1 # Search for start of multi-col char
-            for x in xrange(x, rlx):
+            while x <= rlx:
                 len = 1
                 c = self.image[self._loc(x,y)].c
                 if c:
@@ -717,6 +728,7 @@ class Widget(qt.QFrame):
                                  qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*len,self.font_h),
                                  unistr, self.image[self._loc(x,y)], pm != None, False)
                 x += len - 1
+                x += 1
         self.drawFrame(paint)
         paint.end()
         self.setUpdatesEnabled(True)
@@ -908,6 +920,7 @@ class Widget(qt.QFrame):
     
     def mouseMoveEvent(self, QMouseEvent):
         # for auto-hiding the cursor, we need mouseTracking
+        ev = QMouseEvent
         if ev.state() == self.NoButton:
             return
         if dragInfo.state == diPending:
