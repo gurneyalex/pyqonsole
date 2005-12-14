@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.6 2005-12-14 13:32:24 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.7 2005-12-14 13:37:26 alf Exp $'
 
 import qt
 
@@ -331,7 +331,7 @@ class Widget(qt.QFrame):
 
         The size of the new image may or may not match the size of the widget.
         """
-        pm = self.backgroundPixmap()
+        pm = self.paletteBackgroundPixmap()
         self.setUpdatesEnabled(False)
         paint = qt.QPainter()
         paint.begin(self)
@@ -667,7 +667,7 @@ class Widget(qt.QFrame):
         between the old and the new image. Instead, the internal
         image is used and the painting bound by the PaintEvent box.
         """
-        pm = self.backgroundPixmap()
+        pm = self.paletteBackgroundPixmap()
         self.setUpdatesEnabled(False)
         # XXX paint ?
         paint.begin(self)
