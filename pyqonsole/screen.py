@@ -28,7 +28,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: screen.py,v 1.3 2005-12-09 09:11:13 alf Exp $"
+__revision__ = "$Id: screen.py,v 1.4 2005-12-14 12:59:04 syt Exp $"
 
 import ca
 from ca import Ca
@@ -63,7 +63,7 @@ class Screen:
         # Screen image
         self.__lines = l
         self.__columns = c
-        self.__image = [[Ca() for j in xrange(c)] for i in xrange(l+1)]
+        self.__image = [Ca() for j in xrange(c) for i in xrange(l+1)]
         self.__lineWrapped = [False for i in xrange(l+1)]
         
         # History buffer
@@ -548,7 +548,7 @@ class Screen:
         
         return merged
     
-    def getCookedLinedWrapped(self):
+    def getCookedLineWrapped(self):
         result = [False for i in xrange(self.__lines)]
         
         y = 0

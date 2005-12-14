@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.5 2005-12-09 09:11:13 alf Exp $'
+__revision__ = '$Id: pty_.py,v 1.6 2005-12-14 12:59:03 syt Exp $'
 
 import os
 import sys
@@ -115,6 +115,7 @@ class PtyProcess(Process):
     """
 
     def __init__(self):
+        super(PtyProcess, self).__init__()
         self.wsize = (0, 0)
         self.addutmp = False
         self.term = None
@@ -135,7 +136,7 @@ class PtyProcess(Process):
         self.term = term
         self.addutmp = addutmp
         #self.clearArguments() # XXX not needed because of the code below
-        self.arguments = [pgm] + args
+        self._arguments = [pgm] + args
         self.start(RUN_NOTIFYONEXIT, COMM_STDOUT | COMM_NOREAD)
         self.resume()
 
@@ -263,7 +264,7 @@ class PtyProcess(Process):
             return
         ioctl(self.master_fd, TIOCSWINSZ, pack('ii', lines, columns))
         
-    def setupCommunication(self):
+    def setupCommunication(self, comm):
         """overriden from Process"""
         self.out[0] = self.master_fd
         self.out[1] = os.dup(2) # Dummy
@@ -271,8 +272,8 @@ class PtyProcess(Process):
         
     def _childSetupCommunication(self):
         """overriden from Process"""
-        pgm = self.arguments.pop(0)
-        self.startPgm(pgm, self.arguments, self.term)
+        pgm = self._arguments.pop(0)
+        self.startPgm(pgm, self._arguments, self.term)
         
     def sendBytes(self, string):
         """sends len bytes through the line"""

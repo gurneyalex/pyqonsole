@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.4 2005-12-13 10:23:11 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.5 2005-12-14 12:59:04 syt Exp $'
 
 import qt
 
@@ -83,11 +83,13 @@ diPending = 1
 diDragging = 2
 
 class dragInfo:
-    def __init__(self, state, start, dragObject):
-      self.state = state
-      self.start = start
-      self.dragObject = dragObject
-
+##     def __init__(self, state, start, dragObject):
+##       self.state = state
+##       self.start = start
+##       self.dragObject = dragObject
+    state = None
+    start = None
+    dragObject = None
 
 # Colors ######################################################################
 
@@ -153,7 +155,10 @@ class Widget(qt.QFrame):
     def _loc(self, x, y):
         return y * self.columns + x
     
-    def __init__(self, parent=None, name=''):
+    def __init__(self, qapp, parent=None, name=''):
+        super(Widget, self).__init__(parent, name)
+        # application object
+        self._qapp = qapp
         # current session in this widget
         self.current_session = None
         # has blinking cursor enabled
@@ -170,7 +175,7 @@ class Widget(qt.QFrame):
         self.ctrldrag = False
         # do we antialias or not
         self.antialias = False
-        self.fixed_font # has fixed pitch
+        #self.fixed_font # has fixed pitch
         # height, width, ascend
         self.font_h = self.font_w = self.font_a = 1
         # The offsets are not yet calculated. 
@@ -209,7 +214,7 @@ class Widget(qt.QFrame):
         self.m_resize_timer = None # QTimer
         self.m_line_spacing = 0
 
-        self.qt.QApplication.clipboard() # QClipboard
+        self.cb = qt.QApplication.clipboard() # QClipboard
         
         self.scrollbar = qt.QScrollBar(self)
         self.scrollbar.setCursor(self.arrowCursor)
@@ -218,15 +223,14 @@ class Widget(qt.QFrame):
         self.cursor_rect = None #for quick changing of cursor
 
         self.connect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
-        self.connect(self.scrollbar, SIGNAL('valueChanged(int)'), self.scrollChanged)
-        self.connect(self.blink_t, SIGNAL('timeout()'), self.blinkEvent)
-        self.connect(self.blink_cursor_t, SIGNAL('timeout()'), self.blinkCursorEvent)
+        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
+        self.connect(self.blink_t, qt.SIGNAL('timeout()'), self.blinkEvent)
+        self.connect(self.blink_cursor_t, qt.SIGNAL('timeout()'), self.blinkCursorEvent)
 
         self.setMouseMarks(True)
         self.setVTFont(qt.QFont("fixed"))
         self.setColorTable(BASE_COLOR_TABLE) # init color table
-        # XXX qApp
-        qApp.installEventFilter(self) #FIXME: see below
+        self._qapp.installEventFilter(self) #FIXME: see below
         #  QCursor::setAutoHideCursor( self, True )
 
         # Init DnD ################################
@@ -242,7 +246,7 @@ class Widget(qt.QFrame):
 
     def __del__(self):
         # FIXME: make proper destructor
-        qApp.removeEventFilter( self )
+        self._qapp.removeEventFilter( self )
         #if self.image:
         #    free(self.image)
                 
@@ -313,14 +317,14 @@ class Widget(qt.QFrame):
         if not text.isEmpty():
             text.replace(qt.QRegExp("\n"), "\r")
         ev = qt.QKeyEvent(qt.QEvent.KeyPress, 0, -1, 0, text)
-            self.emit(qt.SIGNAL('keyPressedSignal'), (ev,)) # expose as a big fat keypress event
-            self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+        self.emit(qt.SIGNAL('keyPressedSignal'), (ev,)) # expose as a big fat keypress event
+        self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
         qt.QApplication.clipboard().setSelectionMode(False)
   
     def emitText(self,  text):
         if not text.isEmpty():
             ev = qt.QKeyEvent(qt.QEvent.KeyPress, 0, -1, 0, text)
-            self.emit keyPressedSignal(ev) # expose as a big fat keypress event
+            self.emit(qt.PYSIGNAL('keyPressedSignal'), (ev,)) # expose as a big fat keypress event
 
     def setImage(self, newimg, lines, columns):
         """Display Operation - The image can only be set completely.
@@ -329,6 +333,7 @@ class Widget(qt.QFrame):
         """
         pm = self.backgroundPixmap()
         self.setUpdatesEnabled(False)
+        paint = qt.QPainter()
         paint.begin(self)
         tL  = self.contentsRect().topLeft()
         tLx = tL.x()
@@ -337,44 +342,45 @@ class Widget(qt.QFrame):
         cf = cb = cr  = -1 # undefined
         lins = min(self.lines,  max(0, lines  ))
         cols = min(self.columns,max(0, columns))
-        QChar *disstrU = new QChar[cols]
+        disstrU = [] # qt.QChar[cols]
         for y in xrange(lins):
             lcl = self.image[y*self.columns]
             ext = newimg[y*columns]
             if self.resizing: # not while resizing, we're expecting a paintEvent
                 break
             for x in range(cols):
-                self.has_blinker |= ext[x].r & RE_BLINK
-                if ext[x] == lcl[x]:
+                ca = newimg[y*columns + x]
+                self.has_blinker |= ca.r & RE_BLINK
+                if ca == self.image[y*self.columns+x]:#lcl[x]:
                     continue
-                c = ext[x+0].c
+                c = ca.c
                 if not c:
                     continue
-                p = 0
-                disstrU[p++] = c
-                cr = ext[x].r
-                cb = ext[x].b
-                if ext[x].f != cf:
-                    cf = ext[x].f
+                disstrU.append(c)
+                cr = ca.r
+                cb = ca.b
+                if ca.f != cf:
+                    cf = ca.f
                 lln = cols - x
                 for len in xrange(1, lln):
-                    c = ext[x+len].c
+                    cal = newimg[y*columns + x + len]
+                    c = cal.c
                     if not c:
                         continue # Skip trailing part of multi-col chars.
 
-                    if (ext[x+len].f != cf or ext[x+len].b != cb or ext[x+len].r != cr or
-                        ext[x+len] == lcl[x+len]):
+                    if (cal.f != cf or cal.b != cb or cal.r != cr or
+                        cal == self.image[y*self.columns + x + len]):#lcl[x+len]):
                         break
-                    disstrU[p++] = c
-                # XXX
-                qt.QString unistr(disstrU, p)
+                    disstrU.append(c)
+                unistr = qt.QString(''.join(disstrU))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*len,self.font_h),
-                                 unistr, ext[x], pm != NULL, True)
+                                 unistr, ca, pm != None, True)
                 x += len - 1
             # XXX finally, make `image' become `newimg'.
-            memcpy(lcl, ext, cols*sizeof(ca))
-        drawFrame(paint)
+            #memcpy(lcl, ext, cols*sizeof(ca))
+            self.image = newimg
+        self.drawFrame(paint)
         paint.end()
         self.setUpdatesEnabled(True)
         if (self.has_blinker and not self.blink_t.isActive()):
@@ -382,9 +388,8 @@ class Widget(qt.QFrame):
         if (not self.has_blinker and self.blink_t.isActive()):
             self.blink_t.stop()
             self.blinking = False
-        del disstrU
 
-        if selfresizing and self.terminal_size_hint:
+        if self.resizing and self.terminal_size_hint:
             if self.terminal_size_startup:
                 self.terminal_size_startup = False
                 return
@@ -454,14 +459,14 @@ class Widget(qt.QFrame):
         lins = min(oldlin, self.lines)
         cols = min(oldcol, self.columns)
         if oldimg:
-            for i in xrange(lins):
+            for lin in xrange(lins):
                 self.image[self.columns*lin] = oldimg[oldcol*lin]
         else:
             self.clearImage()
         # NOTE: control flows from the back through the chest right into the eye.
         #      `emu' will call back via `setImage'.
         self.resizing = True
-        self.emit(qt.PYSIGNAL('changedImageSizeSignal', (self.lines, self.columns)) # expose resizeEvent
+        self.emit(qt.PYSIGNAL('changedImageSizeSignal'), (self.lines, self.columns)) # expose resizeEvent
         self.resizing = False
 
     def calcSize(self, cols, lins):        
@@ -509,7 +514,7 @@ class Widget(qt.QFrame):
     def setVTFont(self, font):
         if not self.antialias:
             font.setStyleStrategy(qt.QFont.NoAntialias)
-        QFrame.setFont(self, font)
+        qt.QFrame.setFont(self, font)
         self.fontChange(font)
 
     def setMouseMarks(self, on):
@@ -550,7 +555,7 @@ class Widget(qt.QFrame):
         we have focus.
         """
         if (e.type() == qt.QEvent.Accel or
-            e.type() == qt.QEvent.AccelAvailable) and qApp.focusWidget() == self:
+            e.type() == qt.QEvent.AccelAvailable) and self._qapp.focusWidget() == self:
             e.ignore()
             return True
         if obj != self and obj != parent(): # when embedded / when standalone
@@ -566,7 +571,7 @@ class Widget(qt.QFrame):
                 self.blinkCursorEvent()
             else:
                 self.cursor_blinking = False
-            self.emit keyPressedSignal(e) # expose
+            self.emit(qt.PYSIGNAL('keyPressedSignal'), (e,)) # expose
             # in Qt2 when key events were propagated up the tree 
             # (unhandled? . parent widget) they passed the event filter only once at
             # the beginning. in qt3 self has changed, that is, the event filter is 
@@ -617,7 +622,7 @@ class Widget(qt.QFrame):
             fColor = self.color_table[attr.b].color
             bColor = self.color_table[attr.f].color
         else:
-            fColor = self.color_table[attr.f].color)
+            fColor = self.color_table[attr.f].color
             bColor = self.color_table[attr.b].color
         if attr.r & RE_CURSOR:
             self.cursor_rect = rect
@@ -683,7 +688,7 @@ class Widget(qt.QFrame):
         #  if (pm != NULL and self.color_table[image.b].transparent)
         #  self.erase(rect)
         # BL: I have no idea why we need self, and it breaks the refresh.
-        disstrU = qt.QChar[self.columns]
+        disstrU = []
         for y in xrange(luy, rly):
             c = self.image[self._loc(lux,y)].c
             x = lux
@@ -691,11 +696,9 @@ class Widget(qt.QFrame):
                 x -= 1 # Search for start of multi-col char
             for x in xrange(x, rlx):
                 len = 1
-                p = 0
                 c = self.image[self._loc(x,y)].c
                 if c:
-                    p = p+1
-                    disstrU[p] = c
+                    disstrU.append(c)
                 cf = self.image[self._loc(x,y)].f
                 cb = self.image[self._loc(x,y)].b
                 cr = self.image[self._loc(x,y)].r
@@ -705,13 +708,11 @@ class Widget(qt.QFrame):
                        self.image[self._loc(x+len,y)].r == cr ):
                     c = self.image[self._loc(x+len,y)].c
                     if c:
-                        p += 1
-                      disstrU[p] = c
+                        disstrU.append(c)
                     len += 1
                 if (x+len < self.columns) and (not self.image[self._loc(x+len,y)].c):
                     len += 1 # Adjust for trailing part of multi-column char
-                # XXX
-                qt.QString unistr(disstrU,p)
+                unistr = qt.QString(''.join(disstrU))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*len,self.font_h),
                                  unistr, self.image[self._loc(x,y)], pm != None, False)
@@ -729,16 +730,18 @@ class Widget(qt.QFrame):
 
 
     def fontChange(self, font):
-        fm = font() # QFontMetrics
+        fm = qt.QFontMetrics(font) # QFontMetrics fm(font())
         self.font_h = fm.height() + self.m_line_spacing
         # waba TEWidget 1.123:
         # "Base character width on widest ASCII character. Self prevents too wide
         #  characters in the presence of double wide (e.g. Japanese) characters."
         self.font_w = 1
         for i in xrange(128):
+            i = chr(i)
+            if not i.isalnum():
+                continue
             fw = fm.width(i)
-            # XXX isprint ?
-            if isprint(i) and self.font_w < fw:
+            if self.font_w < fw:
                 self.font_w = fw
         if self.font_w > 200: # don't trust unrealistic value, fallback to QFontMetrics::maxWidth()
             self.font_w = fm.maxWidth()
@@ -795,7 +798,7 @@ class Widget(qt.QFrame):
         endSel = pos
         i = self._loc(bgnSel.x(),bgnSel.y())
         self.i_pnt_sel = bgnSel
-        self.i_pnt_sel.ry() += self.scrollbar.value()
+        self.i_pnt_sel.setY(bgnSel.y() + self.scrollbar.value())
         self.word_selection_mode = True
         # find word boundaries...
         selClass = self.charClass(self.image[i].c)
@@ -807,7 +810,7 @@ class Widget(qt.QFrame):
                 x -= 1
             else:
                 x = self.columns-1
-                bgnSel.ry() -= 1
+                bgnSel.setY(bgnSel.y() - 1)
         bgnSel.setX(x)
         self.emit(qt.PYSIGNAL('beginSelectionSignal'), (bgnSel.x(), bgnSel.y()))
         # set the end...
@@ -819,7 +822,7 @@ class Widget(qt.QFrame):
                 x += 1
             else:
                 x = 0
-                endSel.ry() += 1
+                endSel.setYb(endSel.y() + 1)
         endSel.setX(x)
         self.act_sel = 2 # within selection
         self.emit(qt.PYSIGNAL('extendSelectionSignal'), (endSel.x(), endSel.y()))
@@ -853,10 +856,10 @@ class Widget(qt.QFrame):
             else:
                 # No reason to ever start a drag event
                 dragInfo.state = diNone
-                self.preserve_line_breaks = not ( ev.state() & self.ControlButton )
+                self.preserve_line_breaks = not (ev.state() & self.ControlButton)
                 if self.mouse_marks or (ev.state() & self.ShiftButton):
-                    self.emit(qt.PYSIGNAL('clearSelectionSignal', ())
-                    pos.ry() += self.scrollbar.value()
+                    self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+                    pos.setY(pos.y() + self.scrollbar.value())
                     self.i_pnt_sel = self.pnt_sel = pos
                     self.act_sel = 1 # left mouse button pressed but nothing selected yet.
                     self.grabMouse() # handle with care!
@@ -878,7 +881,7 @@ class Widget(qt.QFrame):
             self.emit(qt.PYSIGNAL('isBusySelecting'), (False,)) # Ok.. we can breath again.
             if dragInfo.state == diPending:
                 # We had a drag event pending but never confirmed.  Kill selection
-                self.emit clearSelectionSignal()
+                self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
             else:
                 if self.act_sel > 1:
                     self.emit(qt.PYSIGNAL('endSelectionSignal'), (self.preserve_line_breaks,))
@@ -956,9 +959,9 @@ class Widget(qt.QFrame):
             self.scrollbar.setValue(self.scrollbar.value()-yMouseScroll) # scrollback
         here = qt.QPoint((pos.x()-tLx-self.bX+(self.font_w/2))/self.font_w,(pos.y()-tLy-self.bY)/self.font_h)
         self.i_pnt_selCorr = self.i_pnt_sel
-        self.i_pnt_selCorr.ry() -= self.scrollbar.value()
+        self.i_pnt_selCorr.setY(self.i_pnt_selCorr.y() - self.scrollbar.value())
         self.pnt_selCorr = self.pnt_sel
-        self.pnt_selCorr.ry() -= self.scrollbar.value()
+        self.pnt_selCorr.setY(self.pnt_selCorr.y() - self.scrollbar.value())
         swapping = False
         if self.word_selection_mode:
             # Extend to word boundaries
@@ -974,11 +977,11 @@ class Widget(qt.QFrame):
                 selClass = self.charClass(self.image[i].c)
                 while ((left.x()>0) or (left.y()>0 and self.line_wrapped[left.y()-1])) and self.charClass(self.image[i-1].c) == selClass:
                     i -= 1
-                    if left.x()>0:
-                        left.rx() -= 1
+                    if left.x() > 0:
+                        left.setX(left.x() - 1)
                     else:
-                        left.rx() = self.columns-1
-                        left.ry() -= 1
+                        left.setX(self.columns-1)
+                        left.setY(left.y() - 1)
             # Find left (left_not_right ? from start : from here)
             right = left_not_right and self.i_pnt_selCorr or here
             i = self._loc(right.x(),right.y())
@@ -987,16 +990,16 @@ class Widget(qt.QFrame):
                 while ((right.x()<self.columns-1) or (right.y()<self.lines-1 and self.line_wrapped[right.y()])) and self.charClass(self.image[i+1].c) == selClass:
                     i += 1
                     if right.x() < self.columns-1:
-                        right.rx() += 1
+                        right.setX(right.x() + 1)
                     else:
-                        right.rx() = 0
-                        right.ry() += 1
+                        right.setX(0)
+                        right.setY(right.y() + 1)
             # Pick which is start (ohere) and which is extension (here)
             if left_not_right:
                 here, ohere = left, right
             else:
                 here, ohere = right, left
-            ohere.rx() += 1
+            ohere.setX(ohere.x() + 1)
         if self.line_selection_mode:
             # Extend to complete line
             above_not_below = here.y() < self.i_pnt_selCorr.y()
@@ -1005,17 +1008,17 @@ class Widget(qt.QFrame):
             above = above_not_below and here or self.i_pnt_selCorr
             below = above_not_below and self.i_pnt_selCorr or here
             while above.y() > 0 and self.line_wrapped[above.y()-1]:
-                above.ry() -= 1
+                above.setY(above.y() - 1)
             while below.y() < self.lines-1 and self.line_wrapped[below.y()]:
-                below.ry() += 1
+                below.setY(below.y() + 1)
             above.setX(0)
             below.setX(self.columns-1)
             # Pick which is start (ohere) and which is extension (here)
             if above_not_below:
                 here, ohere = above, below
-            else
+            else:
                 here, ohere = below, above
-            ohere.rx() += 1
+            ohere.setX(ohere.x() + 1)
         offset = 0
         if not self.word_selection_mode and not self.line_selection_mode:
             left_not_right = (here.y() < self.i_pnt_selCorr.y() or
@@ -1034,18 +1037,19 @@ class Widget(qt.QFrame):
                     if selClass == ' ':
                         while (right.x() < self.columns-1 and self.charClass(self.image[i+1].c) == selClass and (right.y()<self.lines-1) and not self.line_wrapped[right.y()]):
                             i += 1
-                            right.rx() += 1
+                            right.setX(right.x() + 1)
                         if right.x() < self.columns-1:
                             right = left_not_right and self.i_pnt_selCorr or here
                         else:
-                            right.rx() += 1  # will be balanced later because of offset=-1
-          # Pick which is start (ohere) and which is extension (here)
-          if left_not_right:
-              here, ohere = left, right
-              offset = 0
-          else:
-              here, ohere = right, left
-              offset = -1
+                            # will be balanced later because of offset=-1
+                            right.setX(right.x() + 1)
+            # Pick which is start (ohere) and which is extension (here)
+            if left_not_right:
+                here, ohere = left, right
+                offset = 0
+            else:
+                here, ohere = right, left
+                offset = -1
         if here == self.pnt_selCorr and scroll == self.scrollbar.value():
             return # not moved
         if here == ohere:
@@ -1054,7 +1058,7 @@ class Widget(qt.QFrame):
             self.emit(qt.PYSIGNAL('beginSelectionSignal'), (ohere.x()-1-offset, ohere.y()))
         self.act_sel = 2 # within selection
         self.pnt_sel = here
-        self.pnt_sel.ry() += self.scrollbar.value()
+        self.pnt_sel.setY(self.pnt_sel.y() + self.scrollbar.value())
         self.emit(qt.PYSIGNAL('extendSelectionSignal'), (here.x() + offset, here.y()))
         
     def mouseTripleClickEvent(self, ev):
@@ -1067,13 +1071,13 @@ class Widget(qt.QFrame):
         self.word_selection_mode = False
         self.act_sel = 2 # within selection
         while self.i_pnt_sel.y()>0 and self.line_wrapped[self.i_pnt_sel.y()-1]:
-            self.i_pnt_sel.ry() -= 1
+            self.i_pnt_sel.setY(self.i_pnt_sel.y() - 1)
         self.emit(qt.PYSIGNAL('beginSelectionSignal'), (0, self.i_pnt_sel.y()))
         while self.i_pnt_sel.y()<self.lines-1 and self.line_wrapped[self.i_pnt_sel.y()]:
-            self.i_pnt_sel.ry() += 1
+            self.i_pnt_sel.setY(self.i_pnt_sel.y() + 1)
         self.emit(qt.PYSIGNAL('extendSelectionSignal'), (self.columns-1, self.i_pnt_sel.y()))
         self.emit(qt.PYSIGNAL('endSelectionSignal'), (self.preserve_line_breaks,))
-        self.i_pnt_sel.ry() += self.scrollbar.value()
+        self.i_pnt_sel.setY(self.i_pnt_sel.y() + self.scrollbar.value())
 
 
     def focusInEvent(self, ev):
@@ -1125,9 +1129,9 @@ class Widget(qt.QFrame):
     def makeImage(self):
         # FIXME: rename 'calcGeometry?
         self.calcGeometry()
-        self.image = [None] * (self.lines * self.columns)
+        self.image = [Ca() for i in xrange(self.lines * self.columns)]
         self.image_size = self.lines*self.columns;
-        self.clearImage()
+        #self.clearImage() not needed due to default values of Ca()
 
     def swapColorTable(self):
         color = self.color_table[1]

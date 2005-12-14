@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.8 2005-12-09 14:10:10 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.9 2005-12-14 12:59:03 syt Exp $'
 
 import qt
 
@@ -91,15 +91,19 @@ class Emulation(qt.QObject):
     def __init__(self, w):
         super(Emulation, self).__init__()
         self._gui = w
+        # 0 = primary, 1 = alternate
         self._screen = [Screen(self._gui.lines, self._gui.columns),
                         Screen(self._gui.lines, self._gui.columns)]
         self._scr = self._screen[0]
+        # communicate with widget
         self._connected = False
+        # listen to input
         self._listen_to_key_press = False
+        # codec number, 0=locale, 1=utf8
         self._codec = None
         self._decoder = None
         self._key_trans = keytrans.find()
-        self.__bulkTimer = qt.QTimer()
+        self.__bulkTimer = qt.QTimer(self)
         self.__bulkNlCnt = 0 # Bulk new line counter
         self.__bulkInCnt = 0 # Bulk counter
         self.__findPos = -1
@@ -205,9 +209,9 @@ class Emulation(qt.QObject):
             # A block og text
             # Note that the text is proper unicode. We should do a conversion here,
             # but since this routine will never be used, we simply emit plain ascii.
-            self.emit(qt.PYSIGNAL("sndBlock"), (ev.text().ascii()))
+            self.emit(qt.PYSIGNAL("sndBlock"), (ev.text().ascii(),))
         elif ev.ascii() > 0:
-            self.emit(qt.PYSIGNAL("sndBlock"), (ev.ascii()))
+            self.emit(qt.PYSIGNAL("sndBlock"), (ev.ascii(),))
             
     def onRcvBlock(self, s, len_):
         self.emit(qt.PYSIGNAL("notifySessionState"), NOTIFYACTIVITY)
@@ -225,13 +229,13 @@ class Emulation(qt.QObject):
     def onSelectionBegin(self, x, y):
         if not self._connected:
             return
-        self._scr.setSelBegin(x,y)
+        self._scr.setSelBegin(x, y)
         self.__showBulk()
         
     def onSelectionExtend(self, x, y):
         if not self._connected:
             return
-        self._scr.setSelExtendXY(x,y)
+        self._scr.setSelExtendXY(x, y)
         self.__showBulk()
         
     def setSelection(self, preserveLineBreak):
@@ -258,7 +262,7 @@ class Emulation(qt.QObject):
         self.__showBulk()
         
     def streamHistory(self, stream):
-        #stream << self.__scr.getHistory() # << not implemented yest. Find another solution
+        #stream << self.__scr.getHistory() # XXX not implemented yet. Find another solution
         pass
     
     def findTextBegin(self):
@@ -273,7 +277,7 @@ class Emulation(qt.QObject):
                 start = self.__findPos+1
             for i in xrange(start, self._scr.getHistLines()+self._scr.getLines()):
                 string = self._scr.getHistoryLine(i)
-                pos = string.find(str_, 0) #, caseSensitive)
+                pos = string.find(str_, 0) #, XXX caseSensitive)
                 if pos == -1:
                     self.__findPos = i
                     if i > self._scr.getHistLines():
@@ -282,7 +286,7 @@ class Emulation(qt.QObject):
                         self._scr.setHistCursor(i)
                     self.__showBulk()
                     return True
-        else:
+        else: # searching backward
             if self.__findPos == -1:
                 start = self._scr.getHistLines()+self._scr.getLines()
             else:
@@ -313,7 +317,7 @@ class Emulation(qt.QObject):
             self._gui.setImage(image, self._scr.getLines(), self._scr.getColumns()) #  Actual refresh
             self._gui.setCursorPos(self._scr.getCursorX(), self._scr.getCursorY())
             
-            # Check that we do not trigger other draw event here
+            # FIXME: Check that we do not trigger other draw event here
             self._gui.setLineWrapped(self._scr.getCookedLineWrapped())
             self._gui.setScroll(self._scr.getHistCursor(), self._scr.getHistLines())
             
@@ -360,7 +364,7 @@ class Emulation(qt.QObject):
         self.__showBulk()
         
     def _setColumns(self, columns):
-        # This goes strange ways
+        # FIXME This goes strange ways
         # Can we put this straight or explain it at least?
         self.emit(qt.PYSIGNAL("changeColumns"), (columns,))
         
