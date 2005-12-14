@@ -77,7 +77,7 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.6 2005-12-13 10:22:03 alf Exp $'
+__revision__ = '$Id: process.py,v 1.7 2005-12-14 13:55:21 alf Exp $'
 
 
 import os
@@ -516,11 +516,11 @@ class Process(qt.QObject):
         """
         if self.communication != COMM_NOCOMMUNICATION:
             if self.communication & COMM_STDIN:
-                self.in_[0].close()
+                os.close(self.in_[0])
             if self.communication & COMM_STDOUT:
-                self.out[1].close()
+                os.close(self.out[1])
             if self.communication & COMM_STDERR:
-                self.err[1].close()
+                os.close(self.err[1])
         # Don't create socket notifiers and set the sockets non-blocking if
         # blocking is requested.
         if self.run_mode == RUN_BLOCK:
