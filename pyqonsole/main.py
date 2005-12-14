@@ -56,4 +56,15 @@ def main(argv):
     appli.exec_loop()
 
 if __name__ == '__main__':
+    import time
+    print "*" * 80
+    print "Move the mouse cursor to another ION panel to see stdout and pyqonsole"
+    print "*" * 80
+    print "3 seconds before launch..."
+    time.sleep(1)
+    print "2 seconds before launch..."
+    time.sleep(1)
+    print "1 second before launch..."
+    time.sleep(1)
+    print "let's rock!"
     main(sys.argv)
