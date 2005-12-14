@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.7 2005-12-14 13:37:26 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.8 2005-12-14 13:43:52 alf Exp $'
 
 import qt
 
@@ -558,7 +558,7 @@ class Widget(qt.QFrame):
             e.type() == qt.QEvent.AccelAvailable) and self._qapp.focusWidget() == self:
             e.ignore()
             return True
-        if obj != self and obj != parent(): # when embedded / when standalone
+        if obj != self and obj != self.parent(): # when embedded / when standalone
             return False # not us
         if e.type() == qt.QEvent.Wheel:
             qt.QApplication.sendEvent(self.scrollbar, e)
@@ -614,7 +614,7 @@ class Widget(qt.QFrame):
             self.disconnect(self.cb, qt.PYSIGNAL('dataChanged'), self.onClearSelection)
         if e.type() == qt.QEvent.Leave:
             self.connect(self.cb, qt.PYSIGNAL('dataChanged'), self.onClearSelection)
-        return qt.QFrame.eventFilter(obj, e)
+        return qt.QFrame.eventFilter(self,obj, e)
 
     def drawAttrStr(self, paint, rect, str, attr, pm, clear):
         """Display Operation - attributed string draw primitive"""
