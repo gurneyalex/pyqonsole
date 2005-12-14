@@ -65,10 +65,11 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.7 2005-12-14 13:53:41 alf Exp $'
+__revision__ = '$Id: pty_.py,v 1.8 2005-12-14 14:21:03 alf Exp $'
 
 import os
 import sys
+import stat
 from pty import openpty
 from struct import pack
 from fcntl import ioctl, fcntl, F_SETFL
@@ -253,11 +254,11 @@ class PtyProcess(Process):
     def setWriteable(self, writeable):
         """set the slave pty writable"""
         ttyname = os.ttyname(self.slave_fd)
-        mode = stat(ttyname)
+        mode = os.stat(ttyname).st_mode
         if writeable:
-            mode.st_mode |= os.S_IWGRP
+            mode |= stat.S_IWGRP
         else:
-            mode.st_mode &= ~(os.S_IWGRP|os.S_IWOTH)
+            mode &= ~(stat.S_IWGRP|stat.S_IWOTH)
         os.chmod(ttyname, mode)
                 
     def setSize(self, lines, columns):
