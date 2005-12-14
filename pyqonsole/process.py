@@ -77,7 +77,7 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.7 2005-12-14 13:55:21 alf Exp $'
+__revision__ = '$Id: process.py,v 1.8 2005-12-14 14:22:18 alf Exp $'
 
 
 import os
@@ -416,7 +416,10 @@ class Process(qt.QObject):
         """
         if self.communication & COMM_NOREAD:
             len_ = -1
-            self.emit(qt.PYSIGNAL("receivedStdout(int, int)"), fdno, len_)
+            # XXX We have a problem here: the slot is supposed to change the value of len_
+            # at least, dataReceived does it in the c++ version
+            # Don't know how to do this in Python. 
+            self.emit(qt.PYSIGNAL("receivedStdout(int, int&)"), fdno, len_)
         else:
             buffer = os.read(fdno, 1024)
             len_ = len(buffer)
@@ -527,18 +530,18 @@ class Process(qt.QObject):
             return
         if self.communication & COMM_STDIN:
             # fcntl(in_[1], F_SETFL, O_NONBLOCK))
-            self._innot = qt.QSocketNotifier(self.in_[1].fileno(), qt.QSocketNotifier.Write)
+            self._innot = qt.QSocketNotifier(self.in_[1], qt.QSocketNotifier.Write)
             self._innot.setEnabled(False) # will be enabled when data has to be sent
             self.connect(self._innot, qt.SIGNAL('activated(int)'), self.slotSendData)
         if self.communication & COMM_STDOUT:
             # fcntl(out[0], F_SETFL, O_NONBLOCK))
-            self._outnot = qt.QSocketNotifier(self.out[0].fileno(), qt.QSocketNotifier.Read)
+            self._outnot = qt.QSocketNotifier(self.out[0], qt.QSocketNotifier.Read)
             self.connect(self._outnot, qt.SIGNAL('activated(int)'), self.slotChildOutput)
             if self.communication & COMM_NOREAD:
                 self.suspend()
         if self.communication & COMM_STDERR:
             # fcntl(err[0], F_SETFL, O_NONBLOCK))
-            self._errnot = qt.QSocketNotifier(self.err[0].fileno(), qt.QSocketNotifier.Read)
+            self._errnot = qt.QSocketNotifier(self.err[0], qt.QSocketNotifier.Read)
             self.connect(self._outnot, qt.SIGNAL('activated(int)'), self.slotChildError)
 
     def commClose(self):
