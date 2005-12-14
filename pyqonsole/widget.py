@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.5 2005-12-14 12:59:04 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.6 2005-12-14 13:32:24 alf Exp $'
 
 import qt
 
@@ -258,9 +258,9 @@ class Widget(qt.QFrame):
     def setColorTable(self, table):
         for i in xrange(TABLE_COLORS):
             self.color_table[i] = table[i]
-        pm = self.backgroundPixmap() # XXX
+        pm = self.paletteBackgroundPixmap() # XXX
         if not pm:
-            self.setBackgroundColor(self.color_table[DEFAULT_BACK_COLOR].color)
+            self.setPaletteBackgroundColor(self.color_table[DEFAULT_BACK_COLOR].color)
         self.update()
 
     # FIXME: add backgroundPixmapChanged.
