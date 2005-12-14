@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.6 2005-12-14 12:59:03 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.7 2005-12-14 13:53:41 alf Exp $'
 
 import os
 import sys
@@ -144,8 +144,11 @@ class PtyProcess(Process):
         """only used internally. See `run' for interface"""
         tt = self.makePty() # slave_fd
         # reset signal handlers for child process
-        for i in range(signal.NSIG):
-            signal.signal(i, signal.SIG_DFL)
+        for i in range(1,signal.NSIG):
+            try:
+                signal.signal(i, signal.SIG_DFL)
+            except RuntimeError, exc:
+                print 'error resetting signal handler for sig %d: %s' % (i, exc)
 
         # Don't know why, but his is vital for SIGHUP to find the child.
         # Could be, we get rid of the controling terminal by this.
