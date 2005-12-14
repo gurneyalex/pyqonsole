@@ -1,3 +1,4 @@
+#!/usr/bin/python2.4
 from logilab.common.testlib import main
 
 if __name__ == '__main__':
