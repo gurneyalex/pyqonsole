@@ -17,7 +17,7 @@
 */
 
 TESession::TESession(TEWidget* _te, const QString &_pgm, QStrList & _args, const QString &_term,const QString &_sessionId, const QString &_cwd) : //DCOPObject( _sessionId.latin1() )
-   , monitorActivity(false)
+    monitorActivity(false)
    , monitorSilence(false)
    , masterMode(false)
    , schema_no(0)
