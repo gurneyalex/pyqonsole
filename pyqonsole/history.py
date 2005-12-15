@@ -50,11 +50,9 @@ Based on the konsole code from Lars Doelle.
 
 
 XXX getLineLen usefull
-XXX unification of addCells / addLine
-XXX use of the type classes ?
 """
 
-__revision__ = '$Id: history.py,v 1.2 2005-12-09 18:01:55 syt Exp $'
+__revision__ = '$Id: history.py,v 1.3 2005-12-15 18:50:35 syt Exp $'
 
 
 class HistoryType(object):
@@ -100,8 +98,7 @@ class HistoryTypeBuffer(HistoryType):
         if self.nb_lines < old.getLines():
             start = old.getLines() - self.nb_lines
         for i in xrange(start, old.getLines()):
-            scroll.addCells(old.getCells(i, 0))
-            scroll.addLine(old.isWrappedLine(i))
+            scroll.addCells(old.getCells(i, 0), old.isWrappedLine(i))
         return scroll
 
     
@@ -128,10 +125,7 @@ class HistoryScroll(object):
     def isWrappedLine(self, lineno):
         return False
     
-    def addCells(self, a):
-        raise NotImplementedError
-    
-    def addLine(self, previousWrapped=False):
+    def addCells(self, a, wrapped=False):
         raise NotImplementedError
     
     
@@ -149,10 +143,7 @@ class HistoryScrollNone(HistoryScroll):
     def getCells(self, lineno, colno, count=None):
         return None
     
-    def addCells(self, a):
-        pass
-    
-    def addLine(self, previousWrapped=False):
+    def addCells(self, a, wrapped=False):
         pass
    
 
@@ -170,20 +161,17 @@ class HistoryScrollBuffer(HistoryScroll):
         self.hist_buffer = [None] * max_lines
         self.wrapped_line = [False] * max_lines
         
-    def addCells(self, a):
+    def addCells(self, a, wrapped=False):
         """a: list(Ca())"""
         line = a[:] # XXX necessary ?
         self.hist_buffer[self.array_index] = line
-        self.wrapped_line[self.array_index] = False
+        self.wrapped_line[self.array_index] = wrapped
         self.array_index += 1
         if self.array_index >= self.max_lines:
             self.array_index = 0
             self.buff_filled = True
         if self.nb_lines < self.max_lines - 1:
             self.nb_lines += 1
-
-    def addLine(self, previous_wrapped):
-        self.wrapped_line[self.array_index-1] = previous_wrapped
 
     def getLines(self):
         return self.nb_lines
