@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.10 2005-12-14 19:02:28 alf Exp $'
+__revision__ = '$Id: emulation.py,v 1.11 2005-12-15 15:18:51 syt Exp $'
 
 import qt
 
@@ -275,7 +275,7 @@ class Emulation(qt.QObject):
                 start = 0
             else:
                 start = self.__findPos+1
-            for i in xrange(start, self._scr.getHistLines()+self._scr.getLines()):
+            for i in xrange(start, self._scr.getHistLines()+self._scr.lines):
                 string = self._scr.getHistoryLine(i)
                 pos = string.find(str_, 0) #, XXX caseSensitive)
                 if pos == -1:
@@ -288,7 +288,7 @@ class Emulation(qt.QObject):
                     return True
         else: # searching backward
             if self.__findPos == -1:
-                start = self._scr.getHistLines()+self._scr.getLines()
+                start = self._scr.getHistLines()+self._scr.lines
             else:
                 start = self.__findPos-1
             for i in xrange(start, -1, -1):
@@ -314,7 +314,7 @@ class Emulation(qt.QObject):
         self.__bulkInCnt = 0
         if self._connected:
             image = self._scr.getCookedImage() # Get the image
-            self._gui.setImage(image, self._scr.getLines(), self._scr.getColumns()) #  Actual refresh
+            self._gui.setImage(image, self._scr.lines, self._scr.columns) #  Actual refresh
             self._gui.setCursorPos(self._scr.getCursorX(), self._scr.getCursorY())
             
             # FIXME: Check that we do not trigger other draw event here
