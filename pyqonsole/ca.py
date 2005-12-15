@@ -13,7 +13,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: ca.py,v 1.5 2005-12-15 15:25:15 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.6 2005-12-15 18:25:11 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -31,7 +31,7 @@ RE_INTENSIVE = 2**3 # Widget only
 RE_CURSOR = 2**4
 
 
-class Ca:
+class Ca(object):
     """ Ca class.
     """
     def __init__(self, c=ord(' '), f=DEFAULT_FORE_COLOR,
@@ -70,9 +70,9 @@ class Ca:
     # XXX for debugging
     def setC(self, c):
         assert isinstance(c, int)
-        self.c = c
+        self._c = c
     def getC(self):
-        return self.c
+        return self._c
     c = property(getC, setC)
     
 class ColorEntry:
