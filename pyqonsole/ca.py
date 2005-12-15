@@ -13,7 +13,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: ca.py,v 1.3 2005-12-11 20:04:26 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.5 2005-12-15 15:25:15 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -34,7 +34,7 @@ RE_CURSOR = 2**4
 class Ca:
     """ Ca class.
     """
-    def __init__(self, c=' ', f=DEFAULT_FORE_COLOR,
+    def __init__(self, c=ord(' '), f=DEFAULT_FORE_COLOR,
                  b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
         """ Init a Ca instance.
         """
@@ -55,6 +55,26 @@ class Ca:
         return (self.c != other.c) or (self.f != other.f) or \
                (self.b != other.b) or (self.r != other.r)
 
+    def __repr__(self):
+        return '%r %s %s %r' % (self.c, self.f, self.b, self.r)
+
+    def isSpace(self):
+        return chr(self.c).isspace()
+
+    def copy(self, ca):
+        self.c = ca.c
+        self.f = ca.f
+        self.b = ca.b
+        self.r = ca.r
+        
+    # XXX for debugging
+    def setC(self, c):
+        assert isinstance(c, int)
+        self.c = c
+    def getC(self):
+        return self.c
+    c = property(getC, setC)
+    
 class ColorEntry:
 
     def __init__(self, c=None, tr=False, b=False):
