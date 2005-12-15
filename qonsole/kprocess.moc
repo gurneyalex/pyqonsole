@@ -1,0 +1,304 @@
+/****************************************************************************
+** KProcess meta object code from reading C++ file 'kprocess.h'
+**
+** Created: Thu Dec 15 16:35:48 2005
+**      by: The Qt MOC ($Id: kprocess.moc,v 1.2 2005-12-15 16:26:20 alf Exp $)
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#undef QT_NO_COMPAT
+#include "kprocess.h"
+#include <qmetaobject.h>
+#include <qapplication.h>
+
+#include <private/qucomextra_p.h>
+#if !defined(Q_MOC_OUTPUT_REVISION) || (Q_MOC_OUTPUT_REVISION != 26)
+#error "This file was generated using the moc from 3.3.5. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
+
+const char *KProcess::className() const
+{
+    return "KProcess";
+}
+
+QMetaObject *KProcess::metaObj = 0;
+static QMetaObjectCleanUp cleanUp_KProcess( "KProcess", &KProcess::staticMetaObject );
+
+#ifndef QT_NO_TRANSLATION
+QString KProcess::tr( const char *s, const char *c )
+{
+    if ( qApp )
+	return qApp->translate( "KProcess", s, c, QApplication::DefaultCodec );
+    else
+	return QString::fromLatin1( s );
+}
+#ifndef QT_NO_TRANSLATION_UTF8
+QString KProcess::trUtf8( const char *s, const char *c )
+{
+    if ( qApp )
+	return qApp->translate( "KProcess", s, c, QApplication::UnicodeUTF8 );
+    else
+	return QString::fromUtf8( s );
+}
+#endif // QT_NO_TRANSLATION_UTF8
+
+#endif // QT_NO_TRANSLATION
+
+QMetaObject* KProcess::staticMetaObject()
+{
+    if ( metaObj )
+	return metaObj;
+    QMetaObject* parentObject = QObject::staticMetaObject();
+    static const QUParameter param_slot_0[] = {
+	{ "fdno", &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod slot_0 = {"slotChildOutput", 1, param_slot_0 };
+    static const QUParameter param_slot_1[] = {
+	{ "fdno", &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod slot_1 = {"slotChildError", 1, param_slot_1 };
+    static const QUParameter param_slot_2[] = {
+	{ "dummy", &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod slot_2 = {"slotSendData", 1, param_slot_2 };
+    static const QMetaData slot_tbl[] = {
+	{ "slotChildOutput(int)", &slot_0, QMetaData::Protected },
+	{ "slotChildError(int)", &slot_1, QMetaData::Protected },
+	{ "slotSendData(int)", &slot_2, QMetaData::Protected }
+    };
+    static const QUParameter param_signal_0[] = {
+	{ "proc", &static_QUType_ptr, "KProcess", QUParameter::In }
+    };
+    static const QUMethod signal_0 = {"processExited", 1, param_signal_0 };
+    static const QUParameter param_signal_1[] = {
+	{ "proc", &static_QUType_ptr, "KProcess", QUParameter::In },
+	{ "buffer", &static_QUType_charstar, 0, QUParameter::In },
+	{ "buflen", &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod signal_1 = {"receivedStdout", 3, param_signal_1 };
+    static const QUParameter param_signal_2[] = {
+	{ "fd", &static_QUType_int, 0, QUParameter::In },
+	{ "len", &static_QUType_int, 0, QUParameter::InOut }
+    };
+    static const QUMethod signal_2 = {"receivedStdout", 2, param_signal_2 };
+    static const QUParameter param_signal_3[] = {
+	{ "proc", &static_QUType_ptr, "KProcess", QUParameter::In },
+	{ "buffer", &static_QUType_charstar, 0, QUParameter::In },
+	{ "buflen", &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod signal_3 = {"receivedStderr", 3, param_signal_3 };
+    static const QUParameter param_signal_4[] = {
+	{ "proc", &static_QUType_ptr, "KProcess", QUParameter::In }
+    };
+    static const QUMethod signal_4 = {"wroteStdin", 1, param_signal_4 };
+    static const QMetaData signal_tbl[] = {
+	{ "processExited(KProcess*)", &signal_0, QMetaData::Public },
+	{ "receivedStdout(KProcess*,char*,int)", &signal_1, QMetaData::Public },
+	{ "receivedStdout(int,int&)", &signal_2, QMetaData::Public },
+	{ "receivedStderr(KProcess*,char*,int)", &signal_3, QMetaData::Public },
+	{ "wroteStdin(KProcess*)", &signal_4, QMetaData::Public }
+    };
+    metaObj = QMetaObject::new_metaobject(
+	"KProcess", parentObject,
+	slot_tbl, 3,
+	signal_tbl, 5,
+#ifndef QT_NO_PROPERTIES
+	0, 0,
+	0, 0,
+#endif // QT_NO_PROPERTIES
+	0, 0 );
+    cleanUp_KProcess.setMetaObject( metaObj );
+    return metaObj;
+}
+
+void* KProcess::qt_cast( const char* clname )
+{
+    if ( !qstrcmp( clname, "KProcess" ) )
+	return this;
+    return QObject::qt_cast( clname );
+}
+
+#include <qobjectdefs.h>
+#include <qsignalslotimp.h>
+
+// SIGNAL processExited
+void KProcess::processExited( KProcess* t0 )
+{
+    if ( signalsBlocked() )
+	return;
+    QConnectionList *clist = receivers( staticMetaObject()->signalOffset() + 0 );
+    if ( !clist )
+	return;
+    QUObject o[2];
+    static_QUType_ptr.set(o+1,t0);
+    activate_signal( clist, o );
+}
+
+// SIGNAL receivedStdout
+void KProcess::receivedStdout( KProcess* t0, char* t1, int t2 )
+{
+    if ( signalsBlocked() )
+	return;
+    QConnectionList *clist = receivers( staticMetaObject()->signalOffset() + 1 );
+    if ( !clist )
+	return;
+    QUObject o[4];
+    static_QUType_ptr.set(o+1,t0);
+    static_QUType_charstar.set(o+2,t1);
+    static_QUType_int.set(o+3,t2);
+    activate_signal( clist, o );
+}
+
+// SIGNAL receivedStdout
+void KProcess::receivedStdout( int t0, int& t1 )
+{
+    if ( signalsBlocked() )
+	return;
+    QConnectionList *clist = receivers( staticMetaObject()->signalOffset() + 2 );
+    if ( !clist )
+	return;
+    QUObject o[3];
+    static_QUType_int.set(o+1,t0);
+    static_QUType_int.set(o+2,t1);
+    activate_signal( clist, o );
+    t1 = static_QUType_int.get(o+2);
+}
+
+// SIGNAL receivedStderr
+void KProcess::receivedStderr( KProcess* t0, char* t1, int t2 )
+{
+    if ( signalsBlocked() )
+	return;
+    QConnectionList *clist = receivers( staticMetaObject()->signalOffset() + 3 );
+    if ( !clist )
+	return;
+    QUObject o[4];
+    static_QUType_ptr.set(o+1,t0);
+    static_QUType_charstar.set(o+2,t1);
+    static_QUType_int.set(o+3,t2);
+    activate_signal( clist, o );
+}
+
+// SIGNAL wroteStdin
+void KProcess::wroteStdin( KProcess* t0 )
+{
+    if ( signalsBlocked() )
+	return;
+    QConnectionList *clist = receivers( staticMetaObject()->signalOffset() + 4 );
+    if ( !clist )
+	return;
+    QUObject o[2];
+    static_QUType_ptr.set(o+1,t0);
+    activate_signal( clist, o );
+}
+
+bool KProcess::qt_invoke( int _id, QUObject* _o )
+{
+    switch ( _id - staticMetaObject()->slotOffset() ) {
+    case 0: slotChildOutput((int)static_QUType_int.get(_o+1)); break;
+    case 1: slotChildError((int)static_QUType_int.get(_o+1)); break;
+    case 2: slotSendData((int)static_QUType_int.get(_o+1)); break;
+    default:
+	return QObject::qt_invoke( _id, _o );
+    }
+    return TRUE;
+}
+
+bool KProcess::qt_emit( int _id, QUObject* _o )
+{
+    switch ( _id - staticMetaObject()->signalOffset() ) {
+    case 0: processExited((KProcess*)static_QUType_ptr.get(_o+1)); break;
+    case 1: receivedStdout((KProcess*)static_QUType_ptr.get(_o+1),(char*)static_QUType_charstar.get(_o+2),(int)static_QUType_int.get(_o+3)); break;
+    case 2: receivedStdout((int)static_QUType_int.get(_o+1),(int&)static_QUType_int.get(_o+2)); break;
+    case 3: receivedStderr((KProcess*)static_QUType_ptr.get(_o+1),(char*)static_QUType_charstar.get(_o+2),(int)static_QUType_int.get(_o+3)); break;
+    case 4: wroteStdin((KProcess*)static_QUType_ptr.get(_o+1)); break;
+    default:
+	return QObject::qt_emit(_id,_o);
+    }
+    return TRUE;
+}
+#ifndef QT_NO_PROPERTIES
+
+bool KProcess::qt_property( int id, int f, QVariant* v)
+{
+    return QObject::qt_property( id, f, v);
+}
+
+bool KProcess::qt_static_property( QObject* , int , int , QVariant* ){ return FALSE; }
+#endif // QT_NO_PROPERTIES
+
+
+const char *KShellProcess::className() const
+{
+    return "KShellProcess";
+}
+
+QMetaObject *KShellProcess::metaObj = 0;
+static QMetaObjectCleanUp cleanUp_KShellProcess( "KShellProcess", &KShellProcess::staticMetaObject );
+
+#ifndef QT_NO_TRANSLATION
+QString KShellProcess::tr( const char *s, const char *c )
+{
+    if ( qApp )
+	return qApp->translate( "KShellProcess", s, c, QApplication::DefaultCodec );
+    else
+	return QString::fromLatin1( s );
+}
+#ifndef QT_NO_TRANSLATION_UTF8
+QString KShellProcess::trUtf8( const char *s, const char *c )
+{
+    if ( qApp )
+	return qApp->translate( "KShellProcess", s, c, QApplication::UnicodeUTF8 );
+    else
+	return QString::fromUtf8( s );
+}
+#endif // QT_NO_TRANSLATION_UTF8
+
+#endif // QT_NO_TRANSLATION
+
+QMetaObject* KShellProcess::staticMetaObject()
+{
+    if ( metaObj )
+	return metaObj;
+    QMetaObject* parentObject = KProcess::staticMetaObject();
+    metaObj = QMetaObject::new_metaobject(
+	"KShellProcess", parentObject,
+	0, 0,
+	0, 0,
+#ifndef QT_NO_PROPERTIES
+	0, 0,
+	0, 0,
+#endif // QT_NO_PROPERTIES
+	0, 0 );
+    cleanUp_KShellProcess.setMetaObject( metaObj );
+    return metaObj;
+}
+
+void* KShellProcess::qt_cast( const char* clname )
+{
+    if ( !qstrcmp( clname, "KShellProcess" ) )
+	return this;
+    return KProcess::qt_cast( clname );
+}
+
+bool KShellProcess::qt_invoke( int _id, QUObject* _o )
+{
+    return KProcess::qt_invoke(_id,_o);
+}
+
+bool KShellProcess::qt_emit( int _id, QUObject* _o )
+{
+    return KProcess::qt_emit(_id,_o);
+}
+#ifndef QT_NO_PROPERTIES
+
+bool KShellProcess::qt_property( int id, int f, QVariant* v)
+{
+    return KProcess::qt_property( id, f, v);
+}
+
+bool KShellProcess::qt_static_property( QObject* , int , int , QVariant* ){ return FALSE; }
+#endif // QT_NO_PROPERTIES
