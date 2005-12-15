@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.9 2005-12-14 19:02:28 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.10 2005-12-15 09:58:41 alf Exp $'
 
 import qt
 
@@ -723,6 +723,16 @@ class Widget(qt.QFrame):
                     len += 1
                 if (x+len < self.columns) and (not self.image[self._loc(x+len,y)].c):
                     len += 1 # Adjust for trailing part of multi-column char
+                print "disstrU", disstrU
+                # XXX this is duplicated from line ~377
+                # XXX FIXME : the join below crashes because sometimes
+                # there are chars in the list and simetimes there are
+                # ints. The loop here is an ugly hack.  The root of
+                # the problem is that in C you can handle chars like
+                # integers, and this is not possible in Python
+                for i,c in enumerate(disstrU):
+                    if type(c) == int:
+                        disstrU[i] = chr(c)
                 unistr = qt.QString(''.join(disstrU))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*len,self.font_h),
