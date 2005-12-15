@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.9 2005-12-14 19:02:28 alf Exp $'
+__revision__ = '$Id: pty_.py,v 1.10 2005-12-15 10:14:03 alf Exp $'
 
 import os
 import sys
@@ -119,9 +119,7 @@ class PtyProcess(Process):
     """
 
     def __init__(self):
-        print "Q"*10
         super(PtyProcess, self).__init__()
-        print "z"*10
         self.wsize = (0, 0)
         self.addutmp = False
         self.term = None
@@ -217,8 +215,6 @@ class PtyProcess(Process):
         
     def openPty(self):
         """"""
-        print "*"*80
-        print "openPty"
         self.master_fd, self.slave_fd = openpty()
         print os.ttyname(self.master_fd)
         print os.ttyname(self.slave_fd)

@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.10 2005-12-15 09:58:41 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.11 2005-12-15 10:14:03 alf Exp $'
 
 import qt
 
@@ -373,7 +373,6 @@ class Widget(qt.QFrame):
                         cal == self.image[y*self.columns + x + len]):#lcl[x+len]):
                         break
                     disstrU.append(c)
-                print "disstrU", disstrU
                 # XXX FIXME : the join below crashes because sometimes
                 # there are chars in the list and simetimes there are
                 # ints. The loop here is an ugly hack.  The root of
@@ -723,7 +722,6 @@ class Widget(qt.QFrame):
                     len += 1
                 if (x+len < self.columns) and (not self.image[self._loc(x+len,y)].c):
                     len += 1 # Adjust for trailing part of multi-column char
-                print "disstrU", disstrU
                 # XXX this is duplicated from line ~377
                 # XXX FIXME : the join below crashes because sometimes
                 # there are chars in the list and simetimes there are
