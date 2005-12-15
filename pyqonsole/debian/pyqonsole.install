@@ -1,0 +1,3 @@
+_helpers.so usr/lib/python2.4/site-packages/pyqonsole
+*.py usr/lib/python2.4/site-packages/pyqonsole
+test/* usr/share/doc/pyqonsole/test
