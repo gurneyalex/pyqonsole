@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.11 2005-12-15 10:14:03 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.12 2005-12-15 18:51:51 syt Exp $'
 
 import qt
 
@@ -343,12 +343,13 @@ class Widget(qt.QFrame):
         lins = min(self.lines,  max(0, lines  ))
         cols = min(self.columns,max(0, columns))
         disstrU = [] # qt.QChar[cols]
+        print 'setimage', lins, cols, self.lines, self.columns, len(self.image), len(newimg)
         for y in xrange(lins):
             lcl = self.image[y*self.columns]
             ext = newimg[y*columns]
             if self.resizing: # not while resizing, we're expecting a paintEvent
                 break
-            for x in range(cols):
+            for x in xrange(cols):
                 ca = newimg[y*columns + x]
                 self.has_blinker |= ca.r & RE_BLINK
                 if ca == self.image[y*self.columns+x]:#lcl[x]:
@@ -363,14 +364,15 @@ class Widget(qt.QFrame):
                 if ca.f != cf:
                     cf = ca.f
                 lln = cols - x
-                for len in xrange(1, lln):
-                    cal = newimg[y*columns + x + len]
+                xlen = 1
+                for xlen in xrange(1, lln):
+                    cal = newimg[y*columns + x + xlen]
                     c = cal.c
                     if not c:
                         continue # Skip trailing part of multi-col chars.
 
                     if (cal.f != cf or cal.b != cb or cal.r != cr or
-                        cal == self.image[y*self.columns + x + len]):#lcl[x+len]):
+                        cal == self.image[y*self.columns + x + xlen]):#lcl[x+xlen]):
                         break
                     disstrU.append(c)
                 # XXX FIXME : the join below crashes because sometimes
@@ -378,18 +380,18 @@ class Widget(qt.QFrame):
                 # ints. The loop here is an ugly hack.  The root of
                 # the problem is that in C you can handle chars like
                 # integers, and this is not possible in Python
-                for i,c in enumerate(disstrU):
+                for i, c in enumerate(disstrU):
                     if type(c) == int:
                         disstrU[i] = chr(c)
                     
                 unistr = qt.QString(''.join(disstrU))
                 self.drawAttrStr(paint,
-                                 qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*len,self.font_h),
+                                 qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*xlen,self.font_h),
                                  unistr, ca, pm != None, True)
-                x += len - 1
+                x += xlen - 1
             # XXX finally, make `image' become `newimg'.
             #memcpy(lcl, ext, cols*sizeof(ca))
-            self.image = newimg
+        self.image = newimg
         self.drawFrame(paint)
         paint.end()
         self.setUpdatesEnabled(True)
@@ -691,37 +693,41 @@ class Widget(qt.QFrame):
         tL  = self.contentsRect().topLeft()
         tLx = tL.x()
         tLy = tL.y()
-        lux = min(self.columns-1, max(0,(rect.left()   - tLx - self.bX ) / self.font_w))
-        luy = min(self.lines-1,   max(0,(rect.top()    - tLy - self.bY  ) / self.font_h))
-        rlx = min(self.columns-1, max(0,(rect.right()  - tLx - self.bX ) / self.font_w))
-        rly = min(self.lines-1,   max(0,(rect.bottom() - tLy - self.bY  ) / self.font_h))
+        lux = min(self.columns-1, max(0, (rect.left()   - tLx - self.bX) / self.font_w))
+        luy = min(self.lines-1,   max(0, (rect.top()    - tLy - self.bY) / self.font_h))
+        rlx = min(self.columns-1, max(0, (rect.right()  - tLx - self.bX) / self.font_w))
+        rly = min(self.lines-1,   max(0, (rect.bottom() - tLy - self.bY) / self.font_h))
         #  if (pm != NULL and self.color_table[image.b].transparent)
         #  self.erase(rect)
-        # BL: I have no idea why we need self, and it breaks the refresh.
+        # BL: I have no idea why we need this, and it breaks the refresh.
         disstrU = []
+        print 'paintEvent', lux, rlx, luy, rly, self.lines, self.columns, len(self.image)
+        assert rlx < self.columns, str((rlx, self.columns))
+        assert rly < self.lines, str((rly, self.lines))
         for y in xrange(luy, rly):
             c = self.image[self._loc(lux,y)].c
             x = lux
             if not c and x:
                 x -= 1 # Search for start of multi-col char
             while x <= rlx:
-                len = 1
+                xlen = 1
                 c = self.image[self._loc(x,y)].c
                 if c:
                     disstrU.append(c)
                 cf = self.image[self._loc(x,y)].f
                 cb = self.image[self._loc(x,y)].b
                 cr = self.image[self._loc(x,y)].r
-                while (x+len <= rlx and
-                       self.image[self._loc(x+len,y)].f == cf and
-                       self.image[self._loc(x+len,y)].b == cb and
-                       self.image[self._loc(x+len,y)].r == cr ):
-                    c = self.image[self._loc(x+len,y)].c
+                print y, x, xlen, self._loc(x+xlen,y), len(self.image)
+                while (x+xlen <= rlx and
+                       self.image[self._loc(x+xlen,y)].f == cf and
+                       self.image[self._loc(x+xlen,y)].b == cb and
+                       self.image[self._loc(x+xlen,y)].r == cr ):
+                    c = self.image[self._loc(x+xlen,y)].c
                     if c:
                         disstrU.append(c)
-                    len += 1
-                if (x+len < self.columns) and (not self.image[self._loc(x+len,y)].c):
-                    len += 1 # Adjust for trailing part of multi-column char
+                    xlen += 1
+                if (x+xlen < self.columns) and (not self.image[self._loc(x+xlen,y)].c):
+                    xlen += 1 # Adjust for trailing part of multi-column char
                 # XXX this is duplicated from line ~377
                 # XXX FIXME : the join below crashes because sometimes
                 # there are chars in the list and simetimes there are
@@ -733,9 +739,9 @@ class Widget(qt.QFrame):
                         disstrU[i] = chr(c)
                 unistr = qt.QString(''.join(disstrU))
                 self.drawAttrStr(paint,
-                                 qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*len,self.font_h),
+                                 qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*xlen,self.font_h),
                                  unistr, self.image[self._loc(x,y)], pm != None, False)
-                x += len - 1
+                x += xlen - 1
                 x += 1
         self.drawFrame(paint)
         paint.end()

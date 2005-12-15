@@ -28,12 +28,12 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: screen.py,v 1.7 2005-12-15 15:55:43 alf Exp $"
+__revision__ = "$Id: screen.py,v 1.8 2005-12-15 18:51:50 syt Exp $"
 
 import ca
 from ca import Ca
 from helpers import wcWidth
-from history import HistoryScrollNone
+from history import HistoryScrollBuffer
 
 MODE_Origin  = 0
 MODE_Wrap    = 1
@@ -47,24 +47,29 @@ BS_CLEARS = False
 
 REVERSE_WRAPPED_LINES = True # For debug wrapped lines
 
-
     
 
 class Screen:
-    """ Screen class.
     """
+    the screen is a list of lists (columns * lines), i.e. get column 4
+    of line 2 with _image[3][1] (index start at 0...)
+    
+    coordonate are stored as 2d point (y, x)
+    """
+    
     def loc(self, x, y):
         return y*self.columns+x
+
     
     def __init__(self, l=1, c=1):
         # Screen image
         self.lines = l
         self.columns = c
-        self._image = [Ca() for j in xrange(c) for i in xrange(l+1)]
+        self._image = [[Ca() for j in xrange(c)] for i in xrange(l+1)]
         self.__lineWrapped = [False for i in xrange(l+1)]
         # History buffer
-        self.__histCursor = 0
-        self.__hist = HistoryScrollNone()
+        self._histCursor = 0
+        self._hist = HistoryScrollBuffer(1000)
         # Cursor location
         self.__cuX = 0
         self.__cuY = 0
@@ -79,14 +84,12 @@ class Screen:
         self.__currParm = {'mode': [None, None, None, None, None, None]}
         self.__tabStops = None
         # Selection
-        self._sel_begin = 0    # First location selected
-        self._sel_topleft = 0       # Top-left location
-        self._sel_bottomright = 0       # Bottom-right location
+        self.clearSelection()
         self.__selBusy = False # Busy making a selection
         # Effective color and rendition
-        self.__efFg = 0
-        self.__efBg = 0
-        self.__efRe = 0
+        self._eff_fg = 0
+        self._eff_bg = 0
+        self._eff_re = 0
         # Save cursor location
         self.__saCuX = 0
         self.__saCuY = 0
@@ -98,7 +101,6 @@ class Screen:
         self.__saveParm = {'mode': [None, None, None, None, None, None]}
         #
         self.__initTabStops()
-        self.clearSelection()
         self.reset()
 
     # Screen operations
@@ -212,6 +214,7 @@ class Screen:
         """
         if self.__cuY == self.__bMargin:
             if self.__tMargin == 0 and self.__bMargin == self.lines-1:
+                print 'add history line'
                 self._addHistoryLine()
             self.__scrollUp(self.__tMargin, 1)
         elif self.__cuY < self.lines:
@@ -241,7 +244,7 @@ class Screen:
         """
         self.__cuX = max(0, self.__cuX-1)
         if (BS_CLEARS):
-            self._image[self.loc(self.__cuX, self.__cuY)].c = ord(' ')
+            self._image[self.__cuY][self.__cuX].c = ord(' ')
         
     def clear(self):
         """ Clear the entire screen and home the cursor.
@@ -277,22 +280,22 @@ class Screen:
         if n == 0:
             n = 1
         p = max(0, min(self.__cuX+n-1, self.columns-1))
-        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(p, self.__cuY), ' ')
+        self._clearImage([self.__cuY, self.__cuX], [self.__cuY, p], ' ')
         
     def deleteChars(self, n):
         if n == 0:
             n = 1
         p = max(0, min(self.__cuX+n, self.columns-1))
-        self.__moveImage(self.loc(self.__cuX, self.__cuY), self.loc(p, self.__cuY), self.loc(self.columns-1, self.__cuY))
-        self.__clearImage(self.loc(self.columns-n, self.__cuY), self.loc(self.columns-1, self.__cuY), ' ')
+        self._moveImage([self.__cuY, self.__cuX], [self.__cuY, p], [self.__cuY, self.columns-1])
+        self._clearImage([self.__cuY, self.columns-n], [self.__cuY, self.columns-1], ' ')
         
     def insertChars(self, n):
         if n == 0:
             n = 1
         p = max(0, min(self.columns-1-n, self.columns-1))
         q = max(0, min(self.__cuX+n, self.columns-1))
-        self.__moveImage(self.loc(q, self.__cuY), self.loc(self.__cuX, self.__cuY), self.loc(p, self.__cuY))
-        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(q-1, self.__cuY), ' ')
+        self._moveImage([self.__cuY, q], [self.__cuY, self.__cuX], [self.__cuY, p])
+        self._clearImage([self.__cuY, self.__cuX], [self.__cuY, q-1], ' ')
         
     def deleteLines(self, n):
         if n == 0:
@@ -346,25 +349,25 @@ class Screen:
         self.__effectiveRendition()
         
     def clearEntireScreen(self):
-        self.__clearImage(self.loc(0, 0), self.loc(self.columns-1, self.lines-1), ' ')
+        self._clearImage([0, 0], [self.lines-1, self.columns-1], ' ')
         
     def clearToEndOfScreen(self):
-        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(self.columns-1, self.lines-1), ' ')
+        self._clearImage([self.__cuY, self.__cuX], [self.lines-1, self.columns-1], ' ')
         
     def clearToBeginOfScreen(self):
-        self.__clearImage(self.loc(0, 0), self.loc(self.__cuX, self.__cuY), ' ')
+        self._clearImage([0, 0], [self.__cuY, self.__cuX], ' ')
         
     def clearEntireLine(self):
-        self.__clearImage(self.loc(0, self.__cuY), self.loc(self.columns-1, self.__cuY), ' ')
+        self._clearImage([self.__cuY, 0], [self.__cuY, self.columns-1], ' ')
         
     def clearToEndOfLine(self):
-        self.__clearImage(self.loc(self.__cuX, self.__cuY), self.loc(self.columns-1, self.__cuY), ' ')
+        self._clearImage([self.__cuY, self.__cuX], [self.__cuY, self.columns-1], ' ')
         
     def clearToBeginOfLine(self):
-        self.__clearImage(self.loc(0, self.__cuY), self.loc(self.__cuX, self.__cuY), ' ')
+        self._clearImage([self.__cuY, 0], [self.__cuY, self.__cuX], ' ')
         
     def helpAlign(self):
-        self.__clearImage(self.loc(0, 0), self.loc(self.columns-1, self.lines-1), 'E')
+        self._clearImage([0, 0], [self.lines-1, self.columns-1], 'E')
         
     def setRendition(self, re):
         self.__cuRe = self.__cuRe | re
@@ -422,28 +425,34 @@ class Screen:
                 self.__cuX = self.columns-w
         if self.getMode(MODE_Insert):
             self.insertChars(w)
-        i = self.loc(self.__cuX, self.__cuY)
-        self.checkSelection(i, i)
-        self._image[i].c = c
-        self._image[i].f = self.__efFg
-        self._image[i].b = self.__efBg
-        self._image[i].r = self.__efRe
+        cpt = [self.__cuY, self.__cuX]
+        self.checkSelection(cpt, cpt)
+        line = self._image[self.__cuY]
+        ca = line[self.__cuX]
+        ca.c = c
+        ca.f = self._eff_fg
+        ca.b = self._eff_bg
+        ca.r = self._eff_re
         self.__cuX += w
         w -= 1
-        while (w):
-            i += 1
-            self._image[i].c = 0
-            self._image[i].f = self.__efFg
-            self._image[i].b = self.__efBg
-            self._image[i].r = self.__efRe
+        i = 1
+        while w:
+            ca = line[self.__cuX + i]
+            ca.c = 0
+            ca.f = self._eff_fg
+            ca.b = self._eff_bg
+            ca.r = self._eff_re
             w -= 1
+            i += 1
         
     def resizeImage(self, newLines, newColumns):
         if newLines == self.lines and newColumns == self.columns:
             return
+        print 'resizing'
         if self.__cuY > newLines+1:
             self.__bMargin = self.lines-1
             for i in xrange(self.__cuY-(newLines-1)):
+                print 'add history line'
                 self._addHistoryLine()
                 self.__scrollUp()
         
@@ -452,24 +461,12 @@ class Screen:
         newWrapped = [False for i in xrange(newLines+1)]
         self.clearSelection()
         
-        # Clear new image
-        for y in xrange(newLines):
-            for x in xrange(newColumns):
-                newImg[y*newColumns+x].c = ord(' ')
-                newImg[y*newColumns+x].f = ca.DEFAULT_FORE_COLOR
-                newImg[y*newColumns+x].b = ca.DEFAULT_BACK_COLOR
-                newImg[y*newColumns+x].r = ca.DEFAULT_RENDITION
-            newWrapped[y] = False
-        
         # Copy to new image
         cpLines = min(newLines, self.lines)
         cpColumns = min(newColumns, self.columns)
         for y in xrange(newLines):
             for x in xrange(newColumns):
-                newImg[y*newColumns+x].c = self._image[self.loc(x, y)].c
-                newImg[y*newColumns+x].f = self._image[self.loc(x, y)].f
-                newImg[y*newColumns+x].b = self._image[self.loc(x, y)].b
-                newImg[y*newColumns+x].r = self._image[self.loc(x, y)].r
+                newImg[y][x].copy(self._image[y][x])
             newWrapped[y] = self.__lineWrapped[y]
         
         self._image = newImg
@@ -485,122 +482,123 @@ class Screen:
         
     def getCookedImage(self):
         merged = self.lines*self.columns*[None]
-        dft = Ca()
-        
+        dft = Ca()        
         y = 0
-        while y < self.lines and y < (self.__hist.getLines()-self.__histCursor):
-            len_ = min(self.columns, self.__hist.getLineLen(y,self.__histCursor))
+        print 'cooked image', self.lines, self.columns
+        while y < self.lines and y < (self._hist.getLines()-self._histCursor):
+            len_ = min(self.columns, self._hist.getLineLen(y,self._histCursor))
             yp = y*self.columns
-            yq = (y+self.__histCursor)*self.columns
-            #self.__hist.getCells(y+self.__histCursor, 0, len_, merged, yp)
-            try:
-                merged[yp:yp+len_] = self.__hist.getCells(y+self.__histCursor, 0, len_)
-            except TypeError:
-                pass
+            yq = (y+self._histCursor)#*self.columns
+            #self._hist.getCells(y+self._histCursor, 0, len_, merged, yp)
+            #try:
+            merged[yp:yp+len_] = self._hist.getCells(y+self._histCursor, 0, len_)
+            #except TypeError:
+            #    pass
             for x in xrange(len_, self.columns):
                 merged[yp+x] = dft
             for x in xrange(self.columns):
-                p = x+yp
-                q = x+yq
+                p = [y, x]
+                q = [yq, x]
                 if REVERSE_WRAPPED_LINES: # Debug mode
-                    if self.__hist.isWrappedLine(y+self.__histCursor):
-                        self.__reverseRendition(merged, p)
+                    if self._hist.isWrappedLine(y+self._histCursor):
+                        self.__reverseRendition(merged[y][x])
                 if q >= self._sel_topleft and q <= self._sel_bottomright:
-                    self.__reverseRendition(merged, p)
-                    
-        if self.lines >= (self.__hist.getLines()-self.__histCursor):
-            for y in xrange(self.__hist.getLines(), self.lines):
-                yp = y*self.columns
-                yq = (y+self.__histCursor)*self.columns
-                yr = (y-self.__hist.getLines()+self.__histCursor)*self.columns
+                    self.__reverseRendition(merged[y][x])
+            y += 1
+            
+        if self.lines >= (self._hist.getLines()-self._histCursor):
+            for y in xrange(self._hist.getLines(), self.lines):
+                yq = (y+self._histCursor)#*self.columns
+                yr = (y-self._hist.getLines()+self._histCursor)#*self.columns
                 for x in xrange(self.columns):
-                    p = x+yp
-                    q = x+yq
-                    r = x+yr
-                    merged[p] = self._image[r]
+                    p = [y, x]
+                    q = [yq, x]
+                    merged[y*self.columns+x] = self._image[yr][x]
                     if REVERSE_WRAPPED_LINES: # Debug mode
-                        if self.__lineWrapped[y+-self.__hist.getLines()+self.__histCursor]:
-                            self.__reverseRendition(merged, p)
+                        if self.__lineWrapped[y+-self._hist.getLines()+self._histCursor]:
+                            self.__reverseRendition(merged[y][x])
         
         if self.getMode(MODE_Screen):
-            for i in xrange(self.lines*self.columns):
-                self.__reverseRendition(merged, i)
+            for y in xrange(self.lines):
+                for x in xrange(self.columns):
+                    self.__reverseRendition(merged[y][x])
         
-        loc_ = self.loc(self.__cuX, self.__cuY+self.__hist.getLines()-self.__histCursor)
+        loc_ = self.loc(self.__cuX, self.__cuY+self._hist.getLines()-self._histCursor)
         if self.getMode(MODE_Cursor) and loc_ < self.columns*self.lines:
             merged[loc_].r = merged[loc_].r | ca.RE_CURSOR
-        print merged
+        #print merged
         return merged
     
     def getCookedLineWrapped(self):
         result = [False for i in xrange(self.lines)]
         
         y = 0
-        while y < self.lines and y < (self.__hist.getLines()-self.__histCursor):
-            result[y] = self.__hist.isWrappedLine(y+self.__histCursor)
-        if self.lines >= (self.__hist.getLines()-self.__histCursor):
+        while y < self.lines and y < (self._hist.getLines()-self._histCursor):
+            result[y] = self._hist.isWrappedLine(y+self._histCursor)
+        if self.lines >= (self._hist.getLines()-self._histCursor):
             
-            for y in xrange(self.__hist.getLines()-self.__histCursor, self.lines):
-                result[y] = self.__lineWrapped[y-self.__hist.getLines()+self.__histCursor]
+            for y in xrange(self._hist.getLines()-self._histCursor, self.lines):
+                result[y] = self.__lineWrapped[y-self._hist.getLines()+self._histCursor]
                 
         return result
     
     def setHistCursor(self, cursor):
-        self.__histCursor = cursor
+        self._histCursor = cursor
         
     def getHistCursor(self):
-        return self.__histCursor
+        return self._histCursor
     
     def getHistLines(self):
-        return self.__hist.getLines()
+        return self._hist.getLines()
     
     def setScroll(self, t):
         self.clearSelection()
-        self.__hist = t.getScroll(self.__hist)
-        self.__histCursor = self.__hist.getLines()
+        self._hist = t.getScroll(self._hist)
+        self._histCursor = self._hist.getLines()
         
     def getScroll(self):
-        return self.__hist.getType()
+        return self._hist.getType()
     
     def hasScroll(self):
-        return self.__hist.hasScroll()
+        return self._hist.hasScroll()
     
     def setSelBeginXY(self, x, y):
-        self._sel_begin = self.loc(x, y+self.__histCursor)
+        self._sel_begin = [y+self._histCursor, x]
         if x == self.columns:
-            self._sel_begin -= 1
+            self._incPoint(self._sel_begin, -1)
         self._sel_bottomright = self._sel_begin
         self._sel_topleft = self._sel_begin
         
     def setSelExtentXY(self, x, y):
-        if self._sel_begin == -1:
+        if self._sel_begin == [-1, -1]:
             return
-        l = self.loc(x, y+self.__histCursor)
+        l = (y+self._histCursor, x)
         if l < self._sel_begin:
             self._sel_topleft = l
             self._sel_bottomright = self._sel_begin
         else:
             if x == self.columns:
-                l -= 1
+                self._incPoint(l, -1)
             self._sel_topleft = self._sel_begin
             self._sel_bottomright = l
             
     def testIsSelected(self, x, y):
-        pos = self.loc(x, y+self.__histCursor)
-        return (pos >= self._sel_topleft and pos <= self._sel_bottomright)
+        pos = [y+self._histCursor, x]
+        return pos >= self._sel_topleft and pos <= self._sel_bottomright
     
     def clearSelection(self):
-        self._sel_bottomright = -1
-        self._sel_topleft = -1
-        self._sel_begin = -1
+        self._sel_begin = [-1, -1]      # First location selected
+        self._sel_topleft = [-1, -1]    # Top-left location
+        self._sel_bottomright = [-1, -1]# Bottom-right location
         
     def setBusySelecting(self, busy):
         self.__selBusy = busy
         
     def getSelText(self, preserveLineBreak):
-        if self._sel_begin == -1:
+        if self._sel_begin == [-1, -1]:
             return
-        histBR = self.loc(0, self.__hist.getLines())
+        return # XXXXXXX
+        histBR = self.loc(0, self._hist.getLines())
         hY = self._sel_topleft / self.columns
         hX = self._sel_topleft % self.columns
         s = self._sel_topleft
@@ -610,11 +608,11 @@ class Screen:
         
         while s <= self._sel_bottomright:
             if s < histBR:
-                eol = self.__hist.getLineLen(hY)
+                eol = self._hist.getLineLen(hY)
                 if hY == (self._sel_bottomright / self.columns) and eol > (self._sel_bottomright % self.columns):
                     eol = self._sel_bottomright % self.columns + 1
                 while hX < eol:
-                    c = self.__hist.getCell(hY, hX).c
+                    c = self._hist.getCell(hY, hX).c
                     hX += 1
                     if c:
                         m[d] = c
@@ -629,14 +627,14 @@ class Screen:
                                 m[d] = ' '
                             d += 1
                         else:
-                            if not self.__hist.isWrappedLine(hY):
+                            if not self._hist.isWrappedLine(hY):
                                 if preserveLineBreak:
                                     m[d] = '\n'
                                 else:
                                     m[d] = ' '
                                 d += 1
                     elif (eol + 1) % self.columns == 0:
-                        if not self.__hist.isWrappedLine(hY):
+                        if not self._hist.isWrappedLine(hY):
                             if preserveLineBreak:
                                 m[d] = '\n'
                             else:
@@ -656,7 +654,7 @@ class Screen:
                 addNewLine = False
                 if eol < self._sel_bottomright:
                     while eol > s and \
-                    (not self._image[eol-histBR].c or self._image[eol-histBR].c in (' ', '\t', '\f', '\n', '\r')) \
+                    (not self._image[eol-histBR].c or self._image[eol-histBR].isSpace()) \
                     and not self.__lineWrapped[(eol-histBR)/self.columns]:
                         eol -= 1
                 elif eol == self._sel_bottomright:
@@ -674,7 +672,7 @@ class Screen:
                         
                 if eol < self._sel_bottomright:
                     if (eol + 1) % self.columns == 0:
-                        if not self.__hist.isWrappedLine((eol-histBR)/self.columns):
+                        if not self._hist.isWrappedLine((eol-histBR)/self.columns):
                             if preserveLineBreak:
                                 m[d] = '\n'
                             else:
@@ -710,74 +708,81 @@ class Screen:
         return qc[:j]
         
     def getHistory(self):
-        self._sel_begin = self._sel_bottomright = self._sel_topleft = 0
+        self._sel_begin, self._sel_bottomright, self._sel_topleft = [0, 0], [0, 0], [0, 0]
         self.setSelExtentXY(self.columns-1, self.lines-1)
         tmp = self.getSelText()
+        # duh ?
         while tmp[-2] == 10 and tmp[-1] == 10:
             tmp = tmp[:-1]
         return tmp
     
     def getHistoryLine(self, no):
-        self._sel_begin = self._sel_topleft = self.loc(0, no)
-        self._sel_bottomright = self.loc(self.columns-1, no)
+        self._sel_begin = self._sel_topleft = [no, 0]
+        self._sel_bottomright = [no, self.columns-1]
         return self.getSelText(False)
     
     def checkSelection(self, from_, to):
-        if self._sel_begin == -1:
+        if self._sel_begin == [-1, -1]:
             return
-        scrTL = self.loc(0, self.__hist.getLines())
-        
-        # Clear entire selection if overlaps region [from_, to]
-        if self._sel_bottomright > (from_+scrTL) and self._sel_topleft < (to+scrTL):
-            self.clearSelection()
-            
-    def __clearImage(self, loca, loce, c):
-        c = ord(c)
-        scrTL = self.loc(0, self.__hist.getLines())
-         
         # Clear entire selection if overlaps region to be moved
-        if self._sel_bottomright > (loca+scrTL) and self._sel_topleft < (loce+scrTL):
+        if self._overlapSelection(from_, to):
             self.clearSelection()
-        for i in xrange(loca, loce+1):
-            self._image[i].c = c
-            self._image[i].f = self.__efFg
-            self._image[i].b = self.__efBg
-            self._image[i].r = ca.DEFAULT_RENDITION
-        for i in xrange(loca/self.columns, loce/self.columns+1):
-            self.__lineWrapped[i] = False
             
-    def __moveImage(self, dest, loca, loce):
+    def _clearImage(self, loca, loce, c):
+        c = ord(c)
+        # Clear entire selection if overlaps region to be moved
+        if self._overlapSelection(loca, loce):
+            self.clearSelection()
+        for y in xrange(loca[0], loce[0]+1):
+            for x in xrange(loca[1], loce[1]+1):
+                self._image[y][x].c = c
+                self._image[y][x].f = self._eff_fg
+                self._image[y][x].b = self._eff_bg
+                self._image[y][x].r = ca.DEFAULT_RENDITION
+            self.__lineWrapped[y] = False
+
+    def _overlapSelection(self, from_, to):
+        assert isinstance(from_, list), from_
+        assert isinstance(to, list), to
+        scr_topleft = [self._hist.getLines(), 0]
+        # Clear entire selection if overlaps region [from_, to]
+        if self._sel_bottomright > self._addPoints(from_, scr_topleft) and \
+               self._sel_topleft < self._addPoints(to, scr_topleft):
+            return True
+        return False
+    
+    def _moveImage(self, dest, loca, loce):
         if loce < loca:
             return
-        self._image[dest:dest+(loce-loca+1)] = self._image[loca:loca+(loce-loca+1)]
+        # XXX x coordonates are not considered
+        self._image[dest[0]:dest[0]+(loce[0]-loca[0]+1)] = self._image[loca[0]:loca[0]+(loce[0]-loca[0]+1)]
+        
         for i in xrange((loce-loca+1)/self.columns):
             self.__lineWrapped[dst/self.columns+i] = self.__lineWrapped[loca/self.columns+1]
-        if self._sel_begin == -1:
-            
+        if self._sel_begin == [-1, -1]:
             # Adjust selection to follow scroll
             beginIsSTL = (self._sel_begin == self._sel_topleft)
-            diff = dst - loca # Scroll by this amount
-            scrTL = self.loc(0, self.__hist.getLines())
-            srca = loca + scrTL # Translate index from screen to global
-            srce = loce + scrTL
-            desta = srca + diff
-            deste = srce + diff
+            diff = self._subPoints(dst, loca) # Scroll by this amount
+            scr_topleft = [self._hist.getLines(), 0]
+            srca = self._addPoints(loca, scr_topleft) # Translate index from screen to global
+            srce = self._addPoints(loce, scr_topleft)
+            desta = self._addPoints(srca, diff)
+            deste = self._addPoints(srce, diff)
             
             if self._sel_topleft >= srca and self._sel_topleft <= srce:
-                self._sel_topleft += diff
+                self._sel_topleft = self._addPoints(self._sel_topleft, diff)
             elif self._sel_topleft >= desta and self._sel_topleft <= deste:
-                self._sel_bottomright = -1 # Clear selection (see below)
+                self._sel_bottomright = [-1, -1] # Clear selection (see below)
                 
             if self._sel_bottomright >= srca and self._sel_bottomright <= srce:
-                self._sel_bottomright += diff
+                self._sel_bottomright = self._addPoints(self._sel_bottomright, diff)
             elif self._sel_bottomright >= desta and self._sel_bottomright <= deste:
-                self._sel_bottomright = -1 # Clear selection (see below)
+                self._sel_bottomright = [-1, -1] # Clear selection (see below)
             
-            if self._sel_bottomright < 0:
+            if self._sel_bottomright < [0, 0]:
                 self.clearSelection()
-            else:
-                if self._sel_topleft < 0:
-                    self._sel_topleft = 0
+            elif self._sel_topleft < [0, 0]:
+                    self._sel_topleft = [0, 0]
             
             if beginIsSTL:
                 self._sel_begin = self._sel_topleft
@@ -787,67 +792,64 @@ class Screen:
     def __scrollUp(self, from_, n):
         if n >= 0 or from_+n > self.__bMargin:
             return
-        self.__moveImage(self.loc(0, from_), self.loc(0, from_+n), self.loc(self.columns-1, self.__bMargin))
-        self.__clearImage(self.loc(0, self.__bMargin-n+1), self.loc(self.columns-1, self.__bMargin), ' ')
+        self._moveImage([from_, 0], [from_+n, 0], [self.__bMargin, self.columns-1])
+        self._clearImage([self.__bMargin-n+1, 0], [self.__bMargin, self.columns-1], ' ')
         
     def __scrollDown(self, from_, n):
         if n <= 0 or from_ > self.__bMargin:
             return
         if from_+n > self.__bMargin:
             n = self.__bMargin-from_
-        self.__moveImage(self.loc(0, from_+n), self.loc(0, from_), self.loc(self.columns-1, self.__bMargin-n))
-        self.__clearImage(self.loc(0, from_), self.loc(self.columns-1, from_+n-1), ' ')
+        self._moveImage([from_+n, 0], [from_, 0], [self.__bMargin-n, self.columns-1])
+        self._clearImage([from_, 0], [from_+n-1, self.columns-1], ' ')
         
     def _addHistoryLine(self):
-        assert(self.hasScroll() or self.__histCursor == 0)
+        assert(self.hasScroll() or self._histCursor == 0)
         
         # Add to history buffer
         # We have to take care about scrolling too...
         if self.hasScroll():
             dft = Ca()
             end = self.columns - 1
-            while end >= 0 and self._image[end] == dft and not self.__lineWrapped[0]:
+            while end >= 0 and self._image[0][end] == dft and not self.__lineWrapped[0]:
                 end -= 1
                 
-            oldHistLines = self.__hist.getLines()
-            self.__hist.addCells(self._image, self.__lineWrapped[0])
-            newHistLines = self.__hist.getLines()
+            oldHistLines = self._hist.getLines()
+            self._hist.addCells(self._image[0][:end+1], self.__lineWrapped[0])
+            newHistLines = self._hist.getLines()
             beginIsTL = (self._sel_begin == self._sel_topleft)
             
             # Adjust history cursor
             if newHistLines > oldHistLines:
-                self.__histCursor += 1
+                self._histCursor += 1
                 
                 # Adjust selection for the new point of reference
                 if self._sel_begin != -1:
-                    self._sel_topleft += self.columns
-                    self._sel_bottomright += self.columns
-                    
+                    self._incPoint(self._sel_topleft, self.columns)
+                    self._incPoint(self._sel_bottomright, self.columns)
             
             # Scroll up if user is looking at the history and we can scroll up
-            if self.__histCursor > 0 and self.__histCursor != newHistLines or self.__selBusy:
-                self.__histCursor -= 1
+            if self._histCursor > 0 and self._histCursor != newHistLines or self.__selBusy:
+                self._histCursor -= 1
                 
-            if self._sel_begin != -1:
-                
+            if self._sel_begin != [-1, -1]:
                 # Scroll selection in history up
-                topBR = self.loc(0, 1+newHistLines)
+                topBR = [1+newHistLines, 0]
                 if self._sel_topleft < topBR:
-                    self._sel_topleft -= self.columns
+                    self._incPoint(self._sel_topleft, -self.columns)
                 if self._sel_bottomright < topBR:
-                    self._sel_bottomright -= self.columns
+                    self._incPoint(self._sel_bottomright, -self.columns)
                 if self._sel_bottomright < 0:
                     self.clearSelection()
-                else:
-                    if self._sel_topleft < 0:
-                        self._sel_topleft = 0
+                elif self._sel_topleft < 0:
+                    self._sel_topleft = [0, 0]
                         
                 if beginIsTL:
                     self._sel_begin = self._sel_topleft
                 else:
                     self._sel_begin = self._sel_bottomright
         else:
-            self.__histCursor = 0 # A poor workaround
+            self._histCursor = 0 # A poor workaround
             
     def __initTabStops(self):
         self.__tabStops = self.columns*[False]
@@ -855,18 +857,44 @@ class Screen:
             self.__tabStops[i] = ((i % 8 == 0) and i != 0)
         
     def __effectiveRendition(self):
-        self.__efRe = self.__cuRe & (ca.RE_UNDERLINE | ca.RE_BLINK)
+        self._eff_re = self.__cuRe & (ca.RE_UNDERLINE | ca.RE_BLINK)
         if self.__cuRe & ca.RE_REVERSE:
-            self.__efFg = self.__cuBg
-            self.__efBg = self.__cuFg
+            self._eff_fg = self.__cuBg
+            self._eff_bg = self.__cuFg
         else:
-            self.__efFg = self.__cuFg
-            self.__efBg = self.__cuBg
+            self._eff_fg = self.__cuFg
+            self._eff_bg = self.__cuBg
         if self.__cuRe & ca.RE_BOLD:
-            if self.__efFg < ca.BASE_COLORS:
-                self.__efFg += ca.BASE_COLORS
+            if self._eff_fg < ca.BASE_COLORS:
+                self._eff_fg += ca.BASE_COLORS
             else:
-                self.__efFg -= ca.BASE_COLORS
+                self._eff_fg -= ca.BASE_COLORS
                 
     def __reverseRendition(self, p):
         p.f, p.b = p.b, p.f
+
+    # point manipulation ######################################################
+    
+    def _incPoint(self, point, inc=1):
+        x = point[1] + inc
+        if x < 0 or x >= self.columns:
+            dy, x = divmod(x, self.columns)
+            point[0] += dy
+        point[1] = x
+        
+    def _addPoints(self, point1, point2):
+        x = point1[1] + point2[1]
+        y = point1[0] + point2[0]
+        if x < 0 or x >= self.columns:
+            dy, x = divmod(x, self.columns)
+            y += dy
+        return [y, x]
+    
+    def _subPoints(self, point1, point2):
+        x = point1[1] - point2[1]
+        y = point1[0] - point2[0]
+        if x < 0 or x >= self.columns:
+            dy, x = divmod(x, self.columns)
+            y += dy
+        return [y, x]
+        
