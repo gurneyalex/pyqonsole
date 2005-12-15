@@ -28,7 +28,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: screen.py,v 1.6 2005-12-15 14:57:15 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.7 2005-12-15 15:55:43 alf Exp $"
 
 import ca
 from ca import Ca
@@ -863,7 +863,7 @@ class Screen:
             self.__efFg = self.__cuFg
             self.__efBg = self.__cuBg
         if self.__cuRe & ca.RE_BOLD:
-            if self.__efFB < ca.BASE_COLORS:
+            if self.__efFg < ca.BASE_COLORS:
                 self.__efFg += ca.BASE_COLORS
             else:
                 self.__efFg -= ca.BASE_COLORS
