@@ -41,14 +41,14 @@ def main(argv):
     te = Widget(appli)
     te.setMinimumSize(150, 70)
     te.setFocus()
-    te.resize(te.calcSize(80,25))
+    te.resize(te.calcSize(80, 25))
     te.setBackgroundMode(qt.Qt.PaletteBackground)
     # w.setSize(80,25);
     setFont(te, 4) # 15
     appli.setMainWidget(te)
     te.show()
     args = []
-    args.append("/usr/bin/ipython");
+    #args.append("/usr/bin/ipython");
     session = Session(te, "/usr/bin/python", args, "xterm");
     session.setConnect(True)
     session.setHistory(HistoryTypeBuffer(1000))

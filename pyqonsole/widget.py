@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.12 2005-12-15 18:51:51 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.13 2005-12-16 10:53:58 syt Exp $'
 
 import qt
 
@@ -144,14 +144,24 @@ VT100_GRAPHICS = [
     0x252c, 0x2502, 0x2264, 0x2265, 0x03C0, 0x2260, 0x00A3, 0x00b7,
 ]
 
-def identicalMap(c):
-    return c
+## def identicalMap(c):
+##     return c
 
+import sys
 
 
 class Widget(qt.QFrame):
     """a widget representing attributed text"""
-    
+
+    def _print_image(self):
+        """debug"""
+        print 'begin image ***********'
+        for y in xrange(self.lines):
+            for x in xrange(self.columns):
+                sys.stdout.write(chr(self.image[self._loc(x, y)].c))
+            sys.stdout.write('\n')
+        print 'end image ***********'
+                
     def _loc(self, x, y):
         return y * self.columns + x
     
@@ -340,25 +350,25 @@ class Widget(qt.QFrame):
         tLy = tL.y()
         self.has_blinker = False
         cf = cb = cr  = -1 # undefined
-        lins = min(self.lines,  max(0, lines  ))
+        lins = min(self.lines,  max(0, lines))
         cols = min(self.columns,max(0, columns))
-        disstrU = [] # qt.QChar[cols]
         print 'setimage', lins, cols, self.lines, self.columns, len(self.image), len(newimg)
         for y in xrange(lins):
-            lcl = self.image[y*self.columns]
-            ext = newimg[y*columns]
-            if self.resizing: # not while resizing, we're expecting a paintEvent
+            if self.resizing: # while resizing, we're expecting a paintEvent
+                print 'resizing!'
                 break
-            for x in xrange(cols):
+            x = 0
+            while x < cols:
                 ca = newimg[y*columns + x]
                 self.has_blinker |= ca.r & RE_BLINK
-                if ca == self.image[y*self.columns+x]:#lcl[x]:
+                if ca == self.image[self._loc(x, y)]:
+                    x += 1
                     continue
-                
                 c = ca.c
                 if not c:
+                    x += 1
                     continue
-                disstrU.append(c)
+                disstrU = [c]
                 cr = ca.r
                 cb = ca.b
                 if ca.f != cf:
@@ -370,27 +380,15 @@ class Widget(qt.QFrame):
                     c = cal.c
                     if not c:
                         continue # Skip trailing part of multi-col chars.
-
                     if (cal.f != cf or cal.b != cb or cal.r != cr or
-                        cal == self.image[y*self.columns + x + xlen]):#lcl[x+xlen]):
+                        cal == self.image[self._loc(x + xlen, y)]):
                         break
                     disstrU.append(c)
-                # XXX FIXME : the join below crashes because sometimes
-                # there are chars in the list and simetimes there are
-                # ints. The loop here is an ugly hack.  The root of
-                # the problem is that in C you can handle chars like
-                # integers, and this is not possible in Python
-                for i, c in enumerate(disstrU):
-                    if type(c) == int:
-                        disstrU[i] = chr(c)
-                    
-                unistr = qt.QString(''.join(disstrU))
+                unistr = qt.QString(''.join([chr(i) for i in disstrU]))
                 self.drawAttrStr(paint,
-                                 qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*xlen,self.font_h),
+                                 qt.QRect(self.bX+tLx+self.font_w*x, self.bY+tLy+self.font_h*y, self.font_w*xlen, self.font_h),
                                  unistr, ca, pm != None, True)
-                x += xlen - 1
-            # XXX finally, make `image' become `newimg'.
-            #memcpy(lcl, ext, cols*sizeof(ca))
+                x += xlen
         self.image = newimg
         self.drawFrame(paint)
         paint.end()
@@ -482,7 +480,9 @@ class Widget(qt.QFrame):
         self.resizing = False
 
     def calcSize(self, cols, lins):        
-        """calculate the needed size"""
+        """calculate the needed size for the widget to get a cols*lins
+        characters terminal
+        """
         frw = self.width() - self.contentsRect().width()
         frh = self.height() - self.contentsRect().height()
         if self.scroll_loc == SCRNONE:
@@ -700,24 +700,25 @@ class Widget(qt.QFrame):
         #  if (pm != NULL and self.color_table[image.b].transparent)
         #  self.erase(rect)
         # BL: I have no idea why we need this, and it breaks the refresh.
-        disstrU = []
         print 'paintEvent', lux, rlx, luy, rly, self.lines, self.columns, len(self.image)
+        #self._print_image()
         assert rlx < self.columns, str((rlx, self.columns))
         assert rly < self.lines, str((rly, self.lines))
-        for y in xrange(luy, rly):
-            c = self.image[self._loc(lux,y)].c
+        for y in xrange(luy, rly+1):
+            c = self.image[self._loc(lux, y)].c
             x = lux
             if not c and x:
                 x -= 1 # Search for start of multi-col char
             while x <= rlx:
-                xlen = 1
-                c = self.image[self._loc(x,y)].c
+                disstrU = []
+                ca = self.image[self._loc(x,y)]
+                c = ca.c
                 if c:
                     disstrU.append(c)
-                cf = self.image[self._loc(x,y)].f
-                cb = self.image[self._loc(x,y)].b
-                cr = self.image[self._loc(x,y)].r
-                print y, x, xlen, self._loc(x+xlen,y), len(self.image)
+                cf = ca.f
+                cb = ca.b
+                cr = ca.r
+                xlen = 1
                 while (x+xlen <= rlx and
                        self.image[self._loc(x+xlen,y)].f == cf and
                        self.image[self._loc(x+xlen,y)].b == cb and
@@ -728,21 +729,11 @@ class Widget(qt.QFrame):
                     xlen += 1
                 if (x+xlen < self.columns) and (not self.image[self._loc(x+xlen,y)].c):
                     xlen += 1 # Adjust for trailing part of multi-column char
-                # XXX this is duplicated from line ~377
-                # XXX FIXME : the join below crashes because sometimes
-                # there are chars in the list and simetimes there are
-                # ints. The loop here is an ugly hack.  The root of
-                # the problem is that in C you can handle chars like
-                # integers, and this is not possible in Python
-                for i,c in enumerate(disstrU):
-                    if type(c) == int:
-                        disstrU[i] = chr(c)
-                unistr = qt.QString(''.join(disstrU))
+                unistr = qt.QString(''.join([chr(i) for i in disstrU]))
                 self.drawAttrStr(paint,
-                                 qt.QRect(self.bX+tLx+self.font_w*x,self.bY+tLy+self.font_h*y,self.font_w*xlen,self.font_h),
-                                 unistr, self.image[self._loc(x,y)], pm != None, False)
-                x += xlen - 1
-                x += 1
+                                 qt.QRect(self.bX+tLx+self.font_w*x, self.bY+tLy+self.font_h*y, self.font_w*xlen, self.font_h),
+                                 unistr, ca, pm != None, False)
+                x += xlen
         self.drawFrame(paint)
         paint.end()
         self.setUpdatesEnabled(True)

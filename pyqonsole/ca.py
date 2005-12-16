@@ -13,7 +13,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: ca.py,v 1.6 2005-12-15 18:25:11 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.7 2005-12-16 10:53:57 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -32,8 +32,9 @@ RE_CURSOR = 2**4
 
 
 class Ca(object):
-    """ Ca class.
+    """a character with background / foreground colors and rendition attributes
     """
+    
     def __init__(self, c=ord(' '), f=DEFAULT_FORE_COLOR,
                  b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
         """ Init a Ca instance.
@@ -44,16 +45,14 @@ class Ca(object):
         self.r = r # rendition
         
     def __eq__(self, other):
-        """ Implements the '==' operator
-        """
-        return (self.c == other.c) and (self.f == other.f) and \
-               (self.b == other.b) and (self.r == other.r)
+        """ Implements the '==' operator"""
+        return (self.c == other.c and self.f == other.f and 
+                self.b == other.b and self.r == other.r)
     
     def __ne__(self, other):
-        """ Implements the '!=' operator
-        """
-        return (self.c != other.c) or (self.f != other.f) or \
-               (self.b != other.b) or (self.r != other.r)
+        """ Implements the '!=' operator"""
+        return (self.c != other.c or self.f != other.f or 
+                self.b != other.b or self.r != other.r)
 
     def __repr__(self):
         return '%r %s %s %r' % (self.c, self.f, self.b, self.r)
@@ -66,6 +65,9 @@ class Ca(object):
         self.f = ca.f
         self.b = ca.b
         self.r = ca.r
+        
+    def dump(self):
+        return Ca(self.c, self.f, self.b, self.r)
         
     # XXX for debugging
     def setC(self, c):

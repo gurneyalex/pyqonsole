@@ -77,7 +77,7 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.9 2005-12-14 19:02:28 alf Exp $'
+__revision__ = '$Id: process.py,v 1.10 2005-12-16 10:53:57 syt Exp $'
 
 
 import os
@@ -652,6 +652,7 @@ class Process(qt.QObject):
         self.pid = os.fork()
         print 'pid', self.pid
         if 0 == self.pid:
+            print self._arguments
             self._childStart(uid, gid, fd, self._arguments)            
         else:
             self._parentStart(fd)
@@ -771,35 +772,35 @@ class Process(qt.QObject):
         """
         self.d.wd = directory
 
-    def setExecutable(self, proc):
-        """The use of this function is now deprecated. -- Please use the
-        "operator<<" instead of "setExecutable".
-        Sets the executable to be started with this Process object.
-        Returns False if the process is currently running (in that
-        case the executable remains unchanged.)
-        """
-        if self.running: return False
-        if not proc: return False
-        self._arguments = [proc]
-        return True
+##     def setExecutable(self, proc):
+##         """The use of this function is now deprecated. -- Please use the
+##         "operator<<" instead of "setExecutable".
+##         Sets the executable to be started with this Process object.
+##         Returns False if the process is currently running (in that
+##         case the executable remains unchanged.)
+##         """
+##         if self.running: return False
+##         if not proc: return False
+##         self._arguments = [proc]
+##         return True
 
-    def __lshift__(self, arg):
-        """Sets the executable and the command line argument list for this process.
+##     def __lshift__(self, arg):
+##         """Sets the executable and the command line argument list for this process.
    
-        For example, doing an "ls -l /usr/local/bin" can be achieved by:
+##         For example, doing an "ls -l /usr/local/bin" can be achieved by:
         
-        Process p
-        ...
-        p << "ls" << "-l" << "/usr/local/bin"
-        """
-        self._arguments.append(arg)
-        return self
+##         Process p
+##         ...
+##         p << "ls" << "-l" << "/usr/local/bin"
+##         """
+##         self._arguments.append(arg)
+##         return self
 
-    def clearArguments(self):
-        """Clear a command line argument list that has been set by using
-        the "operator<<".
-        """
-        self._arguments = []
+##     def clearArguments(self):
+##         """Clear a command line argument list that has been set by using
+##         the "operator<<".
+##         """
+##         self._arguments = []
 
     def writeStdin(self, string):
         """Transmit data to the child process's stdin.

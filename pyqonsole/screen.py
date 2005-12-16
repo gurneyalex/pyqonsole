@@ -28,7 +28,7 @@ Based on the konsole code from Lars Doelle.
 @license: ??
 """
 
-__revision__ = "$Id: screen.py,v 1.8 2005-12-15 18:51:50 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.9 2005-12-16 10:53:58 syt Exp $"
 
 import ca
 from ca import Ca
@@ -413,7 +413,7 @@ class Screen:
         return self.__cuY
 
     def showCharacter(self, c):
-        print 'screen.showcharacter', c
+        #print 'screen.showcharacter', c
         w = wcWidth(c)
         if w <= 0:
             return
@@ -448,7 +448,7 @@ class Screen:
     def resizeImage(self, newLines, newColumns):
         if newLines == self.lines and newColumns == self.columns:
             return
-        print 'resizing'
+        print 'resizing', newLines, newColumns
         if self.__cuY > newLines+1:
             self.__bMargin = self.lines-1
             for i in xrange(self.__cuY-(newLines-1)):
@@ -513,7 +513,7 @@ class Screen:
                 for x in xrange(self.columns):
                     p = [y, x]
                     q = [yq, x]
-                    merged[y*self.columns+x] = self._image[yr][x]
+                    merged[y*self.columns+x] = self._image[yr][x].dump()
                     if REVERSE_WRAPPED_LINES: # Debug mode
                         if self.__lineWrapped[y+-self._hist.getLines()+self._histCursor]:
                             self.__reverseRendition(merged[y][x])
@@ -569,7 +569,7 @@ class Screen:
         self._sel_bottomright = self._sel_begin
         self._sel_topleft = self._sel_begin
         
-    def setSelExtentXY(self, x, y):
+    def setSelExtendXY(self, x, y):
         if self._sel_begin == [-1, -1]:
             return
         l = (y+self._histCursor, x)
@@ -709,7 +709,7 @@ class Screen:
         
     def getHistory(self):
         self._sel_begin, self._sel_bottomright, self._sel_topleft = [0, 0], [0, 0], [0, 0]
-        self.setSelExtentXY(self.columns-1, self.lines-1)
+        self.setSelExtendXY(self.columns-1, self.lines-1)
         tmp = self.getSelText()
         # duh ?
         while tmp[-2] == 10 and tmp[-1] == 10:

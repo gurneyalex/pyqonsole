@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.11 2005-12-15 15:18:51 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.12 2005-12-16 10:53:57 syt Exp $'
 
 import qt
 
@@ -109,8 +109,8 @@ class Emulation(qt.QObject):
         self.__findPos = -1
         
         self.connect(self.__bulkTimer, qt.SIGNAL("timeout()"), self.__showBulk)
-        self.connect(self._gui, qt.PYSIGNAL("changedImageSizedSignal(int, int)"), self.onImageSizeChange)
-        self.connect(self._gui, qt.PYSIGNAL("changedHistoryCursor(int)"), self.onHistoryCursorChange)
+        self.connect(self._gui, qt.PYSIGNAL("changedImageSizeSignal"), self.onImageSizeChange)
+        self.connect(self._gui, qt.PYSIGNAL("changedHistoryCursor"), self.onHistoryCursorChange)
         self.connect(self._gui, qt.PYSIGNAL("keyPressedSignal"), self.onKeyPress)
         self.connect(self._gui, qt.PYSIGNAL("beginSelectionSignal"), self.onSelectionBegin)
         self.connect(self._gui, qt.PYSIGNAL("extendSelectionSignal"), self.onSelectionExtend)
@@ -169,7 +169,8 @@ class Emulation(qt.QObject):
     def onRcvChar(self, c):
         """ Process application unicode input to terminal.
         
-        This is a trivial scanner.
+        This is a trivial scanner, see emuVt102 for the VT100 scanner actually
+        used.
         """
         c = c & 0xff
         if c == '\b':
@@ -215,7 +216,6 @@ class Emulation(qt.QObject):
             
     def onRcvBlock(self, block):
         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYACTIVITY,))
-        
         self.__bulkStart()
         self.__bulkInCnt += 1
         for c in block:
@@ -229,7 +229,7 @@ class Emulation(qt.QObject):
     def onSelectionBegin(self, x, y):
         if not self._connected:
             return
-        self._scr.setSelBegin(x, y)
+        self._scr.setSelBeginXY(x, y)
         self.__showBulk()
         
     def onSelectionExtend(self, x, y):
@@ -242,7 +242,7 @@ class Emulation(qt.QObject):
         if not self._connected:
             return
         t = self._scr.getSelText(preserveLineBreak)
-        if not t.isNull():
+        if t is not None:
             self._gui.setSelection(t)
             
     def isBusySelecting(self, busy):
@@ -350,6 +350,7 @@ class Emulation(qt.QObject):
         """
         if not self._connected:
             return
+        print 'PTY.onImageSizeChange', lines, columns
         self._screen[0].resizeImage(lines, columns)
         self._screen[1].resizeImage(lines, columns)
         self.__showBulk()

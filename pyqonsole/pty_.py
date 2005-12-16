@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.10 2005-12-15 10:14:03 alf Exp $'
+__revision__ = '$Id: pty_.py,v 1.11 2005-12-16 10:53:57 syt Exp $'
 
 import os
 import sys
@@ -148,7 +148,7 @@ class PtyProcess(Process):
         """only used internally. See `run' for interface"""
         tt = self.makePty() # slave_fd
         # reset signal handlers for child process
-        for i in range(1,signal.NSIG):
+        for i in range(1, signal.NSIG):
             try:
                 signal.signal(i, signal.SIG_DFL)
             except RuntimeError, exc:
@@ -169,7 +169,6 @@ class PtyProcess(Process):
         os.dup2(tt, sys.stdin.fileno())
         os.dup2(tt, sys.stdout.fileno())
         os.dup2(tt, sys.stderr.fileno())
-
         if tt > 2:
             os.close(tt)
 
@@ -206,6 +205,7 @@ class PtyProcess(Process):
         # propagate emulation
         if self.term:
             os.environ['TERM'] = term
+        #print 'PTY propage size', self.wsize
         ioctl(0, TIOCSWINSZ, pack('ii', *self.wsize))
 
         # finally, pass to the new program
@@ -270,9 +270,11 @@ class PtyProcess(Process):
                 
     def setSize(self, lines, columns):
         """Informs the client program about the actual size of the window."""
+        print 'PTY set size', lines, columns
         self.wsize = (lines, columns)
         if self.master_fd is None:
             return
+        print 'PTY propagate size'
         ioctl(self.master_fd, TIOCSWINSZ, pack('ii', lines, columns))
         
     def setupCommunication(self, comm):
@@ -283,7 +285,7 @@ class PtyProcess(Process):
         
     def _childSetupCommunication(self):
         """overriden from Process"""
-        pgm = self._arguments.pop(0)
+        pgm = self._arguments[0]
         self.startPgm(pgm, self._arguments, self.term)
         
     def sendBytes(self, string):
