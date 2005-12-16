@@ -49,7 +49,7 @@ def main(argv):
     te.show()
     args = []
     #args.append("/usr/bin/ipython");
-    session = Session(te, "/usr/bin/python", args, "xterm");
+    session = Session(te, "/bin/bash", args, "xterm");
     session.setConnect(True)
     session.setHistory(HistoryTypeBuffer(1000))
     session.run()

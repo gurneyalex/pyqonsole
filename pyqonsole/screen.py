@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.10 2005-12-16 13:09:40 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.11 2005-12-16 13:55:05 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -65,7 +65,7 @@ class Screen:
     coordonate are stored as 2d point (y, x)
     """
     
-    def loc(self, x, y):
+    def _loc(self, x, y):
         return y*self.columns+x
 
     
@@ -176,7 +176,7 @@ class Screen:
             dy = 0
         self.__cuY = max(0, min(self.lines-1, y+dy))
 
-    def setCursorXY(self, x, y):
+    def setCursorYX(self, y, x):
         self.setCursorX(x)
         self.setCursorY(y)
     
@@ -252,7 +252,8 @@ class Screen:
         """
         self.__cuX = max(0, self.__cuX-1)
         if (BS_CLEARS):
-            self._image[self.__cuY][self.__cuX].c = ord(' ')
+            oldca = self._image[self.__cuY][self.__cuX]
+            self._image[self.__cuY][self.__cuX] = Ca(ord(' '), oldca.f, oldca.b, oldca.r)
         
     def clear(self):
         """ Clear the entire screen and home the cursor.
@@ -501,9 +502,9 @@ class Screen:
                 q = [yq, x]
                 if REVERSE_WRAPPED_LINES: # Debug mode
                     if self._hist.isWrappedLine(y+self._histCursor):
-                        self.__reverseRendition(merged[y][x])
+                        self.__reverseRendition(merged[self._loc(x, y)])
                 if q >= self._sel_topleft and q <= self._sel_bottomright:
-                    self.__reverseRendition(merged[y][x])
+                    self.__reverseRendition(merged[self._loc(x, y)])
             y += 1
             
         if self.lines >= (self._hist.getLines()-self._histCursor):
@@ -516,16 +517,17 @@ class Screen:
                     merged[y*self.columns+x] = self._image[yr][x]#.dump()
                     if REVERSE_WRAPPED_LINES: # Debug mode
                         if self._lineWrapped[y+-self._hist.getLines()+self._histCursor]:
-                            self.__reverseRendition(merged[y][x])
+                            self.__reverseRendition(merged[self._loc(x, y)])
         
         if self.getMode(MODE_Screen):
             for y in xrange(self.lines):
                 for x in xrange(self.columns):
-                    self.__reverseRendition(merged[y][x])
+                    self.__reverseRendition(merged[self._loc(x, y)])
         
-        loc_ = self.loc(self.__cuX, self.__cuY+self._hist.getLines()-self._histCursor)
+        loc_ = self._loc(self.__cuX, self.__cuY+self._hist.getLines()-self._histCursor)
         if self.getMode(MODE_Cursor) and loc_ < self.columns*self.lines:
-            merged[loc_].r = merged[loc_].r | RE_CURSOR
+            mca = merged[loc_]
+            merged[loc_] = Ca(mca.c, mca.f, mca.b, mca.r | RE_CURSOR)
         #print merged
         return merged
     
@@ -598,7 +600,7 @@ class Screen:
         if self._sel_begin == [-1, -1]:
             return
         return # XXXXXXX
-        histBR = self.loc(0, self._hist.getLines())
+        histBR = self._loc(0, self._hist.getLines())
         hY = self._sel_topleft / self.columns
         hX = self._sel_topleft % self.columns
         s = self._sel_topleft
@@ -735,10 +737,7 @@ class Screen:
             self.clearSelection()
         for y in xrange(loca[0], loce[0]+1):
             for x in xrange(loca[1], loce[1]+1):
-                self._image[y][x].c = c
-                self._image[y][x].f = self._eff_fg
-                self._image[y][x].b = self._eff_bg
-                self._image[y][x].r = DEFAULT_RENDITION
+                self._image[y][x] = Ca(c, self._eff_fg, self._eff_bg, DEFAULT_RENDITION)
             self._lineWrapped[y] = False
 
     def _overlapSelection(self, from_, to):

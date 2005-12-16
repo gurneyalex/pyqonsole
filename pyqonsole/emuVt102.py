@@ -41,7 +41,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.8 2005-12-14 19:02:28 alf Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.9 2005-12-16 13:55:03 syt Exp $'
 
 import os
 import qt
@@ -911,7 +911,8 @@ class EmuVt102(Emulation):
             #        the ControlButton to be ignored. This hack seems to work for
             #        latin1 locales at least. Please anyone find a clean solution (malte)
             if ev.state() & qt.QEvent.ControlButton:
-                s.fill(ev.ascii(), 1)
+                print ev.ascii(), ev.key()
+                s.fill(chr(ev.ascii()), 1)
             self.emit(qt.PYSIGNAL("sndBlock"), (s.data(),))
 
     """VT100 Charsets

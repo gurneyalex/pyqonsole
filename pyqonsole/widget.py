@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.14 2005-12-16 13:09:41 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.15 2005-12-16 13:55:05 syt Exp $'
 
 import qt
 
@@ -352,10 +352,9 @@ class Widget(qt.QFrame):
         cf = cb = cr  = -1 # undefined
         lins = min(self.lines,  max(0, lines))
         cols = min(self.columns,max(0, columns))
-        print 'setimage', lins, cols, self.lines, self.columns, len(self.image), len(newimg)
+        #print 'setimage', lins, cols, self.lines, self.columns, len(self.image), len(newimg)
         for y in xrange(lins):
             if self.resizing: # while resizing, we're expecting a paintEvent
-                print 'resizing!'
                 break
             x = 0
             while x < cols:
@@ -501,7 +500,7 @@ class Widget(qt.QFrame):
     def setBellMode(self, mode):
         self.bell_mode = mode
     
-    def Bell(self):
+    def bell(self):
         if self.bell_mode == BELLSYSTEM:
             qt.QApplication.beep()
         if self.bell_mode==BELLVISUAL:
@@ -700,7 +699,7 @@ class Widget(qt.QFrame):
         #  if (pm != NULL and self.color_table[image.b].transparent)
         #  self.erase(rect)
         # BL: I have no idea why we need this, and it breaks the refresh.
-        print 'paintEvent', lux, rlx, luy, rly, self.lines, self.columns, len(self.image)
+        #print 'paintEvent', lux, rlx, luy, rly, self.lines, self.columns, len(self.image)
         #self._print_image()
         assert rlx < self.columns, str((rlx, self.columns))
         assert rly < self.lines, str((rly, self.lines))
