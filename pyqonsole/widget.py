@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.15 2005-12-16 13:55:05 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.16 2005-12-16 15:31:24 syt Exp $'
 
 import qt
 
@@ -671,12 +671,11 @@ class Widget(qt.QFrame):
             paint.setClipping(False)
 
     def paintEvent(self, pe):
-        """Display operation - paint Event
-
-        The difference of self routine vs. the `setImage' is,
-        that the drawing does not include a difference analysis
-        between the old and the new image. Instead, the internal
-        image is used and the painting bound by the PaintEvent box.
+        """
+        The difference of this routine vs. the `setImage' is, that the drawing
+        does not include a difference analysis between the old and the new
+        image. Instead, the internal image is used and the painting bound by the
+        PaintEvent box.
         """
         pm = self.paletteBackgroundPixmap()
         self.setUpdatesEnabled(False)

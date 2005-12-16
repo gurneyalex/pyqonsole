@@ -69,6 +69,10 @@ def main(argv):
     session.setConnect(True)
     session.setHistory(HistoryTypeBuffer(1000))
     session.run()
+    def quit(*args, **kwargs):
+        print 'quitting'
+        appli.quit()
+    appli.connect(session, qt.PYSIGNAL('done'), quit)
     appli.exec_loop()
 
 if __name__ == '__main__':

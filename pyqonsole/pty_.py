@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.12 2005-12-16 13:55:04 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.13 2005-12-16 15:31:23 syt Exp $'
 
 import os
 import sys
@@ -127,8 +127,8 @@ class PtyProcess(Process):
         self.openPty()
         self.pending_send_jobs = []
         self.pending_send_job_timer = None
-        self.connect(self, qt.PYSIGNAL('receivedStdout(int, list)'), self.dataReceived)
-        self.connect(self, qt.PYSIGNAL('processExited(Process*)'),  self.donePty)
+        self.connect(self, qt.PYSIGNAL('receivedStdout'), self.dataReceived)
+        self.connect(self, qt.PYSIGNAL('processExited'),  self.donePty)
         
     def run(self, pgm, args, term, addutmp):
         """start the client program
@@ -325,7 +325,13 @@ class PtyProcess(Process):
 
     def dataReceived(self, fd, lenlist):
         """qt slot: indicates that a block of data is received """
-        buf = os.read(fd, 4096)
+        try:
+            buf = os.read(fd, 4096)
+        except OSError:
+            #
+            import traceback
+            traceback.print_exc()
+            return
         lenlist[0] = len(buf)
         if not buf:
             return
@@ -333,7 +339,7 @@ class PtyProcess(Process):
         f.write(buf)
         f.close()
         #sys.stdout.write(buf)
-        self.emit(qt.PYSIGNAL('block_in(buffer)'), (buf,))
+        self.emit(qt.PYSIGNAL('block_in'), (buf,))
               
     def donePty(self):
         """qt slot"""
@@ -350,7 +356,8 @@ class PtyProcess(Process):
         #  }
         #endif
         #if (needGrantPty) chownpty(fd,False)
-        self.emit(qt.PYSIGNAL('done', (self.exitStatus(),)))
+        print 'emitting done'
+        self.emit(qt.PYSIGNAL('done'), (self.exitStatus(),))
 
 
 

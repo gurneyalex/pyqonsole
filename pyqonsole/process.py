@@ -70,14 +70,8 @@ XXX signals:
   */
   void receivedStderr(Process *proc, char *buffer, int buflen)
 
-  /**
-   * Emitted after all the data that has been
-   * specified by a prior call to @ref writeStdin() has actually been
-   * written to the child process.
-   **/
-  void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.11 2005-12-16 13:09:40 syt Exp $'
+__revision__ = '$Id: process.py,v 1.12 2005-12-16 15:31:23 syt Exp $'
 
 
 import os
@@ -205,9 +199,6 @@ class Process(qt.QObject):
     process or sending data to the child's stdin (For more information,
     have a look at the documentation of each function):
 
-    * bool @ref writeStdin(char  *buffer, int  buflen);
-    *  -- Transmit data to the child process's stdin.
-
     * bool @ref closeStdin();
     * -- Closes the child process's stdin (which causes it to see an  feof(stdin)).
     Returns False if you try to close stdin for a process that has been started
@@ -231,10 +222,6 @@ class Process(qt.QObject):
     *  -- Indicates that new data has arrived from either the
     child process's stdout or stderr.
 
-    *  void @ref wroteStdin(Process  *proc);
-    *  -- Indicates that all data that has been sent to the child process
-    by a prior call to @ref writeStdin() has actually been transmitted to the
-    client .
     """
 
     def __init__(self): 
@@ -407,12 +394,12 @@ class Process(qt.QObject):
         self.commClose()
         # also emit a signal if the process was run Blocking
         if RUN_DONTCARE != self.run_mode:
-            self.emit(qt.SIGNAL('processExited(Process*)'), (self,))
+            self.emit(qt.PYSIGNAL('processExited'), (self,))
 
     def childOutput(self, fdno):
         """Called by "slotChildOutput" this function copies data arriving from the
         child process's stdout to the respective buffer and emits the signal
-        "@ref receivedStderr".
+        "@ref receivedStdout".
         """
         if self.communication & COMM_NOREAD:
             len_ = -1
@@ -420,13 +407,13 @@ class Process(qt.QObject):
             # len_ at least, dataReceived does it in the c++
             # version. I emulate this by passing a list
             lenlist = [len_]
-            self.emit(qt.PYSIGNAL("receivedStdout(int, list)"), (fdno, lenlist))
+            self.emit(qt.PYSIGNAL("receivedStdout"), (fdno, lenlist))
             len_ = lenlist[0]
         else:
             buffer = os.read(fdno, 1024)
             len_ = len(buffer)
             if buffer:
-                self.emit(qt.PYSIGNAL("receivedStdout(Process*, char*, int)"),
+                self.emit(qt.PYSIGNAL("receivedStdout"),
                           (self, buffer, len_))
         return len_
 
@@ -438,81 +425,16 @@ class Process(qt.QObject):
         buffer = os.read(fdno, 1024)
         len_ = len(buffer)
         if buffer:
-            self.emit(qt.PYSIGNAL("receivedStderr(Process*, char*, int)"),
+            self.emit(qt.PYSIGNAL("receivedStderr"),
                       (self, buffer, len_))
         return len_
 
     # Functions for setting up the sockets for communication:
     #
-    # - setupCommunication is called from "start" before "fork"ing.
     # - parentSetupCommunication completes communication socket setup in the parent
-    # - childSetupCommunication completes communication setup in the child process
     # - commClose frees all allocated communication resources in the parent
     #   after the process has exited
     
-    def setupCommunication(self, comm):
-        """ This function is called from "Process::start" right before a "fork"
-        takes place. According to the "comm" parameter this function has to
-        initialize the "in", "out" and "err" data member of Process.
-
-        This function should return 0 if setting the needed communication channels
-        was successful.
-
-        The default implementation is to create UNIX STREAM sockets for the communication,
-        but you could overload this function and establish a TCP/IP communication for
-        network communication, for example.
-        """
-        if comm & COMM_STDIN:
-            self.in_ = [s.fileno() for s in socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)]
-        if comm & COMM_STDOUT:
-            self.out = [s.fileno() for s in socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)]
-        if comm & COMM_STDERR:
-            self.err = [s.fileno() for s in socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM, 0)]
-        self.communication = comm
-
-    def _childSetupCommunication(self):
-        """
-        Called right after a (successful) fork, but before an "exec" on the
-        child process' side. It usually just closes the unused communication
-        ends of "in", "out" and "err" (like the writing end of the "in"
-        communication channel).
-
-        see "man 7 socket" for explanation on SO_LINGER. Here it disabled so
-        that the "close" call returns immediately and the closing is done in
-        the background.
-        """
-        if self.communication & COMM_STDIN:
-            os.close(self.in_[1])
-        if self.communication & COMM_STDOUT:
-            os.close(self.out[0])
-        if self.communication & COMM_STDERR:
-            os.close(self.err[0])
-        # stdin
-        if self.communication & COMM_STDIN:
-            os.dup2(self.in_[0].fileno(), sys.stdin.fileno())
-        else:
-            null_fd = os.open( "/dev/null", os.O_RDONLY)
-            os.dup2(null_fd, sys.stdin.fileno())
-            os.close(null_fd)
-        # stdout
-        if self.communication & COMM_STDOUT:
-            os.dup2(self.out[1], sys.stdout.fileno())
-            self.out[1].setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-                                   struct.pack('ii', 0, 0))
-        else:
-            null_fd = os.open( "/dev/null", os.O_WRONLY)
-            os.dup2(null_fd, sys.stdout.fileno())
-            os.close(null_fd)
-        # stderr
-        if self.communication & COMM_STDERR:
-            os.dup2(self.err[1], sys.stderr.fileno())
-            self.err[1].setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-                                   struct.pack('ii', 0, 0))
-        else:
-            null_fd = os.open( "/dev/null", os.O_WRONLY)
-            os.dup2(null_fd, sys.stderr.fileno())
-            os.close(null_fd)
-
     def _parentSetupCommunication(self):
         """Called right after a (successful) fork on the parent side. This function
         will usually do some communications cleanup, like closing the reading end
@@ -534,18 +456,18 @@ class Process(qt.QObject):
             return
         if self.communication & COMM_STDIN:
             # fcntl(in_[1], F_SETFL, O_NONBLOCK))
-            self._innot = qt.QSocketNotifier(self.in_[1], qt.QSocketNotifier.Write)
+            self._innot = qt.QSocketNotifier(self.in_[1], qt.QSocketNotifier.Write, self)
             self._innot.setEnabled(False) # will be enabled when data has to be sent
             self.connect(self._innot, qt.SIGNAL('activated(int)'), self.slotSendData)
         if self.communication & COMM_STDOUT:
             # fcntl(out[0], F_SETFL, O_NONBLOCK))
-            self._outnot = qt.QSocketNotifier(self.out[0], qt.QSocketNotifier.Read)
+            self._outnot = qt.QSocketNotifier(self.out[0], qt.QSocketNotifier.Read, self)
             self.connect(self._outnot, qt.SIGNAL('activated(int)'), self.slotChildOutput)
             if self.communication & COMM_NOREAD:
                 self.suspend()
         if self.communication & COMM_STDERR:
             # fcntl(err[0], F_SETFL, O_NONBLOCK))
-            self._errnot = qt.QSocketNotifier(self.err[0], qt.QSocketNotifier.Read)
+            self._errnot = qt.QSocketNotifier(self.err[0], qt.QSocketNotifier.Read, self)
             self.connect(self._outnot, qt.SIGNAL('activated(int)'), self.slotChildError)
 
     def commClose(self):
@@ -587,21 +509,23 @@ class Process(qt.QObject):
                     rfds.append(self.out[0])
                 if b_err:
                     rfds.append(self.err[0])
-                rlist, wlist, xlist = select.select(rfds, [], [], p_timeout)
+                rlist, wlist, xlist = select.select(rfds, [], [], timeout)
                 if not rlist:
                     break
                 if b_out and self.out[0] in rlist:
                     ret = 1
                     while ret > 0:
                         ret = self.childOutput(self.out[0])
-                    if (ret == -1 and errno != EAGAIN) or ret == 0:
-                        b_out = False
+                    # XXX
+                    #if (ret == -1 and errno != EAGAIN) or ret == 0:
+                    #    b_out = False
                 if b_err and self.err[0] in rlist:
                     ret = 1
                     while ret > 0:
                         ret = self.childError(err[0])
-                    if (ret == -1 and errno != EAGAIN) or ret == 0:
-                        b_err = False
+                    # XXX
+                    #if (ret == -1 and errno != EAGAIN) or ret == 0:
+                    #    b_err = False
         if self.communication & COMM_STDIN:
             self.communication = self.communication & ~COMM_STDIN
             os.close(self.in_[1])
@@ -739,8 +663,7 @@ class Process(qt.QObject):
             # the exit and set the status
             while self.running: # XXX
                 procctrl.theProcessController.waitForProcessExit(10)
-            self.emit(qt.PYSIGNAL("processExited(Process*)"),
-                      (self,))
+            self.emit(qt.PYSIGNAL("processExited"), (self,))
         
     def kill(self, signo):
         """Stop the process (by sending it a signal).
@@ -761,82 +684,6 @@ class Process(qt.QObject):
         """
         if (self.communication & COMM_STDOUT) and self._outnot:
             self._outnot.setEnabled(True)
-
-    def setEnvironment(self, name, value):
-        self.d.env[name] = value
-        
-    def setWorkingDirectory(self, directory):
-        """Changes the current working directory (CWD) of the process to be
-        started. This function must be called before starting the process.
-        """
-        self.d.wd = directory
-
-##     def setExecutable(self, proc):
-##         """The use of this function is now deprecated. -- Please use the
-##         "operator<<" instead of "setExecutable".
-##         Sets the executable to be started with this Process object.
-##         Returns False if the process is currently running (in that
-##         case the executable remains unchanged.)
-##         """
-##         if self.running: return False
-##         if not proc: return False
-##         self._arguments = [proc]
-##         return True
-
-##     def __lshift__(self, arg):
-##         """Sets the executable and the command line argument list for this process.
-   
-##         For example, doing an "ls -l /usr/local/bin" can be achieved by:
-        
-##         Process p
-##         ...
-##         p << "ls" << "-l" << "/usr/local/bin"
-##         """
-##         self._arguments.append(arg)
-##         return self
-
-##     def clearArguments(self):
-##         """Clear a command line argument list that has been set by using
-##         the "operator<<".
-##         """
-##         self._arguments = []
-
-    def writeStdin(self, string):
-        """Transmit data to the child process's stdin.
-   
-        it may return False in the following cases:
-   
-        * The process is not currently running.
-        * Communication to stdin has not been requested in the @ref start() call.
-        * Transmission of data to the child process by a previous call to
-        
-        @ref writeStdin() is still in progress.
-   
-        Please note that the data is sent to the client asynchronously,
-        so when this function returns, the data might not have been
-        processed by the child process.
-   
-        If all the data has been sent to the client, the signal
-        @ref wroteStdin() will be emitted.
-   
-        Please note that you must not call @ref writeStdin()
-        again until either a @ref wroteStdin() signal indicates that the
-        data has been sent or a @ref processHasExited() signal shows that
-        the child process is no longer alive...
-        """
-        # if there is still data pending, writing new data
-        # to stdout is not allowed (since it could also confuse
-        # process...
-        if not self._input_data:
-            return False
-
-        if self.running and self.communication & COMM_STDIN:
-            self._input_data = string
-            self._input_sent = 0
-            self.slotSendData(0)
-            self._innot.setEnabled(True)
-            return True
-        return False
 
     def slotChildOutput(self, fdno):
         """This slot gets activated when data from the child's stdout arrives.

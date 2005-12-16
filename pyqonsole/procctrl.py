@@ -27,7 +27,7 @@ struct waitdata
 
 XXX review singleton aspect
 """
-__revision__ = '$Id: procctrl.py,v 1.2 2005-12-09 09:11:13 alf Exp $'
+__revision__ = '$Id: procctrl.py,v 1.3 2005-12-16 15:31:23 syt Exp $'
 
 import os
 import errno
@@ -67,24 +67,17 @@ class ProcessController(qt.QObject):
         super(ProcessController, self).__init__()        
         global theProcessController
         assert theProcessController is None
-
         self.old_sigCHLDHandler = None
         self.handler_set = False
         self.process_list = []
         self.fd = os.pipe()
         self.delayed_children_cleanup_timer = qt.QTimer()
-
         fcntl.fcntl(self.fd[0], fcntl.F_SETFL, os.O_NONBLOCK)
-
-        notifier = qt.QSocketNotifier(self.fd[0], qt.QSocketNotifier.Read)
+        notifier = qt.QSocketNotifier(self.fd[0], qt.QSocketNotifier.Read, self)
         self.connect(notifier, qt.SIGNAL('activated(int)'), self.slotDoHousekeeping)
-        notifier.setEnabled(True) 
-        
         self.connect(self.delayed_children_cleanup_timer, qt.SIGNAL('timeout()'),
                      self.delayedChildrenCleanup)
-
         theProcessController = self
-        
         self.setupHandlers()
 
 
@@ -164,37 +157,26 @@ class ProcessController(qt.QObject):
         reasons beyond your control, you should call this function afterwards
         to make sure that no SIGCHLDs where missed.
         """
-        # XXX function outside this class ?
         found = False
-        if theProcessController:
-            # iterating the list doesn't perform any system call
-            for process in theProcessController.process_list:
-                if not process.running:
-                    continue
-                try:
-                    wpid, status = os.waitpid(process.pid, os.WNOHANG)
-                except OSError:
-                    # [Errno 10] No child processes
-                    # XXX: bug in process.py ?
-                    continue
-                if wpid > 0:
-                    # XXX
-                    #::write(theProcessController.fd[1], &wd, sizeof(wd))
-                    os.write(theProcessController.fd[1], struct.pack('II', wpid, status))
-                    found = True
+        # iterating the list doesn't perform any system call
+        for process in self.process_list:
+            if not process.running:
+                continue
+            try:
+                wpid, status = os.waitpid(process.pid, os.WNOHANG)
+            except OSError:
+                # [Errno 10] No child processes
+                # XXX: bug in process.py ?
+                continue
+            if wpid > 0:
+                os.write(self.fd[1], struct.pack('II', wpid, status))
+                found = True
         if (not found and
             not self.old_sigCHLDHandler in (signal.SIG_IGN, signal.SIG_DFL)):
             self.old_sigCHLDHandler(signal) # call the old handler
         # handle the rest
-        if theProcessController:
-            # XXX
-            #static const struct waitdata dwd = { 0, 0 } // delayed waitpid()
-            #::write(theProcessController.fd[1], &dwd, sizeof(dwd))
-            os.write(theProcessController.fd[1], struct.pack('II', 0, 0))
-        else:
-            # XXX
-            for wpid, status in waitChildren():
-                pass
+        # XXX
+        os.write(self.fd[1], struct.pack('II', 0, 0)) # delayed waitpid()
 
     def slotDoHousekeeping(self, int):
         """NOTE: It can happen that QSocketNotifier fires while
@@ -202,7 +184,6 @@ class ProcessController(qt.QObject):
         
         read pid and status from the pipe.
         """
-        print 'do house keeping', int
         bytes_read = ''
         while not bytes_read:
             try:
@@ -222,7 +203,6 @@ class ProcessController(qt.QObject):
         if pid == 0:
             self.delayed_children_cleanup_timer.start(100, True)
             return
-        print 'yo', pid, self.process_list
         for process in self.process_list:
             if process.pid == pid:
                 # process has exited, so do emit the respective events
