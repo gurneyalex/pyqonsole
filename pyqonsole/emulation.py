@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.12 2005-12-16 10:53:57 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.13 2005-12-16 15:01:42 alf Exp $'
 
 import qt
 
@@ -220,8 +220,8 @@ class Emulation(qt.QObject):
         self.__bulkInCnt += 1
         for c in block:
             result = self._decoder.toUnicode(c , 1)
-            for byte in str(result):
-                self.onRcvChar(ord(byte))
+            for char in result:
+                self.onRcvChar(char.at(0).unicode())
             if c == '\n':
                 self.__bulkNewLine()
         self.__bulkEnd()
