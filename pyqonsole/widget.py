@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.13 2005-12-16 10:53:58 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.14 2005-12-16 13:09:41 syt Exp $'
 
 import qt
 
@@ -361,7 +361,7 @@ class Widget(qt.QFrame):
             while x < cols:
                 ca = newimg[y*columns + x]
                 self.has_blinker |= ca.r & RE_BLINK
-                if ca == self.image[self._loc(x, y)]:
+                if ca is self.image[self._loc(x, y)]:# XXX "is" to be more effective than "==" ?
                     x += 1
                     continue
                 c = ca.c

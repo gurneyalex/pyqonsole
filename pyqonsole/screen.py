@@ -1,3 +1,10 @@
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
 """ Provide the Screen class.
 
 The image manipulated by the emulation.
@@ -23,17 +30,18 @@ Based on the konsole code from Lars Doelle.
 @author: Benjamin Longuet
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
-@copyright: 2003
+@author: Sylvain Thenault
+@copyright: 2003, 2005
 @organization: CEA-Grenoble
-@license: ??
+@organization: Logilab
+@license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.9 2005-12-16 10:53:58 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.10 2005-12-16 13:09:40 syt Exp $"
 
-import ca
-from ca import Ca
-from helpers import wcWidth
-from history import HistoryScrollBuffer
+from pyqonsole.ca import *
+from pyqonsole.helpers import wcWidth
+from pyqonsole.history import HistoryScrollBuffer
 
 MODE_Origin  = 0
 MODE_Wrap    = 1
@@ -66,7 +74,7 @@ class Screen:
         self.lines = l
         self.columns = c
         self._image = [[Ca() for j in xrange(c)] for i in xrange(l+1)]
-        self.__lineWrapped = [False for i in xrange(l+1)]
+        self._lineWrapped = [False for i in xrange(l+1)]
         # History buffer
         self._histCursor = 0
         self._hist = HistoryScrollBuffer(1000)
@@ -392,15 +400,15 @@ class Screen:
     def setDefaultRendition(self):
         self.setForeColorToDefault()
         self.setBackColorToDefault()
-        self.__cuRe = ca.DEFAULT_RENDITION
+        self.__cuRe = DEFAULT_RENDITION
         self.__effectiveRendition()
         
     def setForeColorToDefault(self):
-        self.__cuFg = ca.DEFAULT_FORE_COLOR
+        self.__cuFg = DEFAULT_FORE_COLOR
         self.__effectiveRendition()
         
     def setBackColorToDefault(self):
-        self.__cuBg = ca.DEFAULT_BACK_COLOR
+        self.__cuBg = DEFAULT_BACK_COLOR
         self.__effectiveRendition()
         
     def getMode(self, n):
@@ -419,7 +427,7 @@ class Screen:
             return
         if self.__cuX+w > self.columns:
             if self.getMode(MODE_Wrap):
-                self.__lineWrapped[self.__cuY] = True
+                self._lineWrapped[self.__cuY] = True
                 self.nextLine()
             else:
                 self.__cuX = self.columns-w
@@ -428,51 +436,43 @@ class Screen:
         cpt = [self.__cuY, self.__cuX]
         self.checkSelection(cpt, cpt)
         line = self._image[self.__cuY]
-        ca = line[self.__cuX]
-        ca.c = c
-        ca.f = self._eff_fg
-        ca.b = self._eff_bg
-        ca.r = self._eff_re
+        line[self.__cuX] = Ca(c, self._eff_fg, self._eff_bg, self._eff_re)
         self.__cuX += w
         w -= 1
         i = 1
         while w:
-            ca = line[self.__cuX + i]
-            ca.c = 0
-            ca.f = self._eff_fg
-            ca.b = self._eff_bg
-            ca.r = self._eff_re
+            line[self.__cuX + i] = Ca(0, self._eff_fg, self._eff_bg, self._eff_re)
             w -= 1
             i += 1
         
-    def resizeImage(self, newLines, newColumns):
-        if newLines == self.lines and newColumns == self.columns:
+    def resizeImage(self, lines, columns):
+        if lines == self.lines and columns == self.columns:
             return
-        print 'resizing', newLines, newColumns
-        if self.__cuY > newLines+1:
+        print 'resizing', lines, columns
+        if self.__cuY > lines+1:
             self.__bMargin = self.lines-1
-            for i in xrange(self.__cuY-(newLines-1)):
+            for i in xrange(self.__cuY-(lines-1)):
                 print 'add history line'
                 self._addHistoryLine()
                 self.__scrollUp()
         
         # Make new image
-        newImg = [[Ca() for j in xrange(newColumns)] for i in xrange(newLines+1)]
-        newWrapped = [False for i in xrange(newLines+1)]
+        newimg = [[Ca() for j in xrange(columns)] for i in xrange(lines+1)]
+        newwrapped = [False for i in xrange(lines+1)]
         self.clearSelection()
         
         # Copy to new image
-        cpLines = min(newLines, self.lines)
-        cpColumns = min(newColumns, self.columns)
-        for y in xrange(newLines):
-            for x in xrange(newColumns):
-                newImg[y][x].copy(self._image[y][x])
-            newWrapped[y] = self.__lineWrapped[y]
+        cpLines = min(lines, self.lines)
+        cpColumns = min(columns, self.columns)
+        for y in xrange(cpLines):
+            for x in xrange(cpColumns):
+                newimg[y][x].copy(self._image[y][x])
+            newwrapped[y] = self._lineWrapped[y]
         
-        self._image = newImg
-        self.__lineWrapped = newWrapped
-        self.lines = newLines
-        self.columns = newColumns
+        self._image = newimg
+        self._lineWrapped = newwrapped
+        self.lines = lines
+        self.columns = columns
         self.__cuX = min(self.__cuX, self.columns-1)
         self.__cuY = min(self.__cuY, lines-1)
         self.__tMargin = 0
@@ -513,9 +513,9 @@ class Screen:
                 for x in xrange(self.columns):
                     p = [y, x]
                     q = [yq, x]
-                    merged[y*self.columns+x] = self._image[yr][x].dump()
+                    merged[y*self.columns+x] = self._image[yr][x]#.dump()
                     if REVERSE_WRAPPED_LINES: # Debug mode
-                        if self.__lineWrapped[y+-self._hist.getLines()+self._histCursor]:
+                        if self._lineWrapped[y+-self._hist.getLines()+self._histCursor]:
                             self.__reverseRendition(merged[y][x])
         
         if self.getMode(MODE_Screen):
@@ -525,7 +525,7 @@ class Screen:
         
         loc_ = self.loc(self.__cuX, self.__cuY+self._hist.getLines()-self._histCursor)
         if self.getMode(MODE_Cursor) and loc_ < self.columns*self.lines:
-            merged[loc_].r = merged[loc_].r | ca.RE_CURSOR
+            merged[loc_].r = merged[loc_].r | RE_CURSOR
         #print merged
         return merged
     
@@ -538,7 +538,7 @@ class Screen:
         if self.lines >= (self._hist.getLines()-self._histCursor):
             
             for y in xrange(self._hist.getLines()-self._histCursor, self.lines):
-                result[y] = self.__lineWrapped[y-self._hist.getLines()+self._histCursor]
+                result[y] = self._lineWrapped[y-self._hist.getLines()+self._histCursor]
                 
         return result
     
@@ -655,10 +655,10 @@ class Screen:
                 if eol < self._sel_bottomright:
                     while eol > s and \
                     (not self._image[eol-histBR].c or self._image[eol-histBR].isSpace()) \
-                    and not self.__lineWrapped[(eol-histBR)/self.columns]:
+                    and not self._lineWrapped[(eol-histBR)/self.columns]:
                         eol -= 1
                 elif eol == self._sel_bottomright:
-                    if not self.__lineWrapped[(eol-histBR)/self.columns]:
+                    if not self._lineWrapped[(eol-histBR)/self.columns]:
                         addNewLine = True
                 else:
                     eol = self._sel_bottomright
@@ -738,8 +738,8 @@ class Screen:
                 self._image[y][x].c = c
                 self._image[y][x].f = self._eff_fg
                 self._image[y][x].b = self._eff_bg
-                self._image[y][x].r = ca.DEFAULT_RENDITION
-            self.__lineWrapped[y] = False
+                self._image[y][x].r = DEFAULT_RENDITION
+            self._lineWrapped[y] = False
 
     def _overlapSelection(self, from_, to):
         assert isinstance(from_, list), from_
@@ -758,7 +758,7 @@ class Screen:
         self._image[dest[0]:dest[0]+(loce[0]-loca[0]+1)] = self._image[loca[0]:loca[0]+(loce[0]-loca[0]+1)]
         
         for i in xrange((loce-loca+1)/self.columns):
-            self.__lineWrapped[dst/self.columns+i] = self.__lineWrapped[loca/self.columns+1]
+            self._lineWrapped[dst/self.columns+i] = self._lineWrapped[loca/self.columns+1]
         if self._sel_begin == [-1, -1]:
             # Adjust selection to follow scroll
             beginIsSTL = (self._sel_begin == self._sel_topleft)
@@ -811,11 +811,11 @@ class Screen:
         if self.hasScroll():
             dft = Ca()
             end = self.columns - 1
-            while end >= 0 and self._image[0][end] == dft and not self.__lineWrapped[0]:
+            while end >= 0 and self._image[0][end] == dft and not self._lineWrapped[0]:
                 end -= 1
                 
             oldHistLines = self._hist.getLines()
-            self._hist.addCells(self._image[0][:end+1], self.__lineWrapped[0])
+            self._hist.addCells(self._image[0][:end+1], self._lineWrapped[0])
             newHistLines = self._hist.getLines()
             beginIsTL = (self._sel_begin == self._sel_topleft)
             
@@ -857,18 +857,18 @@ class Screen:
             self.__tabStops[i] = ((i % 8 == 0) and i != 0)
         
     def __effectiveRendition(self):
-        self._eff_re = self.__cuRe & (ca.RE_UNDERLINE | ca.RE_BLINK)
-        if self.__cuRe & ca.RE_REVERSE:
+        self._eff_re = self.__cuRe & (RE_UNDERLINE | RE_BLINK)
+        if self.__cuRe & RE_REVERSE:
             self._eff_fg = self.__cuBg
             self._eff_bg = self.__cuFg
         else:
             self._eff_fg = self.__cuFg
             self._eff_bg = self.__cuBg
-        if self.__cuRe & ca.RE_BOLD:
-            if self._eff_fg < ca.BASE_COLORS:
-                self._eff_fg += ca.BASE_COLORS
+        if self.__cuRe & RE_BOLD:
+            if self._eff_fg < BASE_COLORS:
+                self._eff_fg += BASE_COLORS
             else:
-                self._eff_fg -= ca.BASE_COLORS
+                self._eff_fg -= BASE_COLORS
                 
     def __reverseRendition(self, p):
         p.f, p.b = p.b, p.f

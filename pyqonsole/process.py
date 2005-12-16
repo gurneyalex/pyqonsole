@@ -77,7 +77,7 @@ XXX signals:
    **/
   void wroteStdin(Process *proc)
 """
-__revision__ = '$Id: process.py,v 1.10 2005-12-16 10:53:57 syt Exp $'
+__revision__ = '$Id: process.py,v 1.11 2005-12-16 13:09:40 syt Exp $'
 
 
 import os
@@ -652,7 +652,6 @@ class Process(qt.QObject):
         self.pid = os.fork()
         print 'pid', self.pid
         if 0 == self.pid:
-            print self._arguments
             self._childStart(uid, gid, fd, self._arguments)            
         else:
             self._parentStart(fd)
