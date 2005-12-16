@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.11 2005-12-16 13:55:05 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.12 2005-12-16 16:36:44 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -124,7 +124,7 @@ class Screen:
     def cursorUp(self, n):
         """ CUU
         """
-        if n == 0:
+        if n is None:
             n = 1
         if self.__cuY < self.__tMargin:
             stop = 0
@@ -136,7 +136,7 @@ class Screen:
     def cursorDown(self, n):
         """ CUD
         """
-        if n == 0:
+        if n is None:
             n = 1
         if self.__cuY > self.__tMargin:
             stop = self.lines-1
@@ -148,7 +148,7 @@ class Screen:
     def cursorLeft(self, n):
         """ CUB
         """
-        if n == 0:
+        if n is None:
             n = 1
         self.__cuX = min(self.columns-1, self.__cuX)
         self.__cuX = max(0, self.__cuX-n)
@@ -156,18 +156,18 @@ class Screen:
     def cursorRight(self, n):
         """ CUF
         """
-        if n == 0:
+        if n is None:
             n = 1
         self.__cuX = min(self.columns-1, self.__cuX+n)
         
     def setCursorX(self, x):
-        if x == 0:
+        if x is None:
             x = 1
         x -= 1
         self.__cuX = max(0, min(self.columns-1, x))
         
     def setCursorY(self, y):
-        if y == 0:
+        if y is None:
             y = 1
         y -= 1
         if self.getMode(MODE_Origin):
@@ -183,14 +183,16 @@ class Screen:
     def setMargins(self, top, bot):
         """ Set top and bottom margin.
         """
+        print 'setMargins', top, bot
         if top == 0:
             top = 1
         if bot == 0:
             bot = self.lines
         top -= 1
         bot -= 1
-        if not ((0 <= top) and (top < bot) and (bot > self.lines)):
-            raise ValueError("setMargins(%d, %d) : bad range" % (top, bot))
+        if not (0 <= top and top < bot and bot < self.lines):
+            print "setMargins(%d, %d) : bad range" % (top, bot)
+            return
         self.__tMargin = top
         self.__bMargin = bot
         self.__cuX = 0
