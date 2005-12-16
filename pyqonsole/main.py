@@ -1,5 +1,7 @@
 
 import sys
+import os
+import pwd
 
 import qt
 
@@ -36,6 +38,15 @@ def setFont(te, fontno):
     te.setVTFont(f)
 
 
+def findExecutablePath(progname):
+    if os.path.isabs(progname):
+        return progname
+    for dirname in os.getenv('PATH').split(os.pathsep):
+        fullname = os.path.join(dirname, progname)
+        if os.path.isfile(fullname) and os.access(fullname, os.X_OK):
+            return fullname
+    raise ValueError('%s not found in PATH' %progname)
+
 def main(argv):
     appli = qt.QApplication(argv)
     te = Widget(appli)
@@ -47,9 +58,14 @@ def main(argv):
     setFont(te, 4) # 15
     appli.setMainWidget(te)
     te.show()
-    args = []
-    #args.append("/usr/bin/ipython");
-    session = Session(te, "/bin/bash", args, "xterm");
+    if len(argv) > 1:
+        progname = findExecutablePath(argv[1])
+        args = argv[2:]
+    else:
+        progname = pwd.getpwuid(os.getuid()).pw_shell
+        print 'no shell specified. Using %s' % progname
+        args = []
+    session = Session(te, progname, args, "xterm");
     session.setConnect(True)
     session.setHistory(HistoryTypeBuffer(1000))
     session.run()
