@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
   te->show();
 
   QStrList args;
-  args.append("/usr/bin/ipython");
-  TESession session(te, "/usr/bin/ipython", args, "xterm");
+  args.append("/bin/bash");
+  TESession session(te, "/bin/bash", args, "xterm");
   session.setConnect(true);
   session.setHistory(HistoryTypeBuffer(1000));
   session.run();
