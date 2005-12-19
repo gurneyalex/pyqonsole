@@ -41,7 +41,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.11 2005-12-19 11:30:22 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.12 2005-12-19 15:07:10 syt Exp $'
 
 import os
 import qt
@@ -50,6 +50,10 @@ import pyqonsole.keytrans as kt
 from pyqonsole.emulation import Emulation, NOTIFYBELL, NOTIFYNORMAL
 from pyqonsole import screen, widget, ca
 
+# Qt chars shortcuts
+ControlButton = qt.QEvent.ControlButton
+ShiftButton = qt.QEvent.ShiftButton
+AltButton = qt.QEvent.AltButton
 
 MODE_AppScreen = screen.MODES_SCREEN+0
 MODE_AppCuKeys = screen.MODES_SCREEN+1
@@ -320,6 +324,7 @@ class EmuVt102(Emulation):
     """
     
     def onRcvChar(self, cc):
+        """char received from the subprocess"""
         if self._print_fd:
             self.printScan(cc)
             return
@@ -841,23 +846,23 @@ class EmuVt102(Emulation):
         self.scrollLock(not self._hold_screen)
         
     def onKeyPress(self, ev):
+        """char received from the gui"""
         if not self._listen_to_key_press: # Someone else gets the keys
-            return        
+            return
         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
-        
-        def encodeMode(M, B):
-            return self.getMode(M) << B
-        def encodeStat(M, B):
-            return (ev.state() & M == M) << B
-        cmd = kt.CMD_none
+        ev_state = ev.state()
         try:
-            cmd, txt, len, metaSpecified = self._key_trans.findEntry(ev.key(),
-                                                                     encodeMode(screen.MODE_NewLine, kt.BITS_NewLine) +
-                                                                     encodeMode(MODE_Ansi, kt.BITS_Ansi) +
-                                                                     encodeMode(MODE_AppCuKeys, kt.BITS_AppCuKeys) +
-                                                                     encodeStat(qt.QEvent.ControlButton, kt.BITS_Control) +
-                                                                     encodeStat(qt.QEvent.ShiftButton, kt.BITS_Shift) +
-                                                                     encodeStat(qt.QEvent.AltButton, kt.BITS_Alt))
+            entry = self._key_trans.findEntry(ev.key(),
+                                              self.getMode(screen.MODE_NewLine),
+                                              self.getMode(MODE_Ansi),
+                                              self.getMode(MODE_AppCuKeys),
+                                              ev_state & ControlButton == ControlButton,
+                                              ev_state & ShiftButton == ShiftButton,
+                                              ev_state & AltButton == AltButton)
+        except kt.EntryNotFound:
+            cmd = kt.CMD_none
+        else:
+            cmd = entry.cmd
             if   cmd == kt.CMD_emitClipboard:   self._gui.emitSelection(False, False)
             elif cmd == kt.CMD_emitSelection:   self._gui.emitSelection(True, False)
             elif cmd == kt.CMD_scrollPageUp:    self._gui.doScroll(-self._gui.lines/2)
@@ -888,8 +893,6 @@ class EmuVt102(Emulation):
                 else:
                     self.emit(qt.PYSIGNAL("moveSessionRight"), ())
             elif cmd == kt.CMD_scrollLock: self.__onScrollLock()            
-        except:
-            pass
         
         # Revert to non-history when typing
         if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty() or \
@@ -899,20 +902,20 @@ class EmuVt102(Emulation):
             self._scr.setHistCursor(self._scr.getHistLines())
             
         if cmd == kt.CMD_send:
-            if ev.state() & qt.QEvent.AltButton and not metaSpecified:
+            if ev_state & AltButton and not entry.metaspecified():
                 self.sendString("\033") # ESC this is the ALT prefix
-            self.emit(qt.PYSIGNAL("sndBlock"), (txt,))
+            self.emit(qt.PYSIGNAL("sndBlock"), (entry.txt,))
             return
         # fall back handling
         if not ev.text().isEmpty():
-            if ev.state() & qt.QEvent.AltButton:
+            if ev_state & AltButton:
                 self.sendString("\033") # ESC this is the ALT prefix
             s = self._codec.fromUnicode(ev.text()) # Encode for application
             # FIXME: In Qt 2, QKeyEvent::text() would return "\003" for Ctrl-C etc.
             #        while in Qt 3 it returns the actual key ("c" or "C") which caused
             #        the ControlButton to be ignored. This hack seems to work for
             #        latin1 locales at least. Please anyone find a clean solution (malte)
-            if ev.state() & qt.QEvent.ControlButton:
+            if ev_state & ControlButton:
                 #print ev.ascii(), ev.key()
                 s.fill(chr(ev.ascii()), 1)
             self.emit(qt.PYSIGNAL("sndBlock"), (s.data(),))

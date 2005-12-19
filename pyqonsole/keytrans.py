@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.4 2005-12-09 18:02:15 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.5 2005-12-19 15:07:09 syt Exp $'
 
 
 import re
@@ -39,6 +39,12 @@ BITS_Control   = 4
 BITS_Shift     = 5
 BITS_Alt       = 6
 BITS_COUNT     = 7
+
+def encodeModes(newline, ansi, appcukeys):    
+    return newline + (ansi << BITS_Ansi) + (appcukeys << BITS_AppCuKeys)
+
+def encodeButtons(control, shift, alt):    
+    return (control << BITS_Control) + (shift << BITS_Shift) + (alt << BITS_Alt)
 
 CMD_none             = -1
 CMD_send             =  0
@@ -78,6 +84,8 @@ def find(ktid=0):
 def count():
     return len(_KEYMAPS)
 
+class EntryNotFound(Exception): pass
+
 class KeyEntry:
     """instances represent the individual assignments"""
     def __init__(self, ref, key, bits, mask, cmd, txt):
@@ -95,7 +103,7 @@ class KeyEntry:
     def metaspecified(self):
         return (self.mask & (1 << BITS_Alt)) and (self.bits & (1 << BITS_Alt))
 
-    
+
 class KeyTrans:
     """combines the individual assignments to a proper map
     Takes part in a collection themself.
@@ -132,25 +140,28 @@ class KeyTrans:
         """returns conflicting entry if any, else create it, add it to the
         table, and return None
         """
-        entry = self._findEntry(key, bits, mask)
-        if entry: return entry
-        entry = KeyEntry(ref, key, bits, mask, cmd, txt)
-        self._table.append(entry)
+        try:
+            return self._findEntry(key, bits, mask)
+        except EntryNotFound:
+            entry = KeyEntry(ref, key, bits, mask, cmd, txt)
+            self._table.append(entry)
     
-    def findEntry(self, key, bits):
+    def findEntry(self, key, newline, ansi, appcukeys, control, shift, alt):
         if not self._file_read:
             self.readConfig()
+        bits = encodeModes(newline, ansi, appcukeys) + encodeButtons(control, shift, alt)
         return self._findEntry(key, bits)
     
     def _findEntry(self, key, bits, mask=0xffff):
         for entry in self._table:
             if entry.matches(key, bits, 0xffff):
                 return entry
+        raise EntryNotFound('no entry matching %s %s %0x' % (key, bits, mask))
     
     def hdr(self):
         if not self._file_read:
             self.readConfig()
-        return hdr
+        return self.hdr
 
 
 
@@ -420,6 +431,7 @@ class KeytabReader:
             else:
                 cmd = CMD_send
                 keystr = keystr[1:-1] # unquote
+                keystr = keystr.replace('\\E', '\033').replace('\\t', '\t')
         entry = kt.addEntry(self.linno, key, mode, mask, cmd, keystr)
         if entry:
             self._reportError('keystroke already assigned in line %d' % entry.ref)
