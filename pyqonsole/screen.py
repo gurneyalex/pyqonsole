@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.13 2005-12-19 11:30:22 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.14 2005-12-19 11:58:00 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -123,7 +123,7 @@ class Screen:
     def cursorUp(self, n):
         """ CUU
         """
-        if n is None:
+        if not n:
             n = 1
         if self.__cuY < self.__tMargin:
             stop = 0
@@ -135,7 +135,7 @@ class Screen:
     def cursorDown(self, n):
         """ CUD
         """
-        if n is None:
+        if not n:
             n = 1
         if self.__cuY > self.__tMargin:
             stop = self.lines-1
@@ -147,7 +147,7 @@ class Screen:
     def cursorLeft(self, n):
         """ CUB
         """
-        if n is None:
+        if not n:
             n = 1
         self.__cuX = min(self.columns-1, self.__cuX)
         self.__cuX = max(0, self.__cuX-n)
@@ -155,18 +155,18 @@ class Screen:
     def cursorRight(self, n):
         """ CUF
         """
-        if n is None:
+        if not n:
             n = 1
         self.__cuX = min(self.columns-1, self.__cuX+n)
         
     def setCursorX(self, x):
-        if x is None:
+        if not x:
             x = 1
         x -= 1
         self.__cuX = max(0, min(self.columns-1, x))
         
     def setCursorY(self, y):
-        if y is None:
+        if not y:
             y = 1
         y -= 1
         if self.getMode(MODE_Origin):
@@ -176,14 +176,12 @@ class Screen:
         self.__cuY = max(0, min(self.lines-1, y+dy))
 
     def setCursorYX(self, y, x):
-        print 'set cursor', y, x
         self.setCursorX(x)
         self.setCursorY(y)
     
     def setMargins(self, top, bot):
         """ Set top and bottom margin.
         """
-        print 'setMargins', top, bot
         if top == 0:
             top = 1
         if bot == 0:
@@ -389,16 +387,19 @@ class Screen:
         self.__effectiveRendition()
         
     def setForeColor(self, fgcolor):
+        print 'setForeColor', fgcolor
         if fgcolor & 8:
             self.__cuFg = (fgcolor & 7) + 4+8
         else:
             self.__cuFg = (fgcolor & 7) + 2
+        self.__effectiveRendition()
             
     def setBackColor(self, bgcolor):
         if bgcolor & 8:
             self.__cuBg = (bgcolor & 7) + 4+8
         else:
             self.__cuBg = (bgcolor & 7) + 2
+        self.__effectiveRendition()
             
     def setDefaultRendition(self):
         self.setForeColorToDefault()
@@ -487,7 +488,7 @@ class Screen:
         merged = self.lines*self.columns*[None]
         dft = Ca()        
         y = 0
-        print 'cooked image', self.lines, self.columns
+        #print 'cooked image', self.lines, self.columns
         while y < self.lines and y < (self._hist.getLines()-self._histCursor):
             len_ = min(self.columns, self._hist.getLineLen(y,self._histCursor))
             yp = y*self.columns
