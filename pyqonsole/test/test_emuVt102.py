@@ -192,14 +192,17 @@ ESC ~ 		Invoke the G1 Character Set as GR (LS1R).
         self._test_sequence('\033c',
                             scr0=[('getattr', 'clearSelection'), ('call',),
                                   ('getattr', 'resetMode'), ('call', (5,)),
+                                  ('getattr', 'resetMode'), ('call', (4,)),
                                   ('getattr', 'reset'), ('call',)],
                             scr1=[('getattr', 'resetMode'), ('call', (5,)),
+                                  ('getattr', 'resetMode'), ('call', (4,)),
                                   ('getattr', 'reset'), ('call',)],
                             gui=[('getattr', 'setMouseMarks'), ('call', (True,))],
                             emu=[('resetMode', (9,)), ('saveMode', (9,)),
                                  ('resetMode', (6,)), ('saveMode', (6,)),
                                  ('resetMode', (7,)), ('saveMode', (7,)),
-                                 ('resetMode', (5,)), ('setMode', (10,))])
+                                 ('resetMode', (5,)), ('resetMode', (8,)),
+                                 ('resetMode', (4,)), ('setMode', (10,))])
         #self._test_sequence('\033l')
         #self._test_sequence('\033m')
         self._test_sequence('\033n', emu=[('_useCharset', (2,))])
@@ -947,7 +950,19 @@ This is implemented as a 'XTerm hack' in emuVt102
         self._test_sequence('\033]2;blablabla\07',
                             emu=[('9changeTitle', (2, 'blablabla'))])
 
+    def test_missing_vi_code1(self):
+        """CSI ? <Pm> l
+        
+	<Ps>=12 -> Stop Blinking Cursor (att610)
+        """
+        self._test_sequence('\033[?12l')
+        
+    def test_missing_vi_code3(self):
+        """?"""
+        self._test_sequence('\033[?12;25h')
 
+        
+        
 class EmuVtNOT102TC(EmuVtTC):
     
     CSI_PS_EXPECTED_LOGS = {
@@ -1110,5 +1125,24 @@ ESC < 		Exit VT52 mode (Enter VT100 mode).
                             emu=[('setMode', (emuVt102.MODE_Ansi,))])
 
 
+class EmuVt102ModesTC(EmuVtTC):
+
+    def test(self):
+        EMU_MODES = (emuVt102.MODE_AppScreen, emuVt102.MODE_AppCuKeys,
+                     emuVt102.MODE_AppKeyPad, emuVt102.MODE_Mouse1000,
+                     emuVt102.MODE_Ansi, screen.MODE_NewLine, screen.MODE_Cursor)
+        self.emu.resetMode(emuVt102.MODE_Ansi) # reset ansi mode so all modes are unset
+        for mode in EMU_MODES:
+            self.emu.setMode(mode)
+            self.failUnless(self.emu.getMode(mode))
+            for omode in EMU_MODES:
+                if omode == mode:
+                    continue
+                self.failUnless(not self.emu.getMode(omode))
+            self.emu.resetMode(mode)
+            for omode in EMU_MODES:
+                self.failUnless(not self.emu.getMode(omode))
+                
+        
 if __name__ == '__main__':
     unittest.main()

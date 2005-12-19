@@ -41,7 +41,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.9 2005-12-16 13:55:03 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.10 2005-12-19 11:25:26 syt Exp $'
 
 import os
 import qt
@@ -56,7 +56,7 @@ MODE_AppCuKeys = screen.MODES_SCREEN+1
 MODE_AppKeyPad = screen.MODES_SCREEN+2
 MODE_Mouse1000 = screen.MODES_SCREEN+3
 MODE_Ansi      = screen.MODES_SCREEN+4
-MODE_total     = screen.MODES_SCREEN+5
+#MODE_total     = screen.MODES_SCREEN+5
 
 # Tokens
 TY_CHR = 0
@@ -159,8 +159,10 @@ class EmuVt102(Emulation):
         self.__pbuf = []
         self.__argv = [0]
         self._print_fd = None # file used while in print mode
-        self._currParm = {'mode': [None, None, None, None, None, None]}
-        self._saveParm = {'mode': [None, None, None, None, None, None]}
+        # mapping with mode as key and a boolean indicating wether it's
+        # activated as value
+        self._curr_mode = {}
+        self._save_mode = {}
         self._charset = [CharCodes(), CharCodes()]
         self._hold_screen = False
 
@@ -851,7 +853,7 @@ class EmuVt102(Emulation):
         try:
             cmd, txt, len, metaSpecified = self._keyTrans.findEntry(ev.key(),
                                                                     encodeMode(screen.MODE_NewLine, kt.BITS_NewLine) +
-                                                                    encodeMode(screen.MODE_Ansi, kt.BITS_Ansi) +
+                                                                    encodeMode(MODE_Ansi, kt.BITS_Ansi) +
                                                                     encodeMode(MODE_AppCuKeys, kt.BITS_AppCuKeys) +
                                                                     encodeStat(qt.QEvent.ControlButton, kt.BITS_Control) +
                                                                     encodeStat(qt.QEvent.ShiftButton, kt.BITS_Shift) +
@@ -911,7 +913,7 @@ class EmuVt102(Emulation):
             #        the ControlButton to be ignored. This hack seems to work for
             #        latin1 locales at least. Please anyone find a clean solution (malte)
             if ev.state() & qt.QEvent.ControlButton:
-                print ev.ascii(), ev.key()
+                #print ev.ascii(), ev.key()
                 s.fill(chr(ev.ascii()), 1)
             self.emit(qt.PYSIGNAL("sndBlock"), (s.data(),))
 
@@ -1025,42 +1027,47 @@ class EmuVt102(Emulation):
         self.resetMode(MODE_AppCuKeys)
         self.saveMode(MODE_AppCuKeys)
         self.resetMode(screen.MODE_NewLine)
+        # XXX those initialisations were missing from cpp code
+        self.resetMode(MODE_AppKeyPad)
+        self.resetMode(screen.MODE_Cursor)
+        
         self.setMode(MODE_Ansi)
         self._hold_screen = False
         
     def setMode(self, m):
-        self._currParm['mode'][m-screen.MODES_SCREEN] = True
+        self._curr_mode[m] = True
         if m == MODE_Mouse1000:
             self._gui.setMouseMarks(False)
         elif m == MODE_AppScreen:
             self._screen[1].clearSelection()
             self._setScreen(1)
-        if m < screen.MODES_SCREEN or m == screen.MODE_NewLine:
+        if m < screen.MODES_SCREEN:
             self._screen[0].setMode(m)
             self._screen[1].setMode(m)
             
     def resetMode(self, m):
-        self._currParm['mode'][m-screen.MODES_SCREEN] = False
+        self._curr_mode[m] = False
         if m == MODE_Mouse1000:
             self._gui.setMouseMarks(True)
         elif m == MODE_AppScreen:
             self._screen[0].clearSelection()
             self._setScreen(0)
-        if m < screen.MODES_SCREEN or m == screen.MODE_NewLine:
+        if m < screen.MODES_SCREEN:
             self._screen[0].resetMode(m)
             self._screen[1].resetMode(m)
             
     def saveMode(self, m):
-        self._saveParm['mode'][m-screen.MODES_SCREEN] = self._currParm['mode'][m-screen.MODES_SCREEN]
+        self._save_mode[m] = self._curr_mode[m]
         
     def restoreMode(self, m):
-        if self._saveParm['mode'][m-screen.MODES_SCREEN]:
+        if self._save_mode[m]:
             self.setMode(m)
         else:
             self.resetMode(m)
         
     def getMode(self, m):
-        return self._currParm['mode'][m-screen.MODES_SCREEN]
+        #assert (m-screen.MODES_SCREEN) >= 0
+        return self._curr_mode[m]
     
     def setConnect(self, c):
         super(EmuVt102, self).setConnect(c)
