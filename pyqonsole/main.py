@@ -50,6 +50,7 @@ def findExecutablePath(progname):
 def main(argv):
     appli = qt.QApplication(argv)
     te = Widget(appli)
+    te.setScrollbarLocation(2)
     te.setMinimumSize(150, 70)
     te.setFocus()
     te.resize(te.calcSize(80, 25))
@@ -87,17 +88,6 @@ def profile(argv):
     stats.print_stats(30)
 
 if __name__ == '__main__':
-##     import time
-##     print "*" * 80
-##     print "Move the mouse cursor to another ION panel to see stdout and pyqonsole"
-##     print "*" * 80
-##     print "3 seconds before launch..."
-##     time.sleep(1)
-##     print "2 seconds before launch..."
-##     time.sleep(1)
-##     print "1 second before launch..."
-##     time.sleep(1)
-##     print "let's rock!"
     if "--profile" in sys.argv:
         sys.argv.remove("--profile")
         profile(sys.argv)
