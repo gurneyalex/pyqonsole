@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.16 2005-12-16 15:31:24 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.17 2005-12-19 10:55:02 alf Exp $'
 
 import qt
 
@@ -158,7 +158,7 @@ class Widget(qt.QFrame):
         print 'begin image ***********'
         for y in xrange(self.lines):
             for x in xrange(self.columns):
-                sys.stdout.write(chr(self.image[self._loc(x, y)].c))
+                sys.stdout.write(unichr(self.image[self._loc(x, y)].c))
             sys.stdout.write('\n')
         print 'end image ***********'
                 
@@ -383,7 +383,7 @@ class Widget(qt.QFrame):
                         cal == self.image[self._loc(x + xlen, y)]):
                         break
                     disstrU.append(c)
-                unistr = qt.QString(''.join([chr(i) for i in disstrU]))
+                unistr = qt.QString(''.join([unichr(i) for i in disstrU]))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x, self.bY+tLy+self.font_h*y, self.font_w*xlen, self.font_h),
                                  unistr, ca, pm != None, True)
@@ -727,7 +727,7 @@ class Widget(qt.QFrame):
                     xlen += 1
                 if (x+xlen < self.columns) and (not self.image[self._loc(x+xlen,y)].c):
                     xlen += 1 # Adjust for trailing part of multi-column char
-                unistr = qt.QString(''.join([chr(i) for i in disstrU]))
+                unistr = qt.QString(''.join([unichr(i) for i in disstrU]))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x, self.bY+tLy+self.font_h*y, self.font_w*xlen, self.font_h),
                                  unistr, ca, pm != None, False)
