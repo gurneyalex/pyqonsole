@@ -12,7 +12,7 @@ class HistoryScrollNoneTC(unittest.TestCase):
         history = self.history
         self.failUnless(isinstance(history.type, HistoryTypeNone))
         self.failUnlessEqual(history.hasScroll(), False)
-        self.failUnlessEqual(history.getLines(), 0)
+        self.failUnlessEqual(history.lines, 0)
         self.failUnlessEqual(history.getLineLen(1), 0)
         self.failUnlessEqual(history.isWrappedLine(1), False)
         self.failUnlessEqual(history.getCells(1, 0), None)
@@ -20,7 +20,7 @@ class HistoryScrollNoneTC(unittest.TestCase):
     def test_one_line(self):
         history = self.history
         history.addCells(list('bonjour'), True) # this is a list of Ca instances in the real world
-        self.failUnlessEqual(history.getLines(), 0)
+        self.failUnlessEqual(history.lines, 0)
         self.failUnlessEqual(history.getLineLen(1), 0)
         self.failUnlessEqual(history.isWrappedLine(1), False)
         self.failUnlessEqual(history.getCells(1, 0), None)
@@ -33,17 +33,17 @@ class HistoryScrollBufferTC(unittest.TestCase):
         history = self.history
         self.failUnless(isinstance(history.type, HistoryTypeBuffer))
         self.failUnlessEqual(history.hasScroll(), True)
-        self.failUnlessEqual(history.getLines(), 0)
+        self.failUnlessEqual(history.lines, 0)
         self.failUnlessEqual(history.getLineLen(0), 0)
         self.failUnlessEqual(history.isWrappedLine(0), False)
-        self.failUnlessEqual(history.getCells(0, 0), None)
+        #self.failUnlessEqual(history.getCells(0, 0), None)
         self.failUnlessEqual(history.buff_filled, False)
         
     def test_one_line(self):
         history = self.history
         cells = list('bonjour')
         history.addCells(cells, True) # this is a list of Ca instances in the real world
-        self.failUnlessEqual(history.getLines(), 1)
+        self.failUnlessEqual(history.lines, 1)
         self.failUnlessEqual(history.getLineLen(0), len(cells))
         self.failUnlessEqual(history.isWrappedLine(0), True)
         self.failUnlessEqual(history.getCells(0, 0), cells)

@@ -52,7 +52,7 @@ Based on the konsole code from Lars Doelle.
 XXX getLineLen usefull
 """
 
-__revision__ = '$Id: history.py,v 1.3 2005-12-15 18:50:35 syt Exp $'
+__revision__ = '$Id: history.py,v 1.4 2005-12-19 22:13:05 syt Exp $'
 
 
 class HistoryType(object):
@@ -95,9 +95,9 @@ class HistoryTypeBuffer(HistoryType):
             return old
         scroll = HistoryScrollBuffer(self.nb_lines)
         start = 0
-        if self.nb_lines < old.getLines():
-            start = old.getLines() - self.nb_lines
-        for i in xrange(start, old.getLines()):
+        if self.nb_lines < old.lines:
+            start = old.lines - self.nb_lines
+        for i in xrange(start, old.lines):
             scroll.addCells(old.getCells(i, 0), old.isWrappedLine(i))
         return scroll
 
@@ -109,12 +109,10 @@ class HistoryScroll(object):
         """ Init the History Scroll abstract base class.
         """
         self.type = type_
+        self.lines = 0
         
     def hasScroll(self):
         return True
-    
-    def getLines(self):
-        return 0
     
     def getLineLen(self, lineno):
         return 0
@@ -155,7 +153,7 @@ class HistoryScrollBuffer(HistoryScroll):
         """
         super (HistoryScrollBuffer, self).__init__(HistoryTypeBuffer(max_lines))
         self.max_lines = max_lines
-        self.nb_lines = 0
+        self.lines = 0
         self.array_index = 0
         self.buff_filled = False
         self.hist_buffer = [None] * max_lines
@@ -170,11 +168,8 @@ class HistoryScrollBuffer(HistoryScroll):
         if self.array_index >= self.max_lines:
             self.array_index = 0
             self.buff_filled = True
-        if self.nb_lines < self.max_lines - 1:
-            self.nb_lines += 1
-
-    def getLines(self):
-        return self.nb_lines
+        if self.lines < self.max_lines - 1:
+            self.lines += 1
 
     def getLineLen(self, lineno):
         if lineno >= self.max_lines:
@@ -193,8 +188,7 @@ class HistoryScrollBuffer(HistoryScroll):
         assert lineno < self.max_lines
         lineno = self._adjustLineNo(lineno)
         line = self.hist_buffer[lineno]
-        if line is None:
-            return # XXX
+        assert line is not None
         assert colno < len(line)
         if count is None:
             count = len(line)
@@ -213,8 +207,8 @@ class HistoryScrollBuffer(HistoryScroll):
             self.hist_buffer += [None] * (max_lines - self.max_lines)
             self.wrapped_line += [False] * (max_lines - self.max_lines)
         self.max_lines = max_lines
-        if self.nb_lines > max_lines - 2:
-            self.nb_lines = max_lines - 2
+        if self.lines > max_lines - 2:
+            self.lines = max_lines - 2
         self.type = HistoryTypeBuffer(max_lines)
 
     def _normalize(self):
@@ -231,7 +225,7 @@ class HistoryScrollBuffer(HistoryScroll):
         self.wrapped_line = wrapped_line
         self.array_index = max_lines - 2
         self.buff_filled = False
-        self.nb_lines = max_lines - 2
+        self.lines = max_lines - 2
 
     def _adjustLineNo(self, lineno):
         if self.buff_filled:
