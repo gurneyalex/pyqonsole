@@ -21,6 +21,12 @@ class ParserTC(unittest.TestCase):
         entry = kt.findEntry(qt.Qt.Key_Tab, False, True, False, False, False, False)
         self.failUnlessEqual(entry.cmd, keytrans.CMD_send)
         self.failUnlessEqual(entry.txt, '\t')
+        entry = kt.findEntry(qt.Qt.Key_Backspace, False, True, False, False, False, False)
+        self.failUnlessEqual(entry.cmd, keytrans.CMD_send)
+        self.failUnlessEqual(entry.txt, '\x7f')
+        entry = kt.findEntry(qt.Qt.Key_Return, False, True, False, False, False, False)
+        self.failUnlessEqual(entry.cmd, keytrans.CMD_send)
+        self.failUnlessEqual(entry.txt, '\r')
         
 if __name__ == '__main__':
     unittest.main()

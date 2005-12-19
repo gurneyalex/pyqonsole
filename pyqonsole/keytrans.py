@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.5 2005-12-19 15:07:09 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.6 2005-12-19 15:13:18 syt Exp $'
 
 
 import re
@@ -430,8 +430,8 @@ class KeytabReader:
                 return
             else:
                 cmd = CMD_send
-                keystr = keystr[1:-1] # unquote
-                keystr = keystr.replace('\\E', '\033').replace('\\t', '\t')
+                keystr = eval(keystr) # unquote + evaluation of special characters
+                keystr = keystr.replace('\\E', '\033')
         entry = kt.addEntry(self.linno, key, mode, mask, cmd, keystr)
         if entry:
             self._reportError('keystroke already assigned in line %d' % entry.ref)
