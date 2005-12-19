@@ -1,7 +1,7 @@
 """Test pyqonsole's screen module.
 """
 import unittest
-from pyqonsole.screen import Screen
+from pyqonsole.screen import *
 from pyqonsole.ca import *
 
 class ScreenTC(unittest.TestCase):
@@ -67,6 +67,22 @@ class ScreenTC(unittest.TestCase):
         expected[11].c = ord('c')
         expected[20].r |= RE_CURSOR # cursor location
         self.failUnlessEqual(image, expected)
+
+    def test_modes(self):
+        SCREEN_MODES = (MODE_Origin, MODE_Wrap, MODE_Insert, MODE_Screen, MODE_Cursor, MODE_NewLine)
+        # reset modes so all modes are unset
+        self.screen.resetMode(MODE_Wrap) 
+        self.screen.resetMode(MODE_Cursor) 
+        for mode in SCREEN_MODES:
+            self.screen.setMode(mode)
+            self.failUnless(self.screen.getMode(mode))
+            for omode in SCREEN_MODES:
+                if omode == mode:
+                    continue
+                self.failUnless(not self.screen.getMode(omode))
+            self.screen.resetMode(mode)
+            for omode in SCREEN_MODES:
+                self.failUnless(not self.screen.getMode(omode))
         
 if __name__ == '__main__':
     unittest.main()

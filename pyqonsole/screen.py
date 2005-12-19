@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.14 2005-12-19 11:58:00 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.15 2005-12-19 17:01:48 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -248,22 +248,19 @@ class Screen:
             self.cursorRight(1)
         
     def backSpace(self):
-        """ Move the cursor to left one column.
-        """
+        """Move the cursor to left one column"""
         self.__cuX = max(0, self.__cuX-1)
         if (BS_CLEARS):
             oldca = self._image[self.__cuY][self.__cuX]
             self._image[self.__cuY][self.__cuX] = Ca(ord(' '), oldca.f, oldca.b, oldca.r)
         
     def clear(self):
-        """ Clear the entire screen and home the cursor.
-        """
+        """Clear the entire screen and home the cursor"""
         self.clearEntireScreen()
         self.home()
     
     def home(self):
-        """ Home the cursor.
-        """
+        """home the cursor"""
         self.__cuX = self.__cuY = 0
         
     def reset(self):
@@ -276,13 +273,10 @@ class Screen:
         self.setMode(MODE_Cursor)    # Cursor visible
         self.resetMode(MODE_Screen)  # Screen not inversed
         self.resetMode(MODE_NewLine)
-        
         self.__tMargin = 0
         self.__bMargin = self.lines-1
-        
         self.setDefaultRendition()
         self.saveCursor()
-        
         self.clear()
         
     def eraseChars(self, n):
@@ -387,7 +381,6 @@ class Screen:
         self.__effectiveRendition()
         
     def setForeColor(self, fgcolor):
-        print 'setForeColor', fgcolor
         if fgcolor & 8:
             self.__cuFg = (fgcolor & 7) + 4+8
         else:
@@ -425,7 +418,7 @@ class Screen:
         return self.__cuY
 
     def showCharacter(self, c):
-        #print 'screen.showcharacter', c
+        #print 'screen.showcharacter', c, self.__cuX
         w = wcWidth(c)
         if w <= 0:
             return
@@ -754,17 +747,18 @@ class Screen:
         return False
     
     def _moveImage(self, dest, loca, loce):
+        print 'move image', dest, loca, loce
         if loce < loca:
             return
         # XXX x coordonates are not considered
         self._image[dest[0]:dest[0]+(loce[0]-loca[0]+1)] = self._image[loca[0]:loca[0]+(loce[0]-loca[0]+1)]
         
-        for i in xrange((loce-loca+1)/self.columns):
-            self._lineWrapped[dst/self.columns+i] = self._lineWrapped[loca/self.columns+1]
+        for i in xrange(loce[0] - loca[0] + 1):
+            self._lineWrapped[dest[0]+i] = self._lineWrapped[loca[0]+1]
         if self._sel_begin == [-1, -1]:
             # Adjust selection to follow scroll
             beginIsSTL = (self._sel_begin == self._sel_topleft)
-            diff = self._subPoints(dst, loca) # Scroll by this amount
+            diff = self._subPoints(dest, loca) # Scroll by this amount
             scr_topleft = [self._hist.getLines(), 0]
             srca = self._addPoints(loca, scr_topleft) # Translate index from screen to global
             srce = self._addPoints(loce, scr_topleft)
