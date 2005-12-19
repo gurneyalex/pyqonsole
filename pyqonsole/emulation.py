@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.14 2005-12-19 17:11:31 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.15 2005-12-19 22:54:25 syt Exp $'
 
 import qt
 
@@ -172,47 +172,49 @@ class Emulation(qt.QObject):
         This is a trivial scanner, see emuVt102 for the VT100 scanner actually
         used.
         """
-        c = c & 0xff
-        if c == '\b':
-            self._scr.backSpace()
-        elif c == '\t':
-            self._scr.tabulate()
-        elif c == '\n':
-            self._scr.newLine()
-        elif c == '\r':
-            self._scr.return_()
-        elif ord(c) == 0x07:
-            if self._connected:
-                self._gui.bell()
-            self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYBELL,))
-        else:
-            self._scr.showCharacter()
+        raise NotImplementedError()
+##         c = c & 0xff
+##         if c == '\b':
+##             self._scr.backSpace()
+##         elif c == '\t':
+##             self._scr.tabulate()
+##         elif c == '\n':
+##             self._scr.newLine()
+##         elif c == '\r':
+##             self._scr.return_()
+##         elif ord(c) == 0x07:
+##             if self._connected:
+##                 self._gui.bell()
+##             self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYBELL,))
+##         else:
+##             self._scr.showCharacter()
 
     def setMode(self):
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def resetMode(self):
-        raise NotImplementedError
+        raise NotImplementedError()
     
     def sendString(self, str_):
-        raise NotImplementedError
+        raise NotImplementedError()
            
     # Keyboard handling
     
     def onKeyPress(self, ev):
-        if not self._listen_to_key_press: # Someone else gets the keys
-            return
+        raise NotImplementedError()
+##         if not self._listen_to_key_press: # Someone else gets the keys
+##             return
         
-        self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
-        if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty():
-            self._scr.setHistCursor(self._scr.getHistLines())
-        if not ev.text().isEmpty():            
-            # A block og text
-            # Note that the text is proper unicode. We should do a conversion here,
-            # but since this routine will never be used, we simply emit plain ascii.
-            self.emit(qt.PYSIGNAL("sndBlock"), (ev.text().ascii(),))
-        elif ev.ascii() > 0:
-            self.emit(qt.PYSIGNAL("sndBlock"), (ev.ascii(),))
+##         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
+##         if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty():
+##             self._scr.setHistCursor(self._scr.getHistLines())
+##         if not ev.text().isEmpty():            
+##             # A block og text
+##             # Note that the text is proper unicode. We should do a conversion here,
+##             # but since this routine will never be used, we simply emit plain ascii.
+##             self.emit(qt.PYSIGNAL("sndBlock"), (ev.text().ascii(),))
+##         elif ev.ascii() > 0:
+##             self.emit(qt.PYSIGNAL("sndBlock"), (ev.ascii(),))
             
     def onRcvBlock(self, block):
         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYACTIVITY,))

@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.17 2005-12-19 22:13:05 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.18 2005-12-19 22:54:25 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -211,7 +211,7 @@ class Screen:
         self.index()
        
     def index(self):
-        """ Move the cursor down one line.
+        """Move the cursor down one line.
         
         If cursor is on bottom margin, the region between the
         actual top and bottom margin is scrolled up instead.
@@ -224,7 +224,7 @@ class Screen:
             self.__cuY += 1
     
     def reverseIndex(self):
-        """ Move the cursor up one line.
+        """Move the cursor up one line.
         
         If cursor is on the top margin, the region between the
         actual top and bottom margin is scrolled down instead.

@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.14 2005-12-19 16:58:51 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.15 2005-12-19 22:54:25 syt Exp $'
 
 import os
 import sys
@@ -356,7 +356,6 @@ class PtyProcess(Process):
         #  }
         #endif
         #if (needGrantPty) chownpty(fd,False)
-        print 'emitting done'
         self.emit(qt.PYSIGNAL('done'), (self.exitStatus(),))
 
 
