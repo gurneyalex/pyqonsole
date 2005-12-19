@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.18 2005-12-19 11:30:47 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.19 2005-12-19 15:08:48 syt Exp $'
 
 import qt
 
@@ -327,7 +327,7 @@ class Widget(qt.QFrame):
         if not text.isEmpty():
             text.replace(qt.QRegExp("\n"), "\r")
         ev = qt.QKeyEvent(qt.QEvent.KeyPress, 0, -1, 0, text)
-        self.emit(qt.SIGNAL('keyPressedSignal'), (ev,)) # expose as a big fat keypress event
+        self.emit(qt.PYSIGNAL('keyPressedSignal'), (ev,)) # expose as a big fat keypress event
         self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
         qt.QApplication.clipboard().setSelectionMode(False)
   
@@ -606,7 +606,7 @@ class Widget(qt.QFrame):
             text += e.text()
             if not text.isEmpty():
                 ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1,0, text)
-                self.emit(qt.SIGNAL('keyPressedSignal'), (ke,))
+                self.emit(qt.PYSIGNAL('keyPressedSignal'), (ke,))
             e.accept()
             return False
         if e.type() == qt.QEvent.IMEnd:
@@ -618,7 +618,7 @@ class Widget(qt.QFrame):
             text += e.text()
             if not text.isEmpty():
                 ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1,0, text)
-                self.emit(qt.SIGNAL('keyPressedSignal'), (ke,))
+                self.emit(qt.PYSIGNAL('keyPressedSignal'), (ke,))
             e.accept()
             return False
         if e.type() == qt.QEvent.Enter:
