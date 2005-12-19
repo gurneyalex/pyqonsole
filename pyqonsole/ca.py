@@ -1,3 +1,10 @@
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
 """ Provide the Ca class.
 
 This class implements a character with rendition atributes.
@@ -8,12 +15,13 @@ Based on the konsole code from Lars Doelle.
 @author: Benjamin Longuet
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
-@copyright: 2003
+@copyright: 2003, 2005
 @organization: CEA-Grenoble
-@license: ??
+@organization: Logilab
+@license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.7 2005-12-16 10:53:57 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.8 2005-12-19 22:13:31 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -55,7 +63,7 @@ class Ca(object):
                 self.b != other.b or self.r != other.r)
 
     def __repr__(self):
-        return '%r %s %s %r' % (self.c, self.f, self.b, self.r)
+        return '%r %s %s %r' % (chr(self.c), self.f, self.b, self.r)
 
     def isSpace(self):
         return chr(self.c).isspace()
