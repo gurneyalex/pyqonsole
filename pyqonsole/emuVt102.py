@@ -41,14 +41,14 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.10 2005-12-19 11:25:26 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.11 2005-12-19 11:30:22 syt Exp $'
 
 import os
 import qt
 
 import pyqonsole.keytrans as kt
 from pyqonsole.emulation import Emulation, NOTIFYBELL, NOTIFYNORMAL
-from pyqonsole import screen, ca
+from pyqonsole import screen, widget, ca
 
 
 MODE_AppScreen = screen.MODES_SCREEN+0
@@ -851,19 +851,19 @@ class EmuVt102(Emulation):
             return (ev.state() & M == M) << B
         cmd = kt.CMD_none
         try:
-            cmd, txt, len, metaSpecified = self._keyTrans.findEntry(ev.key(),
-                                                                    encodeMode(screen.MODE_NewLine, kt.BITS_NewLine) +
-                                                                    encodeMode(MODE_Ansi, kt.BITS_Ansi) +
-                                                                    encodeMode(MODE_AppCuKeys, kt.BITS_AppCuKeys) +
-                                                                    encodeStat(qt.QEvent.ControlButton, kt.BITS_Control) +
-                                                                    encodeStat(qt.QEvent.ShiftButton, kt.BITS_Shift) +
-                                                                    encodeStat(qt.QEvent.AltButton, kt.BITS_Alt))
+            cmd, txt, len, metaSpecified = self._key_trans.findEntry(ev.key(),
+                                                                     encodeMode(screen.MODE_NewLine, kt.BITS_NewLine) +
+                                                                     encodeMode(MODE_Ansi, kt.BITS_Ansi) +
+                                                                     encodeMode(MODE_AppCuKeys, kt.BITS_AppCuKeys) +
+                                                                     encodeStat(qt.QEvent.ControlButton, kt.BITS_Control) +
+                                                                     encodeStat(qt.QEvent.ShiftButton, kt.BITS_Shift) +
+                                                                     encodeStat(qt.QEvent.AltButton, kt.BITS_Alt))
             if   cmd == kt.CMD_emitClipboard:   self._gui.emitSelection(False, False)
             elif cmd == kt.CMD_emitSelection:   self._gui.emitSelection(True, False)
-            elif cmd == kt.CMD_scrollPageUp:    self.__gui.doScroll(-self._gui.lines/2)
-            elif cmd == kt.CMD_scrollPageDown:  self.__gui.doScroll(+self._gui.lines/2)
-            elif cmd == kt.CMD_scrollLineUp:    self.__gui.doScroll(-1)
-            elif cmd == kt.CMD_scrollLineDown:  self.__gui.doScroll(+1)
+            elif cmd == kt.CMD_scrollPageUp:    self._gui.doScroll(-self._gui.lines/2)
+            elif cmd == kt.CMD_scrollPageDown:  self._gui.doScroll(+self._gui.lines/2)
+            elif cmd == kt.CMD_scrollLineUp:    self._gui.doScroll(-1)
+            elif cmd == kt.CMD_scrollLineDown:  self._gui.doScroll(+1)
             elif cmd == kt.CMD_prevSession:
                 if qt.QApplication.reverseLayout():
                     self.emit(qt.PYSIGNAL("nextSession"), ())
@@ -940,7 +940,7 @@ class EmuVt102(Emulation):
         """
         CHARSET = self._charset[self._scr is self._screen[1]]
         if CHARSET.graphic and 0x5f <= c and c <= 0x7e:
-            return widget.vt100Graphics[c-0x5f]
+            return widget.VT100_GRAPHICS[c-0x5f]
         elif CHARSET.pound and c == ord('#'):
             return 0xa3 # Obsolete mode
         elif ord('[') <= c and c <= ord(']'):

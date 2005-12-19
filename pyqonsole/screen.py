@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.12 2005-12-16 16:36:44 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.13 2005-12-19 11:30:22 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -89,7 +89,8 @@ class Screen:
         self.__tMargin = 0
         self.__bMargin = 0
         # States
-        self.__currParm = {'mode': [None, None, None, None, None, None]}
+        self._curr_mode = [None, None, None, None, None, None]
+        self._save_mode = [None, None, None, None, None, None]
         self.__tabStops = None
         # Selection
         self.clearSelection()
@@ -105,8 +106,6 @@ class Screen:
         self.__saCuFg = 0
         self.__saCuBg = 0
         self.__saCuRe = 0
-        # Save modes
-        self.__saveParm = {'mode': [None, None, None, None, None, None]}
         #
         self.__initTabStops()
         self.reset()
@@ -177,6 +176,7 @@ class Screen:
         self.__cuY = max(0, min(self.lines-1, y+dy))
 
     def setCursorYX(self, y, x):
+        print 'set cursor', y, x
         self.setCursorX(x)
         self.setCursorY(y)
     
@@ -328,21 +328,21 @@ class Screen:
         self.__tabStops[self.__cuX] = set
         
     def setMode(self, m):
-        self.__currParm['mode'][m] = True
+        self._curr_mode[m] = True
         if m == MODE_Origin:
             self.__cuX = 0
             self.__cuY = self.__tMargin
             
     def resetMode(self, m):
-        self.__currParm['mode'][m] = False
+        self._curr_mode[m] = False
         if m == MODE_Origin:
             self.__cuX = self.__cuY = 0
             
     def saveMode(self, m):
-        self.__saveParm['mode'][m] = self.__currParm['mode'][m]
+        self._save_mode[m] = self._curr_mode[m]
             
     def restoreMode(self, m):
-        self.__currParm['mode'][m] = self.__saveParm['mode'][m]
+        self._curr_mode[m] = self._save_mode[m]
             
     def saveCursor(self):
         self.__saCuX = self.__cuX
@@ -415,7 +415,7 @@ class Screen:
         self.__effectiveRendition()
         
     def getMode(self, n):
-        return self.__currParm['mode'][n]
+        return self._curr_mode[n]
     
     def getCursorX(self):
         return self.__cuX
