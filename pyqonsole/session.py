@@ -22,7 +22,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.5 2005-12-16 15:31:24 syt Exp $'
+__revision__ = '$Id: session.py,v 1.6 2005-12-19 11:47:41 syt Exp $'
 
 import os
 
@@ -66,7 +66,7 @@ class Session(qt.QObject):
         self.sh.setSize(self.te.lines, self.te.columns) # not absolutely necessary
         
         self.connect(self.sh, qt.PYSIGNAL('block_in'), self.em.onRcvBlock)
-        self.connect(self.em, qt.PYSIGNAL('ImageSizeChanged'), self.sh.setSize)
+        self.connect(self.em, qt.PYSIGNAL('imageSizeChanged'), self.sh.setSize)
         self.connect(self.em, qt.PYSIGNAL('sndBlock'), self.sh.sendBytes)
         self.connect(self.em, qt.PYSIGNAL('changeTitle'), self.setUserTitle)
         self.connect(self.em, qt.PYSIGNAL('notifySessionState'), self.notifySessionState)
