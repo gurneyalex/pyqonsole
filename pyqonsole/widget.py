@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.17 2005-12-19 10:55:02 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.18 2005-12-19 11:30:47 syt Exp $'
 
 import qt
 
@@ -284,11 +284,11 @@ class Widget(qt.QFrame):
         self.update()
 
     def setScroll(self, cursor, lines):
-        self.disconnect(self.scrollbar, qt.PYSIGNAL('valueChanged'), self.scrollChanged)
+        self.disconnect(self.scrollbar, qt.PYSIGNAL('valueChanged(int)'), self.scrollChanged)
         self.scrollbar.setRange(0,lines)
         self.scrollbar.setSteps(1, self.lines)
         self.scrollbar.setValue(cursor)
-        self.connect(self.scrollbar, qt.PYSIGNAL('valueChanged'), self.scrollChanged)
+        self.connect(self.scrollbar, qt.PYSIGNAL('valueChanged(int)'), self.scrollChanged)
 
     def doScroll(self, lines):
         self.scrollbar.setValue(self.scrollbar.value()+lines)
@@ -511,12 +511,12 @@ class Widget(qt.QFrame):
     def setSelection(self, t):
         # Disconnect signal while WE set the clipboard
         self.cb = qt.QApplication.clipboard()
-        self.disconnect(self.cb, qt.SIGNAL('selectionChanged'), self.onClearSelection)
+        self.disconnect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
         self.cb.setSelectionMode(True)
         qt.QApplication.clipboard().setText(t)
         self.cb.setSelectionMode(False)
         qt.QApplication.clipboard().setText(t)
-        self.connect(self.cb, qt.SIGNAL('selectionChanged'), self.onClearSelection)
+        self.connect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
 
 
     def setFont(self, font):
@@ -622,9 +622,9 @@ class Widget(qt.QFrame):
             e.accept()
             return False
         if e.type() == qt.QEvent.Enter:
-            self.disconnect(self.cb, qt.PYSIGNAL('dataChanged'), self.onClearSelection)
+            self.disconnect(self.cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
         if e.type() == qt.QEvent.Leave:
-            self.connect(self.cb, qt.PYSIGNAL('dataChanged'), self.onClearSelection)
+            self.connect(self.cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
         return qt.QFrame.eventFilter(self,obj, e)
 
     def drawAttrStr(self, paint, rect, str, attr, pm, clear):
