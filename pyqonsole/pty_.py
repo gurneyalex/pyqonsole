@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.13 2005-12-16 15:31:23 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.14 2005-12-19 16:58:51 syt Exp $'
 
 import os
 import sys
@@ -206,7 +206,7 @@ class PtyProcess(Process):
         if self.term:
             os.environ['TERM'] = term
         #print 'PTY propage size', self.wsize
-        ioctl(0, TIOCSWINSZ, pack('ii', *self.wsize))
+        ioctl(0, TIOCSWINSZ, pack('4H', self.wsize[0], self.wsize[1], 0, 0))
 
         # finally, pass to the new program
         os.execvp(pgm, args)
@@ -275,7 +275,7 @@ class PtyProcess(Process):
         if self.master_fd is None:
             return
         print 'PTY propagate size'
-        ioctl(self.master_fd, TIOCSWINSZ, pack('ii', lines, columns))
+        ioctl(self.master_fd, TIOCSWINSZ, pack('4H', lines, columns, 0, 0))
         
     def setupCommunication(self, comm):
         """overriden from Process"""
