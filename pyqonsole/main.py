@@ -53,10 +53,9 @@ def main(argv):
     te.setScrollbarLocation(2)
     te.setMinimumSize(150, 70)
     te.setFocus()
-    te.resize(te.calcSize(80, 25))
     te.setBackgroundMode(qt.Qt.PaletteBackground)
-    # w.setSize(80,25);
     setFont(te, 4) # 15
+    te.resize(te.calcSize(80, 25))
     appli.setMainWidget(te)
     te.show()
     if len(argv) > 1:
