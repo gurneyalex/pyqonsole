@@ -12,13 +12,6 @@ TODO list for pyqonsole
     (C++ destructor vs python __del__)
 
 * backport: 
-  * TECommon (ca.py)
-  * TEmulation (emulation.py)
-  * TEScreen (screen.py)
-  * TEWidget
-  * BlockArray
-  * qonsole_wcwidth (_helpers.c)
-  * main
   * HistoryScrollBlockArray n'a pas été backporté car il semble
     incomplet et n'a pas l'air utilisé. Fallait ?
   * voir l'interaction screen <-> history, la gestion de l'historique
@@ -27,7 +20,7 @@ TODO list for pyqonsole
 
 * refactor to be more pythonic
 
-
+* remove qt from emulation, emuVt102, keytrans, proc*, pty_, session modules
 
 undecodable 813063 0 0
 undecodable 814087 0 0

@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.15 2005-12-19 17:01:48 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.16 2005-12-19 17:11:31 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -481,13 +481,14 @@ class Screen:
         merged = self.lines*self.columns*[None]
         dft = Ca()        
         y = 0
-        #print 'cooked image', self.lines, self.columns
+        print 'cooked image', y, self.lines, self._hist.getLines(), self._histCursor
         while y < self.lines and y < (self._hist.getLines()-self._histCursor):
             len_ = min(self.columns, self._hist.getLineLen(y,self._histCursor))
             yp = y*self.columns
             yq = (y+self._histCursor)#*self.columns
             #self._hist.getCells(y+self._histCursor, 0, len_, merged, yp)
             #try:
+            print self._hist.getCells(y+self._histCursor, 0, len_)
             merged[yp:yp+len_] = self._hist.getCells(y+self._histCursor, 0, len_)
             #except TypeError:
             #    pass

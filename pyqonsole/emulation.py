@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.13 2005-12-16 15:01:42 alf Exp $'
+__revision__ = '$Id: emulation.py,v 1.14 2005-12-19 17:11:31 syt Exp $'
 
 import qt
 
@@ -350,11 +350,10 @@ class Emulation(qt.QObject):
         """
         if not self._connected:
             return
-        print 'PTY.onImageSizeChange', lines, columns
+        print 'emulation.onImageSizeChange', lines, columns
         self._screen[0].resizeImage(lines, columns)
         self._screen[1].resizeImage(lines, columns)
         self.__showBulk()
-        
         # Propagate event to serial line
         self.emit(qt.PYSIGNAL("imageSizeChanged"), (lines, columns))
     
@@ -367,6 +366,7 @@ class Emulation(qt.QObject):
     def _setColumns(self, columns):
         # FIXME This goes strange ways
         # Can we put this straight or explain it at least?
+        # XXX moreover no one is connected to this signal...
         self.emit(qt.PYSIGNAL("changeColumns"), (columns,))
         
         
