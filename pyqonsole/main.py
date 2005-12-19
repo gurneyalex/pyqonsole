@@ -75,6 +75,17 @@ def main(argv):
     appli.connect(session, qt.PYSIGNAL('done'), quit)
     appli.exec_loop()
 
+def profile(argv):
+    from hotshot import Profile
+    prof = Profile('pyqonsole.prof')
+    prof.runcall(main, argv)
+    prof.close()
+    import hotshot.stats
+    stats = hotshot.stats.load('pyqonsole.prof')
+    stats.strip_dirs()
+    stats.sort_stats('time', 'calls')
+    stats.print_stats(30)
+
 if __name__ == '__main__':
 ##     import time
 ##     print "*" * 80
@@ -87,4 +98,8 @@ if __name__ == '__main__':
 ##     print "1 second before launch..."
 ##     time.sleep(1)
 ##     print "let's rock!"
-    main(sys.argv)
+    if "--profile" in sys.argv:
+        sys.argv.remove("--profile")
+        profile(sys.argv)
+    else:
+        main(sys.argv)
