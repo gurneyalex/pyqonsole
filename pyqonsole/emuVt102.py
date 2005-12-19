@@ -41,7 +41,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.13 2005-12-19 22:54:04 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.14 2005-12-19 22:58:17 syt Exp $'
 
 import os
 import qt
@@ -744,7 +744,6 @@ class EmuVt102(Emulation):
         print 'undecodable', token, p, q
 
     def sendString(self, s):
-        print 'emuVt102.sendString', repr(s)
         self.emit(qt.PYSIGNAL("sndBlock"), (s,))
         
     def reportCursorPosition(self):
@@ -839,9 +838,9 @@ class EmuVt102(Emulation):
     def scrollLock(self, lock):
         self._hold_screen = lock
         if lock:
-            self.emit(qt.PYSIGNAL("sndBlock"), ("\023",)) # XOFF (^S)
+            self.sendString("\023") # XOFF (^S)
         else:
-            self.emit(qt.PYSIGNAL("sndBlock"), ("\021",)) # XON (^Q)
+            self.sendString("\021") # XON (^Q)
             
     def __onScrollLock(self):
         self.scrollLock(not self._hold_screen)
@@ -905,7 +904,7 @@ class EmuVt102(Emulation):
         if cmd == kt.CMD_send:
             if ev_state & AltButton and not entry.metaspecified():
                 self.sendString("\033") # ESC this is the ALT prefix
-            self.emit(qt.PYSIGNAL("sndBlock"), (entry.txt,))
+            self.sendString(entry.txt)
             return
         # fall back handling
         if not ev.text().isEmpty():
@@ -919,7 +918,7 @@ class EmuVt102(Emulation):
             if ev_state & ControlButton:
                 #print ev.ascii(), ev.key()
                 s.fill(chr(ev.ascii()), 1)
-            self.emit(qt.PYSIGNAL("sndBlock"), (str(s),))
+            self.sendString(str(s))
 
     """VT100 Charsets
 
