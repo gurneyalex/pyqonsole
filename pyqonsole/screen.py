@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.19 2005-12-20 09:56:30 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.20 2005-12-20 10:45:35 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -230,7 +230,7 @@ class Screen:
         actual top and bottom margin is scrolled down instead.
         """
         if self.__cuY == self._margin_t:
-            self.__scrollDown(self._margin_t, 1)
+            self._scrollDown(self._margin_t, 1)
         elif self.__cuY > 0:
             self.__cuY -= 1
     
@@ -303,7 +303,7 @@ class Screen:
     def insertLines(self, n):
         if n == 0:
             n = 1
-        self.__scrollDown(self.__cuY, n)
+        self._scrollDown(self.__cuY, n)
         
     def clearTabStops(self):
         for i in xrange(self.columns):
@@ -462,7 +462,7 @@ class Screen:
         self.__cuX = min(self.__cuX, self.columns-1)
         self.__cuY = min(self.__cuY, lines-1)
         self._margin_t = 0
-        self._margin_b = self.lines
+        self._margin_b = self.lines - 1
         self.__initTabStops()
         self.clearSelection()
         
@@ -534,9 +534,9 @@ class Screen:
     def getHistLines(self):
         return self._hist.lines
     
-    def setScroll(self, t):
+    def setScroll(self, scroll_type):
         self.clearSelection()
-        self._hist = t.getScroll(self._hist)
+        self._hist = scroll_type.getScroll(self._hist)
         self._hist_cursor = self._hist.lines
         
     def getScroll(self):
@@ -746,7 +746,6 @@ class Screen:
             xs = loca[1]
             dx = loce[1] - xs + 1
             self._image[ys][dest[1]:dest[1]+dx] = [c.dump() for c in self._image[ys][xs:xs+dx]]
-                    
         # Adjust selection to follow scroll
         if self._sel_begin != [-1, -1]:
             beginIsSTL = (self._sel_begin == self._sel_topleft)
@@ -779,7 +778,7 @@ class Screen:
         self._moveImage([from_, 0], [from_+n, 0], [self._margin_b, self.columns-1])
         self._clearImage([self._margin_b-n+1, 0], [self._margin_b, self.columns-1], ' ')
         
-    def __scrollDown(self, from_, n):
+    def _scrollDown(self, from_, n):
         if n <= 0 or from_ > self._margin_b:
             return
         if from_+n > self._margin_b:
