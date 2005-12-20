@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.23 2005-12-20 11:30:20 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.24 2005-12-20 11:38:56 syt Exp $'
 
 import qt
 
@@ -213,7 +213,7 @@ class Widget(qt.QFrame):
         self.line_selection_mode = False
         self.preserve_line_breaks = True
         self.scroll_loc = SCRNONE
-        self.word_characters = ":@-./_~"
+        self._word_characters = u":@-./_~"
         self.bell_mode = BELLSYSTEM
         # is set in mouseDoubleClickEvent and deleted
         # after QApplication::doubleClickInterval() delay
@@ -495,12 +495,6 @@ class Widget(qt.QFrame):
     def sizeHint(self):
         return self.size()
 
-    def setWordCharacters(self, wc):
-        self.word_characters = wc
-
-    def setBellMode(self, mode):
-        self.bell_mode = mode
-    
     def bell(self):
         if self.bell_mode == BELLSYSTEM:
             qt.QApplication.beep()
@@ -1113,9 +1107,15 @@ class Widget(qt.QFrame):
 
 
     def charClass(self, ch):
-        qch = qt.QChar(ch)
-        if qch.isSpace(): return ' '
-        if qch.isLetterOrNumber() or self.word_characters.contains(qch, False):
+        """return a kind of category for the given char (as an int):
+        * space
+        * alpha numeric
+        * other
+        """
+        ch = unichr(ch)
+        if ch.isspace():
+            return ' '
+        if ch.alnum() or ch in self._word_characters:
             return 'a'
         # Everything else is weird
         return 1
