@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.21 2005-12-20 09:56:50 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.22 2005-12-20 10:45:53 syt Exp $'
 
 import qt
 
@@ -268,7 +268,7 @@ class Widget(qt.QFrame):
     def setColorTable(self, table):
         for i in xrange(TABLE_COLORS):
             self.color_table[i] = table[i]
-        pm = self.paletteBackgroundPixmap() 
+        pm = self.paletteBackgroundPixmap()
         if not pm:
             self.setPaletteBackgroundColor(self.color_table[DEFAULT_BACK_COLOR].color)
         self.update()
@@ -284,11 +284,12 @@ class Widget(qt.QFrame):
         self.update()
 
     def setScroll(self, cursor, lines):
-        self.disconnect(self.scrollbar, qt.PYSIGNAL('valueChanged(int)'), self.scrollChanged)
+        self.disconnect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
         self.scrollbar.setRange(0,lines)
         self.scrollbar.setSteps(1, self.lines)
         self.scrollbar.setValue(cursor)
-        self.connect(self.scrollbar, qt.PYSIGNAL('valueChanged(int)'), self.scrollChanged)
+        print 'setscroll', cursor, lines
+        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
 
     def doScroll(self, lines):
         self.scrollbar.setValue(self.scrollbar.value()+lines)
