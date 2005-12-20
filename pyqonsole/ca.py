@@ -21,7 +21,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.8 2005-12-19 22:13:31 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.9 2005-12-20 09:56:48 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -42,6 +42,7 @@ RE_CURSOR = 2**4
 class Ca(object):
     """a character with background / foreground colors and rendition attributes
     """
+    __slots__ = ('c', 'f', 'b', 'r')
     
     def __init__(self, c=ord(' '), f=DEFAULT_FORE_COLOR,
                  b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
@@ -77,14 +78,15 @@ class Ca(object):
     def dump(self):
         return Ca(self.c, self.f, self.b, self.r)
         
-    # XXX for debugging
-    def setC(self, c):
-        assert isinstance(c, int)
-        self._c = c
-    def getC(self):
-        return self._c
-    c = property(getC, setC)
-    
+##     # XXX for debugging
+##     def setC(self, c):
+##         assert isinstance(c, int)
+##         self._c = c
+##     def getC(self):
+##         return self._c
+##     c = property(getC, setC)
+
+
 class ColorEntry:
 
     def __init__(self, c=None, tr=False, b=False):
