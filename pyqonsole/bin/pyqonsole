@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+__revision__ = '$Id'
+
+from pyqonsole.main import run
+run()
