@@ -54,7 +54,7 @@ def main(argv):
     te.setMinimumSize(150, 70)
     te.setFocus()
     te.setBackgroundMode(qt.Qt.PaletteBackground)
-    setFont(te, 4) # 15
+    setFont(te, 3) # 15
     te.resize(te.calcSize(80, 25))
     appli.setMainWidget(te)
     te.show()
@@ -86,9 +86,23 @@ def profile(argv):
     stats.sort_stats('time', 'calls')
     stats.print_stats(30)
 
-if __name__ == '__main__':
+def showHelp():
+    print "pyqonsole --help: displays this message"
+    print "pyqonsole [options] [command]: runs command in the console"
+    print "options:"
+    print " --profile : displays profiling statistics when console exits"
+    print "             (internal development use. You don't need this)"
+    
+def run(args=None):
+    args = args or sys.argv
     if "--profile" in sys.argv:
         sys.argv.remove("--profile")
         profile(sys.argv)
+    elif '--help' in sys.argv or '-h' in sys.argv:
+        showHelp()
     else:
         main(sys.argv)
+    
+
+if __name__ == '__main__':
+    run()
