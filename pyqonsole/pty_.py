@@ -65,7 +65,7 @@ XXX  signals:
     void block_in(const char* s, int len)
 
 """
-__revision__ = '$Id: pty_.py,v 1.15 2005-12-19 22:54:25 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.16 2005-12-20 10:54:06 alf Exp $'
 
 import os
 import sys
@@ -335,10 +335,9 @@ class PtyProcess(Process):
         lenlist[0] = len(buf)
         if not buf:
             return
-        f = open("pty.log", "a")
-        f.write(buf)
-        f.close()
-        #sys.stdout.write(buf)
+##         f = open("pty.log", "a")
+##         f.write(buf)
+##         f.close()
         self.emit(qt.PYSIGNAL('block_in'), (buf,))
               
     def donePty(self):
