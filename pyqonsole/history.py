@@ -52,7 +52,7 @@ Based on the konsole code from Lars Doelle.
 XXX getLineLen usefull
 """
 
-__revision__ = '$Id: history.py,v 1.4 2005-12-19 22:13:05 syt Exp $'
+__revision__ = '$Id: history.py,v 1.5 2005-12-20 11:03:03 alf Exp $'
 
 
 class HistoryType(object):
@@ -189,7 +189,7 @@ class HistoryScrollBuffer(HistoryScroll):
         lineno = self._adjustLineNo(lineno)
         line = self.hist_buffer[lineno]
         assert line is not None
-        assert colno < len(line)
+        assert colno < len(line), 'colno=%d, len(line)=%d'%(colno, len(line))
         if count is None:
             count = len(line)
         return line[colno:colno + count]
