@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.18 2005-12-19 22:54:25 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.19 2005-12-20 09:56:30 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -733,16 +733,22 @@ class Screen:
     
     def _moveImage(self, dest, loca, loce):
         #print 'move image', dest, loca, loce
-        if loce < loca:
-            return
-        # XXX x coordonates are not considered
-        self._image[dest[0]:dest[0]+(loce[0]-loca[0]+1)] = [[c.dump() for c in lines]
-                                                            for lines in self._image[loca[0]:loca[0]+(loce[0]-loca[0]+1)]]
-        
-        for i in xrange(loce[0] - loca[0] + 1):
-            self._lineWrapped[dest[0]+i] = self._lineWrapped[loca[0]+1]
-        if self._sel_begin == [-1, -1]:
-            # Adjust selection to follow scroll
+        assert loce >= loca
+        # XXX x coordonates are not always considered. Is it enough actually ?
+        ys = loca[0]
+        if dest[0] != ys:
+            dy = loce[0] - ys + 1
+            self._image[dest[0]:dest[0]+dy] = [[c.dump() for c in lines]
+                                               for lines in self._image[ys:ys+dy]]
+            for i in xrange(dy):
+                self._lineWrapped[dest[0]+i] = self._lineWrapped[ys+i]
+        else:
+            xs = loca[1]
+            dx = loce[1] - xs + 1
+            self._image[ys][dest[1]:dest[1]+dx] = [c.dump() for c in self._image[ys][xs:xs+dx]]
+                    
+        # Adjust selection to follow scroll
+        if self._sel_begin != [-1, -1]:
             beginIsSTL = (self._sel_begin == self._sel_topleft)
             diff = self._subPoints(dest, loca) # Scroll by this amount
             scr_topleft = [self._hist.lines, 0]
@@ -750,22 +756,18 @@ class Screen:
             srce = self._addPoints(loce, scr_topleft)
             desta = self._addPoints(srca, diff)
             deste = self._addPoints(srce, diff)
-            
             if self._sel_topleft >= srca and self._sel_topleft <= srce:
                 self._sel_topleft = self._addPoints(self._sel_topleft, diff)
             elif self._sel_topleft >= desta and self._sel_topleft <= deste:
                 self._sel_bottomright = [-1, -1] # Clear selection (see below)
-                
             if self._sel_bottomright >= srca and self._sel_bottomright <= srce:
                 self._sel_bottomright = self._addPoints(self._sel_bottomright, diff)
             elif self._sel_bottomright >= desta and self._sel_bottomright <= deste:
                 self._sel_bottomright = [-1, -1] # Clear selection (see below)
-            
             if self._sel_bottomright < [0, 0]:
                 self.clearSelection()
             elif self._sel_topleft < [0, 0]:
                     self._sel_topleft = [0, 0]
-            
             if beginIsSTL:
                 self._sel_begin = self._sel_topleft
             else:
