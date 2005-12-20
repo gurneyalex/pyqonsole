@@ -24,7 +24,7 @@ class CaTest(unittest.TestCase):
     def testInit(self):
         """ Test the __init__ method.
         """
-        self.assertEqual(self.c1.c, ' ')
+        self.assertEqual(self.c1.c, ord(' '))
         self.assertEqual(self.c1.f, DEFAULT_FORE_COLOR)
         self.assertEqual(self.c1.b, DEFAULT_BACK_COLOR)
         self.assertEqual(self.c1.r, DEFAULT_RENDITION)
