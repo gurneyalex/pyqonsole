@@ -31,7 +31,7 @@ Based on the konsole code from Lars Doelle.
 @author: Cyrille Boullier
 @copyright: 2003
 @organization: CEA-Grenoble
-@license: ??
+@license: CeCILL
 
 
 
@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.24 2005-12-20 11:38:56 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.25 2005-12-20 13:52:52 alf Exp $'
 
 import qt
 
