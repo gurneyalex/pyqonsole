@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.22 2005-12-20 10:45:53 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.23 2005-12-20 11:30:20 syt Exp $'
 
 import qt
 
@@ -288,7 +288,6 @@ class Widget(qt.QFrame):
         self.scrollbar.setRange(0,lines)
         self.scrollbar.setSteps(1, self.lines)
         self.scrollbar.setValue(cursor)
-        print 'setscroll', cursor, lines
         self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
 
     def doScroll(self, lines):

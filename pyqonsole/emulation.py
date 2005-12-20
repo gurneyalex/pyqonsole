@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.15 2005-12-19 22:54:25 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.16 2005-12-20 11:30:21 syt Exp $'
 
 import qt
 
@@ -318,7 +318,6 @@ class Emulation(qt.QObject):
             image = self._scr.getCookedImage() # Get the image
             self._gui.setImage(image, self._scr.lines, self._scr.columns) #  Actual refresh
             self._gui.setCursorPos(self._scr.getCursorX(), self._scr.getCursorY())
-            
             # FIXME: Check that we do not trigger other draw event here
             self._gui.setLineWrapped(self._scr.getCookedLineWrapped())
             self._gui.setScroll(self._scr.getHistCursor(), self._scr.getHistLines())
