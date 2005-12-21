@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.27 2005-12-21 13:13:19 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.28 2005-12-21 13:30:05 syt Exp $'
 
 import qt
 
@@ -968,26 +968,28 @@ class Widget(qt.QFrame):
             pos.setY(tLy+self.bY+self.lines*self.font_h-1)
         # check if we produce a mouse move event by self
         if pos != ev.pos():
+            # XXX mapToGlobal ?
             cursor().setPos(mapToGlobal(pos))
         if pos.y() == tLy+self.bY+self.lines*self.font_h-1:
             self.scrollbar.setValue(self.scrollbar.value()+yMouseScroll) # scrollforward
         if pos.y() == tLy+self.bY:
             self.scrollbar.setValue(self.scrollbar.value()-yMouseScroll) # scrollback
-        here = qt.QPoint((pos.x()-tLx-self.bX+(self.font_w/2))/self.font_w,(pos.y()-tLy-self.bY)/self.font_h)
-        self.i_pnt_selCorr = self.i_pnt_sel
-        self.i_pnt_selCorr.setY(self.i_pnt_selCorr.y() - self.scrollbar.value())
-        self.pnt_selCorr = self.pnt_sel
-        self.pnt_selCorr.setY(self.pnt_selCorr.y() - self.scrollbar.value())
+        here = qt.QPoint((pos.x()-tLx-self.bX+(self.font_w/2))/self.font_w,
+                         (pos.y()-tLy-self.bY)/self.font_h)
+        i_pnt_sel_corr = qt.QPoint(self.i_pnt_sel)
+        i_pnt_sel_corr.setY(i_pnt_sel_corr.y() - self.scrollbar.value())
+        pnt_sel_corr = qt.QPoint(self.pnt_sel)
+        pnt_sel_corr.setY(pnt_sel_corr.y() - self.scrollbar.value())
         swapping = False
         if self.word_selection_mode:
             # Extend to word boundaries
-            left_not_right = (here.y() < self.i_pnt_selCorr.y() or
-                              here.y() == self.i_pnt_selCorr.y() and here.x() < self.i_pnt_selCorr.x())
-            old_left_not_right = (self.pnt_selCorr.y() < self.i_pnt_selCorr.y() or
-                                  self.pnt_selCorr.y() == self.i_pnt_selCorr.y() and self.pnt_selCorr.x() < self.i_pnt_selCorr.x())
+            left_not_right = (here.y() < i_pnt_sel_corr.y() or
+                              here.y() == i_pnt_sel_corr.y() and here.x() < i_pnt_sel_corr.x())
+            old_left_not_right = (pnt_sel_corr.y() < i_pnt_sel_corr.y() or
+                                  pnt_sel_corr.y() == i_pnt_sel_corr.y() and pnt_sel_corr.x() < i_pnt_sel_corr.x())
             swapping = left_not_right != old_left_not_right
             # Find left (left_not_right ? from here : from start)
-            left = left_not_right and here or self.i_pnt_selCorr
+            left = qt.QPoint(left_not_right and here or i_pnt_sel_corr)
             i = self._loc(left.x(),left.y())
             if i >= 0 and i <= self.image_size:
                 selClass = self.charClass(self.image[i].c)
@@ -999,7 +1001,7 @@ class Widget(qt.QFrame):
                         left.setX(self.columns-1)
                         left.setY(left.y() - 1)
             # Find left (left_not_right ? from start : from here)
-            right = left_not_right and self.i_pnt_selCorr or here
+            right = qt.QPoint(left_not_right and i_pnt_sel_corr or here)
             i = self._loc(right.x(),right.y())
             if i >= 0 and i <= self.image_size:
                 selClass = self.charClass(self.image[i].c)
@@ -1018,11 +1020,11 @@ class Widget(qt.QFrame):
             ohere.setX(ohere.x() + 1)
         if self.line_selection_mode:
             # Extend to complete line
-            above_not_below = here.y() < self.i_pnt_selCorr.y()
-            #    bool old_above_not_below = ( self.pnt_selCorr.y() < self.i_pnt_selCorr.y() )
+            above_not_below = here.y() < i_pnt_sel_corr.y()
+            #    bool old_above_not_below = ( pnt_sel_corr.y() < i_pnt_sel_corr.y() )
             swapping = True # triple click maybe selected a wrapped line
-            above = above_not_below and here or self.i_pnt_selCorr
-            below = above_not_below and self.i_pnt_selCorr or here
+            above = qt.QPoint(above_not_below and here or i_pnt_sel_corr)
+            below = qt.QPoint(above_not_below and i_pnt_sel_corr or here)
             while above.y() > 0 and self.line_wrapped[above.y()-1]:
                 above.setY(above.y() - 1)
             while below.y() < self.lines-1 and self.line_wrapped[below.y()]:
@@ -1037,15 +1039,15 @@ class Widget(qt.QFrame):
             ohere.setX(ohere.x() + 1)
         offset = 0
         if not self.word_selection_mode and not self.line_selection_mode:
-            left_not_right = (here.y() < self.i_pnt_selCorr.y() or
-                              here.y() == self.i_pnt_selCorr.y() and here.x() < self.i_pnt_selCorr.x())
-            old_left_not_right = (self.pnt_selCorr.y() < self.i_pnt_selCorr.y() or
-                                  self.pnt_selCorr.y() == self.i_pnt_selCorr.y() and self.pnt_selCorr.x() < self.i_pnt_selCorr.x())
+            left_not_right = (here.y() < i_pnt_sel_corr.y() or
+                              here.y() == i_pnt_sel_corr.y() and here.x() < i_pnt_sel_corr.x())
+            old_left_not_right = (pnt_sel_corr.y() < i_pnt_sel_corr.y() or
+                                  pnt_sel_corr.y() == i_pnt_sel_corr.y() and pnt_sel_corr.x() < i_pnt_sel_corr.x())
             swapping = left_not_right != old_left_not_right
             # Find left (left_not_right ? from here : from start)
-            left = left_not_right and here or self.i_pnt_selCorr
+            left = qt.QPoint(left_not_right and here or i_pnt_sel_corr)
             # Find left (left_not_right ? from start : from here)
-            right = left_not_right and self.i_pnt_selCorr or here
+            right = qt.QPoint(left_not_right and i_pnt_sel_corr or here)
             if right.x() > 0:
                 i = self._loc(right.x(),right.y())
                 if i >= 0 and i <= self.image_size:
@@ -1055,7 +1057,7 @@ class Widget(qt.QFrame):
                             i += 1
                             right.setX(right.x() + 1)
                         if right.x() < self.columns-1:
-                            right = left_not_right and self.i_pnt_selCorr or here
+                            right = left_not_right and i_pnt_sel_corr or here
                         else:
                             # will be balanced later because of offset=-1
                             right.setX(right.x() + 1)
@@ -1066,7 +1068,7 @@ class Widget(qt.QFrame):
             else:
                 here, ohere = right, left
                 offset = -1
-        if here == self.pnt_selCorr and scroll == self.scrollbar.value():
+        if here == pnt_sel_corr and scroll == self.scrollbar.value():
             return # not moved
         if here == ohere:
             return # It's not left, it's not right.

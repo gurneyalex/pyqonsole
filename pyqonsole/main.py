@@ -54,7 +54,7 @@ def main(argv):
     te.setMinimumSize(150, 70)
     te.setFocus()
     te.setBackgroundMode(qt.Qt.PaletteBackground)
-    setFont(te, 3) # 15
+    setFont(te, 5) # 15
     te.resize(te.calcSize(80, 25))
     appli.setMainWidget(te)
     te.show()
