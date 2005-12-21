@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.25 2005-12-20 13:52:52 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.26 2005-12-21 10:40:46 syt Exp $'
 
 import qt
 
@@ -1115,7 +1115,7 @@ class Widget(qt.QFrame):
         ch = unichr(ch)
         if ch.isspace():
             return ' '
-        if ch.alnum() or ch in self._word_characters:
+        if ch.isalnum() or ch in self._word_characters:
             return 'a'
         # Everything else is weird
         return 1

@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.20 2005-12-20 10:45:35 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.21 2005-12-21 10:40:46 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -440,6 +440,7 @@ class Screen:
     def resizeImage(self, lines, columns):
         if lines == self.lines and columns == self.columns:
             return
+        print 'screen.resize', lines, columns
         if self.__cuY > lines+1:
             self._margin_b = self.lines-1
             for i in xrange(self.__cuY-(lines-1)):
@@ -481,13 +482,13 @@ class Screen:
             for x in xrange(len_, self.columns):
                 merged[yp+x] = dft
             for x in xrange(self.columns):
-                p = [y, x]
+##                 p = [y, x]
                 q = [yq, x]
 ##                 if REVERSE_WRAPPED_LINES: # Debug mode
 ##                     if hist.isWrappedLine(yq):
-##                         self.__reverseRendition(merged[self._loc(x, y)])
+##                         self._reverseRendition(merged[self._loc(x, y)])
                 if q >= self._sel_topleft and q <= self._sel_bottomright:
-                    self.__reverseRendition(merged[self._loc(x, y)])
+                    self._reverseRendition(merged, self._loc(x, y))
             y += 1
         # get lines from the actual screen
         actual_lines = hist.lines - self._hist_cursor
@@ -496,18 +497,20 @@ class Screen:
                 yq = y + self._hist_cursor
                 yr = y - hist.lines + self._hist_cursor
                 for x in xrange(self.columns):
-                    p = [y, x]
+##                     p = [y, x]
                     q = [yq, x]
                     assert self._image[yr][x] is not None
                     merged[y*self.columns+x] = self._image[yr][x]#.dump()
 ##                     if REVERSE_WRAPPED_LINES: # Debug mode
 ##                         if self._lineWrapped[y+-hist.lines+self._hist_cursor]:
-##                             self.__reverseRendition(merged[self._loc(x, y)])
+##                             self._reverseRendition(merged[self._loc(x, y)])
+                    if q >= self._sel_topleft and q <= self._sel_bottomright:
+                        self._reverseRendition(merged, self._loc(x, y))
         # 
         if self.getMode(MODE_Screen):
             for y in xrange(self.lines):
                 for x in xrange(self.columns):
-                    self.__reverseRendition(merged[self._loc(x, y)])
+                    self._reverseRendition(merged, self._loc(x, y))
         # update cursor
         loc_ = self._loc(self.__cuX, self.__cuY+hist.lines-self._hist_cursor)
         if self.getMode(MODE_Cursor) and loc_ < self.columns*self.lines:
@@ -545,171 +548,19 @@ class Screen:
     def hasScroll(self):
         return self._hist.hasScroll()
     
-    def setSelBeginXY(self, x, y):
-        self._sel_begin = [y+self._hist_cursor, x]
-        if x == self.columns:
-            self._incPoint(self._sel_begin, -1)
-        self._sel_bottomright = self._sel_begin
-        self._sel_topleft = self._sel_begin
-        
-    def setSelExtendXY(self, x, y):
-        if self._sel_begin == [-1, -1]:
-            return
-        l = (y+self._hist_cursor, x)
-        if l < self._sel_begin:
-            self._sel_topleft = l
-            self._sel_bottomright = self._sel_begin
-        else:
-            if x == self.columns:
-                self._incPoint(l, -1)
-            self._sel_topleft = self._sel_begin
-            self._sel_bottomright = l
-            
-    def testIsSelected(self, x, y):
-        pos = [y+self._hist_cursor, x]
-        return pos >= self._sel_topleft and pos <= self._sel_bottomright
+##     def getHistory(self):
+##         self._sel_begin, self._sel_bottomright, self._sel_topleft = [0, 0], [0, 0], [0, 0]
+##         self.setSelExtendXY(self.columns-1, self.lines-1)
+##         tmp = self.getSelText()
+##         # duh ?
+##         while tmp[-2] == 10 and tmp[-1] == 10:
+##             tmp = tmp[:-1]
+##         return tmp
     
-    def clearSelection(self):
-        self._sel_begin = [-1, -1]      # First location selected
-        self._sel_topleft = [-1, -1]    # Top-left location
-        self._sel_bottomright = [-1, -1]# Bottom-right location
-        
-    def setBusySelecting(self, busy):
-        self._sel_busy = busy
-        
-    def getSelText(self, preserveLineBreak):
-        if self._sel_begin == [-1, -1]:
-            return
-        return # XXXXXXX
-        histBR = self._loc(0, self._hist.lines)
-        hY = self._sel_topleft / self.columns
-        hX = self._sel_topleft % self.columns
-        s = self._sel_topleft
-        d = (self._sel_bottomright - self.__selfTL) / self.columns + 1
-        m = (d* (self.columns + 1) + 2) * [None]
-        d = 0
-        
-        while s <= self._sel_bottomright:
-            if s < histBR:
-                eol = self._hist.getLineLen(hY)
-                if hY == (self._sel_bottomright / self.columns) and eol > (self._sel_bottomright % self.columns):
-                    eol = self._sel_bottomright % self.columns + 1
-                while hX < eol:
-                    c = self._hist.getCell(hY, hX).c
-                    hX += 1
-                    if c:
-                        m[d] = c
-                        d += 1
-                    s += 1
-                if s <= self._sel_bottomright:
-                    if eol % self.columns == 0:
-                        if eol == 0:
-                            if preserveLineBreak:
-                                m[d] = '\n'
-                            else:
-                                m[d] = ' '
-                            d += 1
-                        else:
-                            if not self._hist.isWrappedLine(hY):
-                                if preserveLineBreak:
-                                    m[d] = '\n'
-                                else:
-                                    m[d] = ' '
-                                d += 1
-                    elif (eol + 1) % self.columns == 0:
-                        if not self._hist.isWrappedLine(hY):
-                            if preserveLineBreak:
-                                m[d] = '\n'
-                            else:
-                                m[d] = ' '
-                            d += 1
-                    else:
-                        if preserveLineBreak:
-                            m[d] = '\n'
-                        else:
-                            m[d] = ' '
-                            d += 1
-                hY += 1
-                hX = 0
-                s = hY * self.columns
-            else:
-                eol = (s/self.columns+1)*self.columns-1
-                addNewLine = False
-                if eol < self._sel_bottomright:
-                    while eol > s and \
-                    (not self._image[eol-histBR].c or self._image[eol-histBR].isSpace()) \
-                    and not self._lineWrapped[(eol-histBR)/self.columns]:
-                        eol -= 1
-                elif eol == self._sel_bottomright:
-                    if not self._lineWrapped[(eol-histBR)/self.columns]:
-                        addNewLine = True
-                else:
-                    eol = self._sel_bottomright
-                    
-                while s < eol:
-                    c = self._image[s-histBR].c
-                    s += 1
-                    if c:
-                        m[d] = c
-                        d += 1
-                        
-                if eol < self._sel_bottomright:
-                    if (eol + 1) % self.columns == 0:
-                        if not self._hist.isWrappedLine((eol-histBR)/self.columns):
-                            if preserveLineBreak:
-                                m[d] = '\n'
-                            else:
-                                m[d] = ' '
-                            d += 1
-                    else:
-                        if preserveLineBreak:
-                            m[d] = '\n'
-                        else:
-                            m[d] = ' '
-                            d += 1
-                elif addNewLine and preserveLineBreak:
-                    m[d] = '\n'
-                    d += 1
-
-                s = (eol/self.columns+1)*self.columns
-
-        qc = d*[None]
-        lastSpace = -1
-        j = 0
-        for i in xrange(d):
-            j += 1
-            if m[i] == ' ':
-                if lastSpace == -1:
-                    lastSpace = j
-            else:
-                if m[i] == '\n' and lastSpace != -1:
-                    j = lastSpace # Strip trailing space
-            qc[j] = m[i]
-        if lastSpace != -1:
-            j = lastSpace  # Strip trailing space
-        
-        return qc[:j]
-        
-    def getHistory(self):
-        self._sel_begin, self._sel_bottomright, self._sel_topleft = [0, 0], [0, 0], [0, 0]
-        self.setSelExtendXY(self.columns-1, self.lines-1)
-        tmp = self.getSelText()
-        # duh ?
-        while tmp[-2] == 10 and tmp[-1] == 10:
-            tmp = tmp[:-1]
-        return tmp
-    
-    def getHistoryLine(self, no):
-        self._sel_begin = self._sel_topleft = [no, 0]
-        self._sel_bottomright = [no, self.columns-1]
-        return self.getSelText(False)
-    
-    def checkSelection(self, from_, to):
-        if self._sel_begin == [-1, -1]:
-            return
-        # Clear entire selection if overlaps region to be moved
-        if self._overlapSelection(from_, to):
-            self.clearSelection()
+##     def getHistoryLine(self, no):
+##         self._sel_begin = self._sel_topleft = [no, 0]
+##         self._sel_bottomright = [no, self.columns-1]
+##         return self.getSelText(False)
             
     def _clearImage(self, loca, loce, c):
         c = ord(c)
@@ -720,16 +571,6 @@ class Screen:
             for x in xrange(loca[1], loce[1]+1):
                 self._image[y][x] = Ca(c, self._eff_fg, self._eff_bg, DEFAULT_RENDITION)
             self._lineWrapped[y] = False
-
-    def _overlapSelection(self, from_, to):
-        assert isinstance(from_, list), from_
-        assert isinstance(to, list), to
-        scr_topleft = [self._hist.lines, 0]
-        # Clear entire selection if overlaps region [from_, to]
-        if self._sel_bottomright > self._addPoints(from_, scr_topleft) and \
-               self._sel_topleft < self._addPoints(to, scr_topleft):
-            return True
-        return False
     
     def _moveImage(self, dest, loca, loce):
         #print 'move image', dest, loca, loce
@@ -846,8 +687,165 @@ class Screen:
             else:
                 self._eff_fg -= BASE_COLORS
                 
-    def __reverseRendition(self, p):
+    def _reverseRendition(self, image, coord):
+        image[coord] = p = image[coord].dump()
         p.f, p.b = p.b, p.f
+
+    # selection handling ######################################################
+
+    def setSelBeginXY(self, x, y):
+        self._sel_begin = [y+self._hist_cursor, x]
+        if x == self.columns:
+            self._incPoint(self._sel_begin, -1)
+        self._sel_bottomright = self._sel_begin
+        self._sel_topleft = self._sel_begin
+        
+    def setSelExtendXY(self, x, y):
+        if self._sel_begin == [-1, -1]:
+            return
+        l = [y+self._hist_cursor, x]
+        if l < self._sel_begin:
+            self._sel_topleft = l
+            self._sel_bottomright = self._sel_begin
+        else:
+            if x == self.columns:
+                self._incPoint(l, -1)
+            self._sel_topleft = self._sel_begin
+            self._sel_bottomright = l
+            
+    def testIsSelected(self, x, y):
+        pos = [y+self._hist_cursor, x]
+        return pos >= self._sel_topleft and pos <= self._sel_bottomright
+    
+    def clearSelection(self):
+        self._sel_begin = [-1, -1]      # First location selected
+        self._sel_topleft = [-1, -1]    # Top-left location
+        self._sel_bottomright = [-1, -1]# Bottom-right location
+        
+    def setBusySelecting(self, busy):
+        self._sel_busy = busy
+        
+    def getSelText(self, preserve_line_break):
+        if self._sel_begin == [-1, -1]:
+            return
+        histBR = [self._hist.lines, 0]
+        hY = self._sel_topleft[0]
+        hX = self._sel_topleft[1]
+        print 'get sel text', self._sel_bottomright, self._sel_topleft
+        m = []
+        s = self._sel_topleft[:]        
+        while s <= self._sel_bottomright:
+            # XXX in the first if branch, eol is scalar while in the else branch, it's a point !
+            if s < histBR:
+                eol = self._hist.getLineLen(hY)
+                if hY == self._sel_bottomright[0] and eol > self._sel_bottomright[1]:
+                    eol = self._sel_bottomright[1] + 1
+                while hX < eol:
+                    c = self._hist.getCells(hY, hX, 1)[0].c
+                    if c:
+                        m.append(unichr(c))
+                    self._incPoint(s)
+                    hX += 1
+                if s <= self._sel_bottomright:
+                    if eol % self.columns == 0:
+                        if eol == 0:
+                            if preserve_line_break:
+                                m.append('\n')
+                            else:
+                                m.append(' ')
+                        elif not self._hist.isWrappedLine(hY):
+                            if preserve_line_break:
+                                m.append('\n')
+                            else:
+                                m.append(' ')
+                    elif (eol + 1) % self.columns == 0:
+                        if not self._hist.isWrappedLine(hY):
+                            if preserve_line_break:
+                                m.append('\n')
+                            else:
+                                m.append(' ')
+                    elif preserve_line_break:
+                        m.append('\n')
+                    else:
+                        m.append(' ')
+                hY += 1
+                hX = 0
+                s = [hY, 0]
+            else:
+                eol = [s[0]+1, 0]
+                self._incPoint(eol, -1)
+                addNewLine = False
+                if eol < self._sel_bottomright:
+                    while eol > s:
+                        pt = self._subPoints(eol, histBR)
+                        ca = self._image[pt[0]][pt[1]]
+                        if (not ca.c or ca.isSpace()) and not self._lineWrapped[pt[0]]:
+                            break
+                        self._incPoint(eol, -1)
+                elif eol == self._sel_bottomright:
+                    pt = self._subPoints(eol, histBR)
+                    if not self._lineWrapped[pt[0]]:
+                        addNewLine = True
+                else:
+                    eol = self._sel_bottomright
+                while s <= eol:
+                    pt = self._subPoints(s, histBR)
+                    c = self._image[pt[0]][pt[1]].c
+                    if c:
+                        m.append(unichr(c))
+                    self._incPoint(s)
+                if eol < self._sel_bottomright:
+                    if eol[1] +1 == self.columns: #(eol + 1) % self.columns == 0:
+                        if not self._hist.isWrappedLine(eol[0]-histBR[0]):
+                            if preserve_line_break:
+                                m.append('\n')
+                            else:
+                                m.append(' ')
+                    elif preserve_line_break:
+                        m.append('\n')
+                    else:
+                        m.append(' ')
+                elif addNewLine and preserve_line_break:
+                    m.append('\n')
+                s = [eol[0]+1, 0]
+        # skip trailing spaces
+        m = [line.rstrip() for line in ''.join(m).splitlines()]
+##         last_space = None
+##         j = 0
+##         print 'm:', ''.join(m)
+##         for c in m:
+##             if c == ' ':
+##                 if last_space is None:
+##                     last_space = j
+##             else:
+##                 if c == '\n' and last_space is not None:
+##                     j = last_space # Strip trailing space
+##                 last_space = None
+##             j += 1
+##         if last_space is not None:
+##             j = last_space  # Strip trailing space
+        print 'SELECTED'
+        print '\n'.join(m)
+        print '****'
+        return '\n'.join(m)
+    
+    def checkSelection(self, from_, to):
+        if self._sel_begin == [-1, -1]:
+            return
+        # Clear entire selection if overlaps region to be moved
+        if self._overlapSelection(from_, to):
+            self.clearSelection()
+
+    def _overlapSelection(self, from_, to):
+        assert isinstance(from_, list), from_
+        assert isinstance(to, list), to
+        scr_topleft = [self._hist.lines, 0]
+        # Clear entire selection if overlaps region [from_, to]
+        if self._sel_bottomright > self._addPoints(from_, scr_topleft) and \
+               self._sel_topleft < self._addPoints(to, scr_topleft):
+            return True
+        return False
+        
 
     # point manipulation ######################################################
     
