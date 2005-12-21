@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.24 2005-12-21 15:35:09 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.25 2005-12-21 17:15:08 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -325,14 +325,12 @@ class Screen:
             self.__cuX = self.__cuY = 0
             
     def saveMode(self, m):
-        print 'save mode', m
         self._save_mode[m] = self._curr_mode[m]
             
     def restoreMode(self, m):
         self._curr_mode[m] = self._save_mode[m]
             
     def saveCursor(self):
-        print 'save cursor'
         self.__saCuX = self.__cuX
         self.__saCuY = self.__cuY
         self.__saCuRe = self._cu_re
@@ -373,7 +371,7 @@ class Screen:
         self._effectiveRendition()
         
     def resetRendition(self, re):
-        self._cu_re = self._cu_re & re
+        self._cu_re = self._cu_re & ~re
         self._effectiveRendition()
         
     def setForeColor(self, fgcolor):
@@ -414,7 +412,7 @@ class Screen:
         return self.__cuY
 
     def showCharacter(self, c):
-        print 'screen.showcharacter', c
+        #print 'screen.showcharacter', chr(c)
         w = wcWidth(c)
         if w <= 0:
             return

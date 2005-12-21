@@ -41,7 +41,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.15 2005-12-21 13:13:16 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.16 2005-12-21 17:15:07 syt Exp $'
 
 import os
 import qt
@@ -694,7 +694,7 @@ class EmuVt102(Emulation):
         elif token == TY_CSI_PR('r', 1003): self.restoreMode(MODE_Mouse1000) # XTERM
     
         elif token == TY_CSI_PR('h', 1047): self.setMode(MODE_AppScreen) # XTERM
-        elif token == TY_CSI_PR('l', 1047):  # XTERM
+        elif token == TY_CSI_PR('l', 1047): # XTERM
             self._screen[1].clearEntireScreen()
             self.resetMode(MODE_AppScreen)
         elif token == TY_CSI_PR('s', 1047): self.saveMode(MODE_AppScreen)    # XTERM
@@ -1042,7 +1042,6 @@ class EmuVt102(Emulation):
         if m == MODE_Mouse1000:
             self._gui.setMouseMarks(False)
         elif m == MODE_AppScreen:
-            self._screen[1].clearSelection()
             self._setScreen(1)
         if m < screen.MODES_SCREEN:
             self._screen[0].setMode(m)
@@ -1053,7 +1052,6 @@ class EmuVt102(Emulation):
         if m == MODE_Mouse1000:
             self._gui.setMouseMarks(True)
         elif m == MODE_AppScreen:
-            self._screen[0].clearSelection()
             self._setScreen(0)
         if m < screen.MODES_SCREEN:
             self._screen[0].resetMode(m)

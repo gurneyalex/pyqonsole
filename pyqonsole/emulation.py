@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.18 2005-12-21 15:35:09 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.19 2005-12-21 17:15:08 syt Exp $'
 
 import qt
 
@@ -127,8 +127,9 @@ class Emulation(qt.QObject):
         """ Change between primary and alternate screen.
         """
         old = self._scr
-        scr = self._screen[n&1]
-        if scr != old:
+        self._scr = self._screen[n]
+        if not self._scr is old:
+            self._scr.clearSelection()
             old.busy_selecting = False
             
     def setHistory(self, type_):

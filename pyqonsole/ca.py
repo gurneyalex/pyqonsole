@@ -21,7 +21,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.9 2005-12-20 09:56:48 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.10 2005-12-21 17:15:07 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -34,8 +34,7 @@ DEFAULT_RENDITION = 0
 RE_BOLD = 2**0
 RE_BLINK = 2**1
 RE_UNDERLINE = 2**2
-RE_REVERSE = 2**3   # Screen only
-RE_INTENSIVE = 2**3 # Widget only
+RE_REVERSE = 2**3
 RE_CURSOR = 2**4
 
 
