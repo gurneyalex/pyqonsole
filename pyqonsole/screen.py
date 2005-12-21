@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.22 2005-12-21 13:13:18 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.23 2005-12-21 14:07:48 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -492,7 +492,6 @@ class Screen:
         for y in xrange(actual_y, self.lines):
             yq = y + self.hist_cursor
             yr = y - actual_y
-            #print yq, self._sel_topleft, self._sel_bottomright
             for x in xrange(self.columns):
                 q = [yq, x]
                 merged[y*self.columns+x] = self._image[yr][x]
@@ -630,19 +629,15 @@ class Screen:
         if newHistLines > oldHistLines:
             self.hist_cursor += 1
             # Adjust selection for the new point of reference
-            print 'adjusting selection', self._sel_topleft, self._sel_bottomright
             if self._sel_begin != [-1, -1]:
                 self._sel_topleft[0] += 1
                 self._sel_bottomright[0] += 1
-            print '->', self._sel_topleft, self._sel_bottomright
         # Scroll up if user is looking at the history and we can scroll up
         if self.hist_cursor > 0 and (self.hist_cursor != newHistLines
                                      or self.busy_selecting):
-            print 'history scroll'
             self.hist_cursor -= 1
         # Scroll selection in history up
         if self._sel_begin != [-1, -1]:
-            print 'scrolling selection', self._sel_topleft, self._sel_bottomright
             topBR = [1+newHistLines, 0]
             if self._sel_topleft < topBR:
                 self._sel_topleft[0] -= 1
@@ -656,7 +651,6 @@ class Screen:
                 self._sel_begin = self._sel_topleft
             else:
                 self._sel_begin = self._sel_bottomright
-            print '->', self._sel_topleft, self._sel_bottomright
             
     def __initTabStops(self):
         self.__tabStops = self.columns*[False]
@@ -684,7 +678,6 @@ class Screen:
     # selection handling ######################################################
 
     def setSelBeginXY(self, x, y):
-        print 'begin selection', y, self.hist_cursor
         self._sel_begin = [y+self.hist_cursor, x]
         if x == self.columns:
             self._incPoint(self._sel_begin, -1)
@@ -694,7 +687,6 @@ class Screen:
     def setSelExtendXY(self, x, y):
         if self._sel_begin == [-1, -1]:
             return
-        print 'extend selection', y, self.hist_cursor
         l = [y+self.hist_cursor, x]
         if l < self._sel_begin:
             self._sel_topleft = l
@@ -710,7 +702,6 @@ class Screen:
         return pos >= self._sel_topleft and pos <= self._sel_bottomright
     
     def clearSelection(self):
-        print 'clear selection'
         self._sel_begin = [-1, -1]      # First location selected
         self._sel_topleft = [-1, -1]    # Top-left location
         self._sel_bottomright = [-1, -1]# Bottom-right location
@@ -721,7 +712,6 @@ class Screen:
         histBR = [self._hist.lines, 0]
         hY = self._sel_topleft[0]
         hX = self._sel_topleft[1]
-        print 'get sel text', self._sel_bottomright, self._sel_topleft
         m = []
         s = self._sel_topleft[:]        
         while s <= self._sel_bottomright:
@@ -800,9 +790,6 @@ class Screen:
                 s = [eol[0]+1, 0]
         # skip trailing spaces
         m = [line.rstrip() for line in ''.join(m).splitlines()]
-        #print 'SELECTED'
-        #print '\n'.join(m)
-        #print '****'
         return '\n'.join(m)
     
     def checkSelection(self, from_, to):

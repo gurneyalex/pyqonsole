@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.28 2005-12-21 13:30:05 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.29 2005-12-21 14:07:49 syt Exp $'
 
 import qt
 
@@ -957,7 +957,7 @@ class Widget(qt.QFrame):
         # the mouse cursor will kept catched within the bounds of the text in
         # self widget.
         # Adjust position within text area bounds. See FIXME above.
-        pos = ev.pos()
+        pos = qt.QPoint(ev.pos())
         if pos.x() < tLx+self.bX:
             pos.setX(tLx+self.bX)
         if pos.x() > tLx+self.bX+self.columns*self.font_w-1:
@@ -1075,7 +1075,7 @@ class Widget(qt.QFrame):
         if self.act_sel < 2 or swapping:
             self.emit(qt.PYSIGNAL('beginSelectionSignal'), (ohere.x()-1-offset, ohere.y()))
         self.act_sel = 2 # within selection
-        self.pnt_sel = here
+        self.pnt_sel = qt.QPoint(here)
         self.pnt_sel.setY(self.pnt_sel.y() + self.scrollbar.value())
         self.emit(qt.PYSIGNAL('extendSelectionSignal'), (here.x() + offset, here.y()))
         
