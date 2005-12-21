@@ -41,7 +41,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.14 2005-12-19 22:58:17 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.15 2005-12-21 13:13:16 syt Exp $'
 
 import os
 import qt
@@ -895,11 +895,11 @@ class EmuVt102(Emulation):
             elif cmd == kt.CMD_scrollLock: self.__onScrollLock()            
         
         # Revert to non-history when typing
-        if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty() or \
+        if self._scr.hist_cursor != self._scr.getHistLines() and not ev.text().isEmpty() or \
            ev.key() == qt.QEvent.Key_Down or ev.key() == qt.QEvent.Key_Up or \
            ev.key() == qt.QEvent.Key_Left or ev.key() == qt.QEvent.Key_Right or \
            ev.key() == qt.QEvent.Key_PageUp or ev.key() == qt.QEvent.Key_PageDown:
-            self._scr.setHistCursor(self._scr.getHistLines())
+            self._scr.hist_cursor = self._scr.getHistLines()
             
         if cmd == kt.CMD_send:
             if ev_state & AltButton and not entry.metaspecified():

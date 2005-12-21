@@ -68,7 +68,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.16 2005-12-20 11:30:21 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.17 2005-12-21 13:13:17 syt Exp $'
 
 import qt
 
@@ -130,7 +130,7 @@ class Emulation(qt.QObject):
         old = self._scr
         scr = self._screen[n&1]
         if scr != old:
-            old.setBusySelecting(False)
+            old.busy_selecting = False
             
     def setHistory(self, type_):
         self._screen[0].setScroll(type_)
@@ -206,8 +206,8 @@ class Emulation(qt.QObject):
 ##             return
         
 ##         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
-##         if self._scr.getHistCursor() != self._scr.getHistLines() and not ev.text().isEmpty():
-##             self._scr.setHistCursor(self._scr.getHistLines())
+##         if self._scr.hist_cursor != self._scr.getHistLines() and not ev.text().isEmpty():
+##             self._scr.hist_cursor = self._scr.getHistLines()
 ##         if not ev.text().isEmpty():            
 ##             # A block og text
 ##             # Note that the text is proper unicode. We should do a conversion here,
@@ -250,62 +250,63 @@ class Emulation(qt.QObject):
     def isBusySelecting(self, busy):
         if not self._connected:
             return
-        self._scr.setBusySelecting(busy)
+        self._scr.busy_selecting = busy
         
-    def testIsSelected(self, x, y):
+    def testIsSelected(self, x, y, ref):
         if not self._connected:
             return
-        return self._scr.testIsSelected(x, y)
+        ref.value = self._scr.testIsSelected(x, y)
     
     def clearSelection(self):
         if not self._connected:
             return
         self._scr.clearSelection()
         self.__showBulk()
-        
-    def streamHistory(self, stream):
-        #stream << self.__scr.getHistory() # XXX not implemented yet. Find another solution
-        pass
+
+# XXX unused
+##     def streamHistory(self, stream):
+##         #stream << self.__scr.getHistory() # XXX not implemented yet. Find another solution
+##         pass
     
-    def findTextBegin(self):
-        self.__findPos = -1
+##     def findTextBegin(self):
+##         self.__findPos = -1
         
-    def findTextNext(self, str_, forward, caseSensitive):
-        pos = -1
-        if forward:
-            if self.__findPos == -1:
-                start = 0
-            else:
-                start = self.__findPos+1
-            for i in xrange(start, self._scr.getHistLines()+self._scr.lines):
-                string = self._scr.getHistoryLine(i)
-                pos = string.find(str_, 0) #, XXX caseSensitive)
-                if pos == -1:
-                    self.__findPos = i
-                    if i > self._scr.getHistLines():
-                        self._scr.setHistCursor(self._scr.getHistLines())
-                    else:
-                        self._scr.setHistCursor(i)
-                    self.__showBulk()
-                    return True
-        else: # searching backward
-            if self.__findPos == -1:
-                start = self._scr.getHistLines()+self._scr.lines
-            else:
-                start = self.__findPos-1
-            for i in xrange(start, -1, -1):
-                string = self._scr.getHistoryLine(i)
-                pos = string.find(str_, 0) #, caseSensitive)
-                if pos == -1:
-                    self.__findPos = i
-                    if i > self._scr.getHistLines():
-                        self._scr.setHistCursor(self._scr.getHistLines())
-                    else:
-                        self._scr.setHistCursor(i)
-                    self.__showBulk()
-                    return True
+##     def findTextNext(self, str_, forward, caseSensitive):
+##         pos = -1
+##         if forward:
+##             if self.__findPos == -1:
+##                 start = 0
+##             else:
+##                 start = self.__findPos+1
+##             for i in xrange(start, self._scr.getHistLines()+self._scr.lines):
+##                 string = self._scr.getHistoryLine(i)
+##                 pos = string.find(str_, 0) #, XXX caseSensitive)
+##                 if pos == -1:
+##                     self.__findPos = i
+##                     if i > self._scr.getHistLines():
+##                         self._scr.hist_cursor = self._scr.getHistLines()
+##                     else:
+##                         self._scr.hist_cursor = i
+##                     self.__showBulk()
+##                     return True
+##         else: # searching backward
+##             if self.__findPos == -1:
+##                 start = self._scr.getHistLines()+self._scr.lines
+##             else:
+##                 start = self.__findPos-1
+##             for i in xrange(start, -1, -1):
+##                 string = self._scr.getHistoryLine(i)
+##                 pos = string.find(str_, 0) #, caseSensitive)
+##                 if pos == -1:
+##                     self.__findPos = i
+##                     if i > self._scr.getHistLines():
+##                         self._scr.hist_cursor = self._scr.getHistLines()
+##                     else:
+##                         self._scr.hist_cursor = i
+##                     self.__showBulk()
+##                     return True
            
-        return False
+##         return False
     
     def __bulkNewLine(self):
         self.__bulkNlCnt += 1
@@ -320,7 +321,7 @@ class Emulation(qt.QObject):
             self._gui.setCursorPos(self._scr.getCursorX(), self._scr.getCursorY())
             # FIXME: Check that we do not trigger other draw event here
             self._gui.setLineWrapped(self._scr.getCookedLineWrapped())
-            self._gui.setScroll(self._scr.getHistCursor(), self._scr.getHistLines())
+            self._gui.setScroll(self._scr.hist_cursor, self._scr.getHistLines())
             
     def __bulkStart(self):
         if self.__bulkTimer.isActive():
@@ -361,7 +362,7 @@ class Emulation(qt.QObject):
     def onHistoryCursorChange(self, cursor):
         if not self._connected:
             return
-        self._scr.setHistCursor(cursor)
+        self._scr.hist_cursor = cursor
         self.__showBulk()
         
     def _setColumns(self, columns):

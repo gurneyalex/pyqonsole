@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.26 2005-12-21 10:40:46 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.27 2005-12-21 13:13:19 syt Exp $'
 
 import qt
 
@@ -149,7 +149,12 @@ VT100_GRAPHICS = [
 
 import sys
 
+class RefValue(object):
+    """trick to get a return value by reference from an emitted signal"""
+    def __init__(self, value):
+        self.value = value
 
+        
 class Widget(qt.QFrame):
     """a widget representing attributed text"""
 
@@ -796,7 +801,7 @@ class Widget(qt.QFrame):
         tL  = self.contentsRect().topLeft()
         tLx = tL.x()
         tLy = tL.y()
-        pos = qt.QPoint((ev.x()-tLx-self.bX)/self.font_w,(ev.y()-tLy-self.bY)/self.font_h)
+        pos = qt.QPoint((ev.x()-tLx-self.bX)/self.font_w, (ev.y()-tLy-self.bY)/self.font_h)
         # pass on double click as two clicks.
         if not self.mouse_marks and not (ev.state() & self.ShiftButton):
             # Send just _ONE_ click event, since the first click of the double click
@@ -806,7 +811,7 @@ class Widget(qt.QFrame):
         self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
         bgnSel = pos
         endSel = pos
-        i = self._loc(bgnSel.x(),bgnSel.y())
+        i = self._loc(bgnSel.x(), bgnSel.y())
         self.i_pnt_sel = bgnSel
         self.i_pnt_sel.setY(bgnSel.y() + self.scrollbar.value())
         self.word_selection_mode = True
@@ -837,7 +842,7 @@ class Widget(qt.QFrame):
         self.act_sel = 2 # within selection
         self.emit(qt.PYSIGNAL('extendSelectionSignal'), (endSel.x(), endSel.y()))
         self.emit(qt.PYSIGNAL('endSelectionSignal'), (self.preserve_line_breaks,))
-        self.possible_triple_click=True
+        self.possible_triple_click = True
         qt.QTimer.singleShot(qt.QApplication.doubleClickInterval(), self.tripleClickTimeout)
     
     def mousePressEvent(self, ev):
@@ -855,11 +860,11 @@ class Widget(qt.QFrame):
         if ev.button() == self.LeftButton:
             self.emit(qt.PYSIGNAL('isBusySelecting'), (True,)) # Keep it steady...
             # Drag only when the Control key is hold
-            selected = False
+            selected = RefValue(False)
             # The receiver of the testIsSelected() signal will adjust 
             # 'selected' accordingly.
             self.emit(qt.PYSIGNAL('testIsSelected'), (pos.x(), pos.y(), selected))
-            if (not self.ctrldrag or ev.state() & self.ControlButton) and selected:
+            if (not self.ctrldrag or ev.state() & self.ControlButton) and selected.value:
                 # The user clicked inside selected text
                 dragInfo.state = diPending
                 dragInfo.start = ev.pos()
