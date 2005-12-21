@@ -50,7 +50,7 @@ Based on the konsole code from Lars Doelle.
 ##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.29 2005-12-21 14:07:49 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.30 2005-12-21 15:35:10 syt Exp $'
 
 import qt
 
@@ -185,7 +185,7 @@ class Widget(qt.QFrame):
         # hide cursor in paintEvent
         self.cursor_blinking = False
         self.blink_t = qt.QTimer(self)        # active when self.has_blinker
-        self.blink_cursor_t = qt.QTimer(self) # active when self.has_blinking_cursor        
+        self.blink_cursor_t = qt.QTimer(self) # active when self.has_blinking_cursor
         # require Ctrl key for drag
         self.ctrldrag = False
         # do we antialias or not
@@ -968,8 +968,7 @@ class Widget(qt.QFrame):
             pos.setY(tLy+self.bY+self.lines*self.font_h-1)
         # check if we produce a mouse move event by self
         if pos != ev.pos():
-            # XXX mapToGlobal ?
-            cursor().setPos(mapToGlobal(pos))
+            cursor().setPos(self.mapToGlobal(pos))
         if pos.y() == tLy+self.bY+self.lines*self.font_h-1:
             self.scrollbar.setValue(self.scrollbar.value()+yMouseScroll) # scrollforward
         if pos.y() == tLy+self.bY:

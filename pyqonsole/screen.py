@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.23 2005-12-21 14:07:48 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.24 2005-12-21 15:35:09 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -176,8 +176,7 @@ class Screen:
         self.setCursorY(y)
     
     def setMargins(self, top, bot):
-        """ Set top and bottom margin.
-        """
+        """Set top and bottom margin"""
         if top == 0:
             top = 1
         if bot == 0:
@@ -326,12 +325,14 @@ class Screen:
             self.__cuX = self.__cuY = 0
             
     def saveMode(self, m):
+        print 'save mode', m
         self._save_mode[m] = self._curr_mode[m]
             
     def restoreMode(self, m):
         self._curr_mode[m] = self._save_mode[m]
             
     def saveCursor(self):
+        print 'save cursor'
         self.__saCuX = self.__cuX
         self.__saCuY = self.__cuY
         self.__saCuRe = self._cu_re
@@ -344,7 +345,7 @@ class Screen:
         self._cu_re = self.__saCuRe
         self._cu_fg = self.__saCuFg
         self._cu_bg = self.__saCuBg
-        self.__effectiveRendition()
+        self._effectiveRendition()
         
     def clearEntireScreen(self):
         self._clearImage([0, 0], [self.lines-1, self.columns-1], ' ')
@@ -369,39 +370,39 @@ class Screen:
         
     def setRendition(self, re):
         self._cu_re = self._cu_re | re
-        self.__effectiveRendition()
+        self._effectiveRendition()
         
     def resetRendition(self, re):
         self._cu_re = self._cu_re & re
-        self.__effectiveRendition()
+        self._effectiveRendition()
         
     def setForeColor(self, fgcolor):
         if fgcolor & 8:
             self._cu_fg = (fgcolor & 7) + 4+8
         else:
             self._cu_fg = (fgcolor & 7) + 2
-        self.__effectiveRendition()
+        self._effectiveRendition()
             
     def setBackColor(self, bgcolor):
         if bgcolor & 8:
             self._cu_bg = (bgcolor & 7) + 4+8
         else:
             self._cu_bg = (bgcolor & 7) + 2
-        self.__effectiveRendition()
+        self._effectiveRendition()
             
     def setDefaultRendition(self):
         self.setForeColorToDefault()
         self.setBackColorToDefault()
         self._cu_re = DEFAULT_RENDITION
-        self.__effectiveRendition()
+        self._effectiveRendition()
         
     def setForeColorToDefault(self):
         self._cu_fg = DEFAULT_FORE_COLOR
-        self.__effectiveRendition()
+        self._effectiveRendition()
         
     def setBackColorToDefault(self):
         self._cu_bg = DEFAULT_BACK_COLOR
-        self.__effectiveRendition()
+        self._effectiveRendition()
         
     def getMode(self, n):
         return self._curr_mode[n]
@@ -413,7 +414,7 @@ class Screen:
         return self.__cuY
 
     def showCharacter(self, c):
-        #print 'screen.showcharacter', c, self.__cuX
+        print 'screen.showcharacter', c
         w = wcWidth(c)
         if w <= 0:
             return
@@ -430,12 +431,8 @@ class Screen:
         line = self._image[self.__cuY]
         line[self.__cuX] = Ca(c, self._eff_fg, self._eff_bg, self._eff_re)
         self.__cuX += w
-        w -= 1
-        i = 1
-        while w:
+        for i in xrange(1, w):
             line[self.__cuX + i] = Ca(0, self._eff_fg, self._eff_bg, self._eff_re)
-            w -= 1
-            i += 1
         
     def resizeImage(self, lines, columns):
         if lines == self.lines and columns == self.columns:
@@ -531,20 +528,6 @@ class Screen:
     def hasScroll(self):
         return self._hist.hasScroll()
     
-##     def getHistory(self):
-##         self._sel_begin, self._sel_bottomright, self._sel_topleft = [0, 0], [0, 0], [0, 0]
-##         self.setSelExtendXY(self.columns-1, self.lines-1)
-##         tmp = self.getSelText()
-##         # duh ?
-##         while tmp[-2] == 10 and tmp[-1] == 10:
-##             tmp = tmp[:-1]
-##         return tmp
-    
-##     def getHistoryLine(self, no):
-##         self._sel_begin = self._sel_topleft = [no, 0]
-##         self._sel_bottomright = [no, self.columns-1]
-##         return self.getSelText(False)
-            
     def _clearImage(self, loca, loce, c):
         c = ord(c)
         # Clear entire selection if overlaps region to be moved
@@ -657,7 +640,7 @@ class Screen:
         for i in xrange(self.columns):
             self.__tabStops[i] = ((i % 8 == 0) and i != 0)
         
-    def __effectiveRendition(self):
+    def _effectiveRendition(self):
         self._eff_re = self._cu_re & (RE_UNDERLINE | RE_BLINK)
         if self._cu_re & RE_REVERSE:
             self._eff_fg = self._cu_bg
@@ -713,7 +696,11 @@ class Screen:
         hY = self._sel_topleft[0]
         hX = self._sel_topleft[1]
         m = []
-        s = self._sel_topleft[:]        
+        s = self._sel_topleft[:]
+        if preserve_line_break:
+            eol_char = '\n'
+        else:
+            eol_char = ' '
         while s <= self._sel_bottomright:
             # XXX in the first if branch, eol is scalar while in the else branch, it's a point !
             if s < histBR:
@@ -729,25 +716,14 @@ class Screen:
                 if s <= self._sel_bottomright:
                     if eol % self.columns == 0:
                         if eol == 0:
-                            if preserve_line_break:
-                                m.append('\n')
-                            else:
-                                m.append(' ')
+                            m.append(eol_char)
                         elif not self._hist.isWrappedLine(hY):
-                            if preserve_line_break:
-                                m.append('\n')
-                            else:
-                                m.append(' ')
+                            m.append(eol_char)
                     elif (eol + 1) % self.columns == 0:
                         if not self._hist.isWrappedLine(hY):
-                            if preserve_line_break:
-                                m.append('\n')
-                            else:
-                                m.append(' ')
-                    elif preserve_line_break:
-                        m.append('\n')
+                            m.append(eol_char)
                     else:
-                        m.append(' ')
+                        m.append(eol_char)
                 hY += 1
                 hX = 0
                 s = [hY, 0]
@@ -777,14 +753,9 @@ class Screen:
                 if eol < self._sel_bottomright:
                     if eol[1] +1 == self.columns: #(eol + 1) % self.columns == 0:
                         if not self._hist.isWrappedLine(eol[0]-histBR[0]):
-                            if preserve_line_break:
-                                m.append('\n')
-                            else:
-                                m.append(' ')
-                    elif preserve_line_break:
-                        m.append('\n')
+                            m.append(eol_char)
                     else:
-                        m.append(' ')
+                        m.append(eol_char)
                 elif addNewLine and preserve_line_break:
                     m.append('\n')
                 s = [eol[0]+1, 0]

@@ -68,13 +68,12 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.17 2005-12-21 13:13:17 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.18 2005-12-21 15:35:09 syt Exp $'
 
 import qt
 
 from pyqonsole import keytrans
 from pyqonsole.screen import Screen
-#from pyqonsole.widget import Widget
 
 
 NOTIFYNORMAL = 0
@@ -173,21 +172,6 @@ class Emulation(qt.QObject):
         used.
         """
         raise NotImplementedError()
-##         c = c & 0xff
-##         if c == '\b':
-##             self._scr.backSpace()
-##         elif c == '\t':
-##             self._scr.tabulate()
-##         elif c == '\n':
-##             self._scr.newLine()
-##         elif c == '\r':
-##             self._scr.return_()
-##         elif ord(c) == 0x07:
-##             if self._connected:
-##                 self._gui.bell()
-##             self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYBELL,))
-##         else:
-##             self._scr.showCharacter()
 
     def setMode(self):
         raise NotImplementedError()
@@ -202,19 +186,6 @@ class Emulation(qt.QObject):
     
     def onKeyPress(self, ev):
         raise NotImplementedError()
-##         if not self._listen_to_key_press: # Someone else gets the keys
-##             return
-        
-##         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
-##         if self._scr.hist_cursor != self._scr.getHistLines() and not ev.text().isEmpty():
-##             self._scr.hist_cursor = self._scr.getHistLines()
-##         if not ev.text().isEmpty():            
-##             # A block og text
-##             # Note that the text is proper unicode. We should do a conversion here,
-##             # but since this routine will never be used, we simply emit plain ascii.
-##             self.emit(qt.PYSIGNAL("sndBlock"), (ev.text().ascii(),))
-##         elif ev.ascii() > 0:
-##             self.emit(qt.PYSIGNAL("sndBlock"), (ev.ascii(),))
             
     def onRcvBlock(self, block):
         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYACTIVITY,))
@@ -262,51 +233,6 @@ class Emulation(qt.QObject):
             return
         self._scr.clearSelection()
         self.__showBulk()
-
-# XXX unused
-##     def streamHistory(self, stream):
-##         #stream << self.__scr.getHistory() # XXX not implemented yet. Find another solution
-##         pass
-    
-##     def findTextBegin(self):
-##         self.__findPos = -1
-        
-##     def findTextNext(self, str_, forward, caseSensitive):
-##         pos = -1
-##         if forward:
-##             if self.__findPos == -1:
-##                 start = 0
-##             else:
-##                 start = self.__findPos+1
-##             for i in xrange(start, self._scr.getHistLines()+self._scr.lines):
-##                 string = self._scr.getHistoryLine(i)
-##                 pos = string.find(str_, 0) #, XXX caseSensitive)
-##                 if pos == -1:
-##                     self.__findPos = i
-##                     if i > self._scr.getHistLines():
-##                         self._scr.hist_cursor = self._scr.getHistLines()
-##                     else:
-##                         self._scr.hist_cursor = i
-##                     self.__showBulk()
-##                     return True
-##         else: # searching backward
-##             if self.__findPos == -1:
-##                 start = self._scr.getHistLines()+self._scr.lines
-##             else:
-##                 start = self.__findPos-1
-##             for i in xrange(start, -1, -1):
-##                 string = self._scr.getHistoryLine(i)
-##                 pos = string.find(str_, 0) #, caseSensitive)
-##                 if pos == -1:
-##                     self.__findPos = i
-##                     if i > self._scr.getHistLines():
-##                         self._scr.hist_cursor = self._scr.getHistLines()
-##                     else:
-##                         self._scr.hist_cursor = i
-##                     self.__showBulk()
-##                     return True
-           
-##         return False
     
     def __bulkNewLine(self):
         self.__bulkNlCnt += 1
