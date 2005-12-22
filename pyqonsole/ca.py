@@ -21,7 +21,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.11 2005-12-22 13:11:48 alf Exp $"
+__revision__ = "$Id: ca.py,v 1.12 2005-12-22 17:39:44 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -38,6 +38,19 @@ RE_REVERSE = 2**3
 RE_CURSOR = 2**4
 
 
+## _CACHE = {}
+
+## def Ca(c=ord(' '), f=DEFAULT_FORE_COLOR,
+##        b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION, _c=_CACHE):
+##     assert f < TABLE_COLORS
+##     assert b < TABLE_COLORS
+##     try:
+##         return _c[(c, f, b, r)]
+##     except:
+##         ca = _Ca(c, f, b, r)
+##         _c[(c, f, b, r)] = ca
+##         return ca
+    
 class Ca(object):
     """a character with background / foreground colors and rendition attributes
     """
@@ -45,20 +58,18 @@ class Ca(object):
     
     def __init__(self, c=ord(' '), f=DEFAULT_FORE_COLOR,
                  b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
-        """ Init a Ca instance.
-        """
         self.c = c # character
         self.f = f # foreground color
         self.b = b # background color
         self.r = r # rendition
         
     def __eq__(self, other):
-        """ Implements the '==' operator"""
+        """implements the '==' operator"""
         return (self.c == other.c and self.f == other.f and 
                 self.b == other.b and self.r == other.r)
     
     def __ne__(self, other):
-        """ Implements the '!=' operator"""
+        """implements the '!=' operator"""
         return (self.c != other.c or self.f != other.f or 
                 self.b != other.b or self.r != other.r)
 
@@ -66,18 +77,22 @@ class Ca(object):
         return '%r %s %s %r' % (chr(self.c), self.f, self.b, self.r)
 
     def isSpace(self):
-        return chr(self.c).isspace()
+        return unichr(self.c).isspace()
 
-##     def copy(self, ca):
-##         self.c = ca.c
-##         self.f = ca.f
-##         self.b = ca.b
-##         self.r = ca.r
-        
-##     def dump(self):
-## #        return Ca(self.c, self.f, self.b, self.r)
-##         return self
-        
+    def charClass(self, word_characters=u":@-./_~"):
+        """return a kind of category for this char
+        * space
+        * alpha numeric
+        * other
+        """
+        ch = unichr(self.c)
+        if ch.isspace():
+            return ' '
+        if ch.isalnum() or ch in word_characters:
+            return 'a'
+        # Everything else is weird
+        return 1
+
 ##     # XXX for debugging
 ##     def setC(self, c):
 ##         assert isinstance(c, int)
@@ -86,6 +101,7 @@ class Ca(object):
 ##         return self._c
 ##     c = property(getC, setC)
 
+DCA = Ca() # default character
 
 class ColorEntry:
 
