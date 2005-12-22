@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.25 2005-12-21 17:15:08 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.26 2005-12-22 13:11:48 alf Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -449,7 +449,9 @@ class Screen:
         cpColumns = min(columns, self.columns)
         for y in xrange(cpLines):
             for x in xrange(cpColumns):
-                newimg[y][x].copy(self._image[y][x])
+                _tmp = self._image[y][x]
+                newimg[y][x] = Ca(_tmp.c, _tmp.f, _tmp.b, _tmp.r)
+##                 newimg[y][x].copy(self._image[y][x])
             newwrapped[y] = self._lineWrapped[y]
         self._image = newimg
         self._lineWrapped = newwrapped
@@ -543,14 +545,16 @@ class Screen:
         ys = loca[0]
         if dest[0] != ys:
             dy = loce[0] - ys + 1
-            self._image[dest[0]:dest[0]+dy] = [[c.dump() for c in lines]
-                                               for lines in self._image[ys:ys+dy]]
+##             self._image[dest[0]:dest[0]+dy] = [[c.dump() for c in lines]
+##                                                for lines in self._image[ys:ys+dy]]
+            self._image[dest[0]:dest[0]+dy] = [lines[:] for lines in self._image[ys:ys+dy]]
             for i in xrange(dy):
                 self._lineWrapped[dest[0]+i] = self._lineWrapped[ys+i]
         else:
             xs = loca[1]
             dx = loce[1] - xs + 1
-            self._image[ys][dest[1]:dest[1]+dx] = [c.dump() for c in self._image[ys][xs:xs+dx]]
+##             self._image[ys][dest[1]:dest[1]+dx] = [c.dump() for c in self._image[ys][xs:xs+dx]]
+            self._image[ys][dest[1]:dest[1]+dx] = self._image[ys][xs:xs+dx]
         # Adjust selection to follow scroll
         if self._sel_begin != [-1, -1]:
             beginIsSTL = (self._sel_begin == self._sel_topleft)
@@ -653,8 +657,9 @@ class Screen:
                 self._eff_fg -= BASE_COLORS
                 
     def _reverseRendition(self, image, coord):
-        image[coord] = p = image[coord].dump()
-        p.f, p.b = p.b, p.f
+#        image[coord] = p = image[coord].dump()
+        p = image[coord]
+        image[coord] = Ca(p.c, p.b, p.f, p.r)
 
     # selection handling ######################################################
 

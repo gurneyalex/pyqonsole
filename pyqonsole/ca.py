@@ -21,7 +21,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.10 2005-12-21 17:15:07 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.11 2005-12-22 13:11:48 alf Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
@@ -68,14 +68,15 @@ class Ca(object):
     def isSpace(self):
         return chr(self.c).isspace()
 
-    def copy(self, ca):
-        self.c = ca.c
-        self.f = ca.f
-        self.b = ca.b
-        self.r = ca.r
+##     def copy(self, ca):
+##         self.c = ca.c
+##         self.f = ca.f
+##         self.b = ca.b
+##         self.r = ca.r
         
-    def dump(self):
-        return Ca(self.c, self.f, self.b, self.r)
+##     def dump(self):
+## #        return Ca(self.c, self.f, self.b, self.r)
+##         return self
         
 ##     # XXX for debugging
 ##     def setC(self, c):
