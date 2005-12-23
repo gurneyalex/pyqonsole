@@ -25,19 +25,18 @@ configure-stamp:
 	dh_testdir
 	touch configure-stamp
 
-
 build: build-stamp
 
 build-stamp: configure-stamp 
 	dh_testdir
-	$(MAKE)
+	python setup.py build
 	touch build-stamp
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp
-	-$(MAKE) clean
+	rm -rf build 
 	dh_clean 
 
 install: build
@@ -45,11 +44,9 @@ install: build
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
+	python setup.py install --no-compile --root debian/pyqonsole/
+	rm -rf debian/pyqonsole/usr/lib/python2.3/site-packages/pyqonsole/test
 	dh_install
-	rm -f debian/pyqonsole/usr/lib/python2.4/site-packages/setup.py
-
-
-
 
 # Build architecture-dependent files here.
 binary-arch: build install
@@ -59,7 +56,6 @@ binary-arch: build install
 	dh_installdocs
 	dh_installexamples
 	dh_installman
-	dh_link /usr/lib/python2.4/site-packages/pyqonsole/main.py /usr/bin/pyqonsole
 	dh_strip
 	dh_compress
 	dh_fixperms

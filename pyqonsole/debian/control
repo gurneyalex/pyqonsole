@@ -2,12 +2,12 @@ Source: pyqonsole
 Section: python
 Priority: optional
 Maintainer: Alexandre Fayolle <afayolle@debian.org>
-Build-Depends: debhelper (>= 4.0.0), python2.4, python2.4-dev
+Build-Depends: debhelper (>= 4.0.0), python, python-dev
 Standards-Version: 3.6.2
 
 Package: pyqonsole
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python2.4, python2.4-qt
+Depends: ${shlibs:Depends}, ${misc:Depends}, python, python-qt
 Recommends: ipython
 Description: console program written in Python
  Pyqonsole is a X Window terminal written in Python. The code is based
