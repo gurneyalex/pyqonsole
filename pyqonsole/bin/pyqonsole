@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__revision__ = '$Idi$'
+__revision__ = '$Id: pyqonsole,v 1.3 2005-12-23 12:54:12 alf Exp $'
 
 from pyqonsole.main import run
 run()
