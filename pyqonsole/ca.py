@@ -5,9 +5,7 @@
 # the terms of the CECILL license, available at
 # http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
 #
-""" Provide the Ca class.
-
-This class implements a character with rendition atributes.
+"""Provide the Ca class and some other rendering utilities.
 
 Based on the konsole code from Lars Doelle.
 
@@ -15,17 +13,18 @@ Based on the konsole code from Lars Doelle.
 @author: Benjamin Longuet
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
+@author: Sylvain Thenault
 @copyright: 2003, 2005
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.12 2005-12-22 17:39:44 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.13 2005-12-23 09:49:00 syt Exp $"
 
 BASE_COLORS = 2+8
 INTENSITIES = 2
-TABLE_COLORS = INTENSITIES*BASE_COLORS
+TABLE_COLORS = INTENSITIES * BASE_COLORS
 
 DEFAULT_FORE_COLOR = 0
 DEFAULT_BACK_COLOR = 1
@@ -37,19 +36,6 @@ RE_UNDERLINE = 2**2
 RE_REVERSE = 2**3
 RE_CURSOR = 2**4
 
-
-## _CACHE = {}
-
-## def Ca(c=ord(' '), f=DEFAULT_FORE_COLOR,
-##        b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION, _c=_CACHE):
-##     assert f < TABLE_COLORS
-##     assert b < TABLE_COLORS
-##     try:
-##         return _c[(c, f, b, r)]
-##     except:
-##         ca = _Ca(c, f, b, r)
-##         _c[(c, f, b, r)] = ca
-##         return ca
     
 class Ca(object):
     """a character with background / foreground colors and rendition attributes
@@ -90,7 +76,7 @@ class Ca(object):
             return ' '
         if ch.isalnum() or ch in word_characters:
             return 'a'
-        # Everything else is weird
+        # everything else is weird
         return 1
 
 ##     # XXX for debugging
@@ -101,17 +87,13 @@ class Ca(object):
 ##         return self._c
 ##     c = property(getC, setC)
 
-DCA = Ca() # default character
+DCA = Ca() # the default character for optimization
+
 
 class ColorEntry:
-
+    """a color with additional attribute (transparent / bold)
+    """
     def __init__(self, c=None, tr=False, b=False):
         self.color = c
         self.transparent = tr # if used on bg
         self.bold = b # if used on fg
-        
-    # XXX
-    #void operator=(const ColorEntry& rhs) 
-    #     color = rhs.color; 
-    #     transparent = rhs.transparent; 
-    #     bold = rhs.bold; 

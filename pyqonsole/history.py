@@ -20,22 +20,6 @@ An arbitrary long scroll.
    of cells and line/column indexed read access to the scroll
    at constant costs.
 
-FIXME: some complain about the history buffer comsuming the
-       memory of their machines. This problem is critical
-       since the history does not behave gracefully in cases
-       where the memory is used up completely.
-
-       I put in a workaround that should handle it problem
-       now gracefully. I'm not satisfied with the solution.
-
-FIXME: Terminating the history is not properly indicated
-       in the menu. We should throw a signal.
-
-FIXME: There is noticable decrease in speed, also. Perhaps,
-       there whole feature needs to be revisited therefore.
-       Disadvantage of a more elaborated, say block-oriented
-       scheme with wrap around would be it's complexity.
-
 Based on the konsole code from Lars Doelle.
 
 @author: Lars Doelle
@@ -47,40 +31,26 @@ Based on the konsole code from Lars Doelle.
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CECILL
-
-
-XXX getLineLen usefull
 """
 
-__revision__ = '$Id: history.py,v 1.6 2005-12-20 11:06:27 alf Exp $'
-
-
-class HistoryType(object):
-    """ History Type abstract base class.
-    """
+__revision__ = '$Id: history.py,v 1.7 2005-12-23 09:49:01 syt Exp $'
+    
+    
+class HistoryTypeNone(object):
+    """History Type which does nothing"""
+    def getScroll(self, old=None):
+        return HistoryScrollNone()
+    
     def isOn(self):
         return False
 
     def getSize(self):
         return 0
-    
-    def getScroll(self, old=None):
-        raise NotImplementedError
-    
-    
-class HistoryTypeNone(HistoryType):
-    """ History Type which does nothing.
-    """
-    def getScroll(self, old=None):
-        return HistoryScrollNone()
         
 
-class HistoryTypeBuffer(HistoryType):
-    """ History Type using a buffer.
-    """
+class HistoryTypeBuffer(HistoryTypeNone):
+    """History Type using a buffer"""
     def __init__(self, nb_lines):
-        """ Init the History Type Buffer.
-        """
         super(HistoryTypeBuffer, self).__init__()
         self.nb_lines = nb_lines
         
@@ -102,12 +72,10 @@ class HistoryTypeBuffer(HistoryType):
         return scroll
 
     
-class HistoryScroll(object):
-    """ History Scroll abstract base class.
-    """
-    def __init__(self, type_):
-        """ Init the History Scroll abstract base class.
-        """
+class HistoryScrollNone(object):
+    """History Scroll which does nothing"""
+    
+    def __init__(self, type_=HistoryTypeNone()):
         self.type = type_
         self.lines = 0
         
@@ -122,18 +90,6 @@ class HistoryScroll(object):
     
     def isWrappedLine(self, lineno):
         return False
-    
-    def addCells(self, a, wrapped=False):
-        raise NotImplementedError
-    
-    
-class HistoryScrollNone(HistoryScroll):
-    """ History Scroll which does nothing.
-    """
-    def __init__(self):
-        """ Init the History Scroll None.
-        """
-        super(HistoryScrollNone, self).__init__(HistoryTypeNone())
         
     def hasScroll(self):
         return False
@@ -145,12 +101,10 @@ class HistoryScrollNone(HistoryScroll):
         pass
    
 
-class HistoryScrollBuffer(HistoryScroll):
-    """ History Scroll using a buffer.
-    """
+class HistoryScrollBuffer(HistoryScrollNone):
+    """History Scroll using a buffer"""
+    
     def __init__(self, max_lines):
-        """ Init the History Scroll Buffer.
-        """
         super (HistoryScrollBuffer, self).__init__(HistoryTypeBuffer(max_lines))
         self.max_lines = max_lines
         self.lines = 0

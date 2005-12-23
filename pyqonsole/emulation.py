@@ -5,20 +5,11 @@
 # the terms of the CECILL license, available at
 # http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
 #
-""" Provide the Emulation class.
+"""Provide the Emulation class.
 
 This class acts as the controler between the Screen class (Model) and
 Widget class (View). As Widget uses Qt, Emulation also depends on Qt.
 But it is very easy to use another toolkit.
-
-Mediator between Widget and Screen.
-
-   This class is responsible to scan the escapes sequences of the terminal
-   emulation and to map it to their corresponding semantic complements.
-   Thus this module knows mainly about decoding escapes sequences and
-   is a stateless device w.r.t. the semantics.
-
-   It is also responsible to refresh the Widget by certain rules.
 
 A note on refreshing
 
@@ -68,7 +59,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.19 2005-12-21 17:15:08 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.20 2005-12-23 09:49:00 syt Exp $'
 
 import qt
 
@@ -85,7 +76,16 @@ BULK_TIMEOUT = 20
 
 
 class Emulation(qt.QObject):
-    """ Emulation class.
+    """This class acts as the controler between the Screen class (Model) and
+    Widget class (View). It's actually a common abstract base class for
+    different terminal implementations, and so should be subclassed.
+
+    It is responsible to scan the escapes sequences of the terminal
+    emulation and to map it to their corresponding semantic complements.
+    Thus this module knows mainly about decoding escapes sequences and
+    is a stateless device w.r.t. the semantics.
+
+    It is also responsible to refresh the Widget by certain rules.
     """
     def __init__(self, w):
         super(Emulation, self).__init__()
@@ -96,18 +96,17 @@ class Emulation(qt.QObject):
         self._scr = self._screen[0]
         # communicate with widget
         self._connected = False
-        # listen to input
-        self._listen_to_key_press = False
-        # codec number, 0=locale, 1=utf8
+        # codec
         self._codec = None
         self._decoder = None
-        self._key_trans = keytrans.find()
-        self.__bulkTimer = qt.QTimer(self)
-        self.__bulkNlCnt = 0 # Bulk new line counter
-        self.__bulkInCnt = 0 # Bulk counter
-        self.__findPos = -1
-        
-        self.connect(self.__bulkTimer, qt.SIGNAL("timeout()"), self.__showBulk)
+        # key translator
+        self._key_trans = None
+        self.setKeymap(0)
+        # bulk handling
+        self._bulk_timer = qt.QTimer(self)
+        self._bulk_nl_cnt = 0 # bulk new line counter
+        self._bulk_in_cnt = 0 # bulk counter
+        self.connect(self._bulk_timer, qt.SIGNAL("timeout()"), self._showBulk)
         self.connect(self._gui, qt.PYSIGNAL("changedImageSizeSignal"), self.onImageSizeChange)
         self.connect(self._gui, qt.PYSIGNAL("changedHistoryCursor"), self.onHistoryCursorChange)
         self.connect(self._gui, qt.PYSIGNAL("keyPressedSignal"), self.onKeyPress)
@@ -118,47 +117,30 @@ class Emulation(qt.QObject):
         self.connect(self._gui, qt.PYSIGNAL("isBusySelecting"), self.isBusySelecting)
         self.connect(self._gui, qt.PYSIGNAL("testIsSelected"), self.testIsSelected)
         
-        self.setKeymap(0)
-        
     def __del__(self):
-        self.__bulkTimer.stop()
+        self._bulk_timer.stop()
         
     def _setScreen(self, n):
-        """ Change between primary and alternate screen.
-        """
+        """change between primary and alternate screen"""
         old = self._scr
         self._scr = self._screen[n]
         if not self._scr is old:
             self._scr.clearSelection()
             old.busy_selecting = False
             
-    def setHistory(self, type_):
-        self._screen[0].setScroll(type_)
-        if not self._connected:
-            return
-        self.__showBulk()
+    def setHistory(self, history_type):
+        self._screen[0].setScroll(history_type)
+        if self._connected:
+            self._showBulk()
         
     def history(self):
         return self._screen[0].getScroll()
     
-    def _setCodec(self, c):
-        if c:
-            self._codec = qt.QTextCodec.codecForName("utf8")
-        else:
-            self._codec = qt.QTextCodec.codecForLocale()
-        self._decoder = self._codec.makeDecoder()
-        
     def setKeymap(self, no):
         self._key_trans = keytrans.find(no)
-        
-    def setKeymapById(self, id):
-        self._key_trans = keytrans.find(id)
     
     def keymap(self):
-        return self._key_trans.id
-    
-    def keymapNo(self):
-        return self._key_trans.num
+        return self._key_trans
         
     # Interpreting Codes
     # This section deals with decoding the incoming character stream.
@@ -167,11 +149,7 @@ class Emulation(qt.QObject):
     # `Screen' class.
 
     def onRcvChar(self, c):
-        """ Process application unicode input to terminal.
-        
-        This is a trivial scanner, see emuVt102 for the VT100 scanner actually
-        used.
-        """
+        """process application unicode input to terminal"""
         raise NotImplementedError()
 
     def setMode(self):
@@ -180,96 +158,63 @@ class Emulation(qt.QObject):
     def resetMode(self):
         raise NotImplementedError()
     
-    def sendString(self, str_):
-        raise NotImplementedError()
+    def sendString(self, string):
+        self.emit(qt.PYSIGNAL("sndBlock"), (s,))
            
     # Keyboard handling
     
     def onKeyPress(self, ev):
+        """char received from the gui"""
         raise NotImplementedError()
             
     def onRcvBlock(self, block):
         self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYACTIVITY,))
-        self.__bulkStart()
-        self.__bulkInCnt += 1
+        self._bulkStart()
+        self._bulk_in_cnt += 1
         for c in block:
             result = self._decoder.toUnicode(c , 1)
             for char in result:
                 self.onRcvChar(char.at(0).unicode())
             if c == '\n':
-                self.__bulkNewLine()
-        self.__bulkEnd()
+                self._bulkNewLine()
+        self._bulkEnd()
         
     def onSelectionBegin(self, x, y):
-        if not self._connected:
-            return
-        self._scr.setSelBeginXY(x, y)
-        self.__showBulk()
+        if self._connected:
+            self._scr.setSelBeginXY(x, y)
+            self._showBulk()
         
     def onSelectionExtend(self, x, y):
-        if not self._connected:
-            return
-        self._scr.setSelExtendXY(x, y)
-        self.__showBulk()
+        if self._connected:
+            self._scr.setSelExtendXY(x, y)
+            self._showBulk()
         
-    def setSelection(self, preserveLineBreak):
-        if not self._connected:
-            return
-        t = self._scr.getSelText(preserveLineBreak)
-        if t is not None:
-            self._gui.setSelection(t)
+    def setSelection(self, preserve_line_break):
+        if self._connected:
+            text = self._scr.getSelText(preserve_line_break)
+            if text is not None:
+                self._gui.setSelection(text)
             
     def isBusySelecting(self, busy):
-        if not self._connected:
-            return
-        self._scr.busy_selecting = busy
+        if self._connected:
+            self._scr.busy_selecting = busy
         
     def testIsSelected(self, x, y, ref):
-        if not self._connected:
-            return
-        ref.value = self._scr.testIsSelected(x, y)
+        if self._connected:
+            ref.value = self._scr.testIsSelected(x, y)
     
     def clearSelection(self):
-        if not self._connected:
-            return
-        self._scr.clearSelection()
-        self.__showBulk()
-    
-    def __bulkNewLine(self):
-        self.__bulkNlCnt += 1
-        self.__bulkInCnt = 0  # Reset bulk counter since 'nl' rule applies
-        
-    def __showBulk(self):
-        self.__bulkNlCnt = 0
-        self.__bulkInCnt = 0
         if self._connected:
-            image = self._scr.getCookedImage() # Get the image
-            self._gui.setImage(image, self._scr.lines, self._scr.columns) #  Actual refresh
-            self._gui.setCursorPos(self._scr.getCursorX(), self._scr.getCursorY())
-            # FIXME: Check that we do not trigger other draw event here
-            self._gui.setLineWrapped(self._scr.getCookedLineWrapped())
-            self._gui.setScroll(self._scr.hist_cursor, self._scr.getHistLines())
-            
-    def __bulkStart(self):
-        if self.__bulkTimer.isActive():
-            self.__bulkTimer.stop()
-            
-    def __bulkEnd(self):
-        if self.__bulkNlCnt > self._gui.lines or self.__bulkInCnt > 20:
-            self.__showBulk()
-        else:
-            self.__bulkTimer.start(BULK_TIMEOUT, True)
-            
+            self._scr.clearSelection()
+            self._showBulk()
+    
     def setConnect(self, c):
         self._connected = c
         if self._connected:
             self.onImageSizeChange(self._gui.lines, self._gui.columns)
-            self.__showBulk()
+            self._showBulk()
         else:
             self._scr.clearSelection()
-
-    def setListenToKeyPress(self, l):
-        self._listen_to_key_press = l
             
     def onImageSizeChange(self, lines, columns):
         """Triggered by image size change of the TEWidget `gui'.
@@ -282,15 +227,22 @@ class Emulation(qt.QObject):
         print 'emulation.onImageSizeChange', lines, columns
         self._screen[0].resizeImage(lines, columns)
         self._screen[1].resizeImage(lines, columns)
-        self.__showBulk()
+        self._showBulk()
         # Propagate event to serial line
         self.emit(qt.PYSIGNAL("imageSizeChanged"), (lines, columns))
     
     def onHistoryCursorChange(self, cursor):
-        if not self._connected:
-            return
-        self._scr.hist_cursor = cursor
-        self.__showBulk()
+        if self._connected:
+            self._scr.hist_cursor = cursor
+            self._showBulk()
+        
+    def _setCodec(self, c):
+        """coded number, 0=locale, 1=utf8"""
+        if c:
+            self._codec = qt.QTextCodec.codecForName("utf8")
+        else:
+            self._codec = qt.QTextCodec.codecForLocale()
+        self._decoder = self._codec.makeDecoder()
         
     def _setColumns(self, columns):
         # FIXME This goes strange ways
@@ -298,4 +250,29 @@ class Emulation(qt.QObject):
         # XXX moreover no one is connected to this signal...
         self.emit(qt.PYSIGNAL("changeColumns"), (columns,))
         
+    def _bulkNewLine(self):
+        self._bulk_nl_cnt += 1
+        self._bulk_in_cnt = 0  # Reset bulk counter since 'nl' rule applies
+        
+    def _showBulk(self):
+        self._bulk_nl_cnt = 0
+        self._bulk_in_cnt = 0
+        if self._connected:
+            image = self._scr.getCookedImage() # Get the image
+            self._gui.setImage(image, self._scr.lines, self._scr.columns) #  Actual refresh
+            self._gui.setCursorPos(self._scr.getCursorX(), self._scr.getCursorY())
+            # FIXME: Check that we do not trigger other draw event here
+            self._gui.setLineWrapped(self._scr.getCookedLineWrapped())
+            self._gui.setScroll(self._scr.hist_cursor, self._scr.getHistLines())
+            
+    def _bulkStart(self):
+        if self._bulk_timer.isActive():
+            self._bulk_timer.stop()
+            
+    def _bulkEnd(self):
+        if self._bulk_nl_cnt > self._gui.lines or self._bulk_in_cnt > 20:
+            self._showBulk()
+        else:
+            self._bulk_timer.start(BULK_TIMEOUT, True)
+            
         

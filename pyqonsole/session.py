@@ -22,7 +22,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.6 2005-12-19 11:47:41 syt Exp $'
+__revision__ = '$Id: session.py,v 1.7 2005-12-23 09:49:01 syt Exp $'
 
 import os
 
@@ -149,19 +149,12 @@ class Session(qt.QObject):
 
     def setConnect(self, connected):
         self.em.setConnect(connected)
-        self.em.setListenToKeyPress(connected)
-
-    def keymapNo(self):
-        return self.em.keymapNo()
 
     def keymap(self):
         return self.em.keymap()
 
-    def setKeymapNo(self, kn):
+    def setKeymap(self, kn):
         self.em.setKeymap(kn)
-
-    def setKeymap(self, id):
-        self.em.setKeymapById(id)
 
     def setHistory(self, history):
         self.em.setHistory(history)
