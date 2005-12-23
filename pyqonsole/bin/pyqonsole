@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__revision__ = '$Id'
+__revision__ = '$Idi$'
 
 from pyqonsole.main import run
 run()
