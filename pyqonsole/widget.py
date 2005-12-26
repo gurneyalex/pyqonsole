@@ -42,7 +42,7 @@ Based on the konsole code from Lars Doelle.
 @license: CeCILL
 """
 
-__revision__ = '$Id: widget.py,v 1.32 2005-12-26 10:04:00 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.33 2005-12-26 10:19:24 alf Exp $'
 
 import qt
 
@@ -462,12 +462,12 @@ class Widget(qt.QFrame):
     def setSelection(self, t):
         # Disconnect signal while WE set the clipboard
         cb = qt.QApplication.clipboard()
-        self.disconnect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
+        self.disconnect(cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
         cb.setSelectionMode(True)
-        qt.QApplication.clipboard().setText(t)
+        cb.setText(t)
         cb.setSelectionMode(False)
-        qt.QApplication.clipboard().setText(t)
-        self.connect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
+        cb.setText(t)
+        self.connect(cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
 
 
     def setFont(self, font):
@@ -573,10 +573,11 @@ class Widget(qt.QFrame):
                 self.emit(qt.PYSIGNAL('keyPressedSignal'), (ke,))
             e.accept()
             return False
+        cb = qt.QApplication.clipboard()
         if e.type() == qt.QEvent.Enter:
-            self.disconnect(self.cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
+            self.disconnect(cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
         if e.type() == qt.QEvent.Leave:
-            self.connect(self.cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
+            self.connect(cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
         return qt.QFrame.eventFilter(self,obj, e)
 
     def drawAttrStr(self, paint, rect, str, attr, pm, clear):
