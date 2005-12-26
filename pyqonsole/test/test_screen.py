@@ -54,18 +54,19 @@ class ScreenTC(unittest.TestCase):
         screen.showCharacter(ord('a'))
         screen.nextLine()
         image = screen.getCookedImage()
-        expected = [Ca(ord('a'))] + [Ca() for i in xrange(49)]
-        expected[10].r |= RE_CURSOR # cursor location
+        expected = [[Ca(ord('a'))] + [Ca() for i in xrange(9)]]
+        expected += [[Ca() for i in xrange(10)] for i in xrange(4)]
+        expected[1][0].r |= RE_CURSOR # cursor location
         self.failUnlessEqual(image, expected)
 
         screen.showCharacter(ord('b'))
         screen.showCharacter(ord('c'))
         screen.nextLine()
         image = screen.getCookedImage()
-        expected[10].c = ord('b')
-        expected[10].r = 0
-        expected[11].c = ord('c')
-        expected[20].r |= RE_CURSOR # cursor location
+        expected[1][0].c = ord('b')
+        expected[1][0].r = 0
+        expected[1][1].c = ord('c')
+        expected[2][0].r |= RE_CURSOR # cursor location
         self.failUnlessEqual(image, expected)
 
     def test_modes(self):

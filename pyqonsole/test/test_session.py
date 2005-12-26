@@ -46,9 +46,10 @@ class SessionTC(NoScreenTC):
 
     def test_keymap(self):
         session = self.session
-        self.failUnlessEqual(session.keymapNo(), 0)
-        self.failUnlessEqual(session.keymap(), 'default')
-        session.setKeymapNo(0)
+        #self.failUnlessEqual(session.keymapNo(), 0)
+        self.failUnlessEqual(session.keymap().num, 0)
+        self.failUnlessEqual(session.keymap().id, 'default')
+        #session.setKeymapNo(0)
         session.setKeymap('[buildin]')
         
     def test_title(self):

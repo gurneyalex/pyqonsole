@@ -1,38 +1,11 @@
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
 """Pseudo Terminal Device
-                                                               
----------------------------------------------------------------
-Copyright (c) 1997,1998 by Lars Doelle <lars.doelle@on-line.de>
-                                                               
-This file is part of Konsole - an X terminal for KDE           
----------------------------------------------------------------
-
-TEPty
-
-    Ptys provide a pseudo terminal connection to a program.
-
-    Although closely related to pipes, these pseudo terminal connections have
-    some ability, that makes it nessesary to uses them. Most importent, they
-    know about changing screen sizes and UNIX job control.
-
-    Within the terminal emulation framework, this class represents the
-    host side of the terminal together with the connecting serial line.
-
-    One can create many instances of this class within a program.
-    As a side effect of using this class, a signal(2) handler is
-    installed on SIGCHLD.
-
-
-    FIXME
-
-    [NOTE: much of the technical stuff below will be replaced by forkpty.]
-
-    publish the SIGCHLD signal if not related to an instance.
-
-    clearify TEPty::done vs. TEPty::~TEPty semantics.
-    check if pty is restartable via run after done.
-
-
-    Pseudo terminals
 
     Pseudo terminals are a unique feature of UNIX, and always come in form of
     pairs of devices (/dev/ptyXX and /dev/ttyXX), which are connected to each
@@ -51,21 +24,18 @@ TEPty
     Compatibility issues with obsolete installations and other unixes
     may prevent this.
 
-XXX  signals:
+Based on the konsole code from Lars Doelle.
 
-    /*! emitted when the client program terminates.
-        \param status the wait(2) status code of the terminated client program.
-    */
-    void done(int status)
 
-    /*! emitted when a new block of data comes in.
-        \param s - the data
-        \param len - the length of the block
-    */
-    void block_in(const char* s, int len)
-
+@author: Lars Doelle
+@author: Sylvain Thenault
+@copyright: 2003, 2005
+@organization: CEA-Grenoble
+@organization: Logilab
+@license: CECILL
 """
-__revision__ = '$Id: pty_.py,v 1.16 2005-12-20 10:54:06 alf Exp $'
+
+__revision__ = '$Id: pty_.py,v 1.17 2005-12-26 10:04:00 syt Exp $'
 
 import os
 import sys
@@ -116,6 +86,19 @@ class Job:
     
 class PtyProcess(Process):
     """fork a process using a controlling terminal
+
+    Ptys provide a pseudo terminal connection to a program.
+
+    Although closely related to pipes, these pseudo terminal connections have
+    some ability, that makes it nessesary to uses them. Most importent, they
+    know about changing screen sizes and UNIX job control.
+
+    Within the terminal emulation framework, this class represents the
+    host side of the terminal together with the connecting serial line.
+
+    One can create many instances of this class within a program.
+    As a side effect of using this class, a signal(2) handler is
+    installed on SIGCHLD.    
     """
 
     def __init__(self):

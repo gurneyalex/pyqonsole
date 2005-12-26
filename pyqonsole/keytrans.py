@@ -5,7 +5,7 @@
 # the terms of the CECILL license, available at
 # http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
 #
-"""Provides the KeyTrans class.
+"""Provide the KeyTrans class.
 
 The keyboard translation table allows to configure pyonsoles behavior
 on key strokes.
@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.6 2005-12-19 15:13:18 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.7 2005-12-26 10:03:59 syt Exp $'
 
 
 import re

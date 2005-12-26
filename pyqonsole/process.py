@@ -5,73 +5,22 @@
 # the terms of the CECILL license, available at
 # http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
 #
-"""Process
+"""Provide the Process class.
 
 A class for handling child processes in without having to take care
 of Un*x specific implementation details
 
-// This file is a translation of konsole/.kprocess.[h/cpp]
-//  version 0.3.1, Jan, 8th 1998
-//  (C) Christian Czezatke e9025461@student.tuwien.ac.at
+Based on the konsole code from Lars Doelle.
 
-XXX signals:
-  /**
-   * Emitted after the process has terminated when
-   * the process was run in the @p RUN_NOTIFYONEXIT  (==default option to
-   * @ref start()) or the @ref RUN_BLOCK mode.
-   **/
-  void processExited(Process *proc)
-
-  /**
-   * Emitted, when output from the child process has
-   * been received on stdout.
-   *
-   *  To actually get
-   * these signals, the respective communication link (stdout/stderr)
-   * has to be turned on in @ref start().
-   *
-   * @param buffer The data received.
-   * @param buflen The number of bytes that are available.
-   *
-   * You should copy the information contained in @p buffer to your private
-   * data structures before returning from this slot.
-   **/
-  void receivedStdout(Process *proc, char *buffer, int buflen)
-
-  /**
-   * Emitted when output from the child process has
-   * been received on stdout.
-   *
-   * To actually get these signals, the respective communications link 
-   * (stdout/stderr) has to be turned on in @ref start() and the 
-   * @p COMM_NOREAD flag should have been passed.
-   *
-   * You will need to explicitly call resume() after your call to start()
-   * to begin processing data from the child process's stdout.  This is
-   * to ensure that this signal is not emitted when no one is connected
-   * to it, otherwise this signal will not be emitted.
-   * 
-   * The data still has to be read from file descriptor @p fd.
-   **/
-  void receivedStdout(int fd, int &len)
-
-  /**
-   * Emitted, when output from the child process has
-   * been received on stderr.
-   * To actually get
-   * these signals, the respective communication link (stdout/stderr)
-   * has to be turned on in @ref start().
-   *
-   * @param buffer The data received.
-   * @param buflen The number of bytes that are available.
-   *
-   * You should copy the information contained in @p buffer to your private
-   * data structures before returning from this slot.
-  */
-  void receivedStderr(Process *proc, char *buffer, int buflen)
-
+@author: Lars Doelle
+@author: Sylvain Thenault
+@copyright: 2003, 2005
+@organization: CEA-Grenoble
+@organization: Logilab
+@license: CECILL
 """
-__revision__ = '$Id: process.py,v 1.12 2005-12-16 15:31:23 syt Exp $'
+
+__revision__ = '$Id: process.py,v 1.13 2005-12-26 10:04:00 syt Exp $'
 
 
 import os
@@ -101,11 +50,11 @@ def initgroups(user, group):
 # If communication for more than one channel is required,
 # the values have to be or'ed together, for example to get
 # communication with stdout as well as with stdin, you would
-# specify @p Stdin @p | @p Stdout
+# specify Stdin | Stdout
 #
-# If @p COMM_NOREAD is specified in conjunction with @p Stdout,
-# no data is actually read from @p Stdout but only
-# the signal @ref childOutput(int fd) is emitted.
+# If COMM_NOREAD is specified in conjunction with Stdout,
+# no data is actually read from Stdout but only
+# the signal childOutput(int fd) is emitted.
 #
 COMM_NOCOMMUNICATION = 0
 COMM_STDIN           = 1
@@ -134,28 +83,27 @@ class ProcessEnv:
 class Process(qt.QObject):
     """Child process invocation, monitoring and control.
  
-    @sect General usage and features
+    General usage and features
+    --------------------------
 
     This class allows a KDE application to start child processes without having
     to worry about UN*X signal handling issues and zombie process reaping.
 
-    @see ProcIO
-
     Basically, this class distinguishes three different ways of running
     child processes:
 
-    *  Process::RUN_DONTCARE -- The child process is invoked and both the child
+    *  RUN_DONTCARE -- The child process is invoked and both the child
     process and the parent process continue concurrently.
 
     Starting a  RUN_DONTCARE child process means that the application is
     not interested in any notification to determine whether the
     child process has already exited or not.
 
-    *  Process::RUN_NOTIFYONEXIT -- The child process is invoked both the
+    *  RUN_NOTIFYONEXIT -- The child process is invoked both the
     child and the parent process run concurrently.
 
     When the child process exits, the Process instance
-    corresponding to it emits the Qt signal @ref processExited().
+    corresponding to it emits the Qt signal processExited().
 
     Since this signal is @em not emitted from within a UN*X
     signal handler, arbitrary function calls can be made.
@@ -163,9 +111,9 @@ class Process(qt.QObject):
     Be aware: When the Process objects gets destructed, the child
     process will be killed if it is still running!
     This means in particular, that you cannot use a Process on the stack
-    with Process::RUN_NOTIFYONEXIT.
+    with RUN_NOTIFYONEXIT.
 
-    *  Process::RUN_BLOCK -- The child process starts and the parent process
+    *  RUN_BLOCK -- The child process starts and the parent process
     is suspended until the child process exits. (@em Really not recommended
     for programs with a GUI.)
 
@@ -175,108 +123,41 @@ class Process(qt.QObject):
     Furthermore it is possible to supply command-line arguments to the process
     in a clean fashion (no null -- terminated stringlists and such...)
 
-    A small usage example:
-    <pre>
-    Process *proc = new Process;
-
-    *proc << "my_executable";
-    *proc << "These" << "are" << "the" << "command" << "line" << "args";
-    QApplication::connect(proc, SIGNAL(processExited(Process *)),
-                          pointer_to_my_object, SLOT(my_objects_slot(Process *)));
-    proc.start();
-    </pre>
-
-    This will start "my_executable" with the commandline arguments "These"...
-
     When the child process exits, the respective Qt signal will be emitted.
 
-    @sect Communication with the child process
-
+    Communication with the child process
+    ------------------------------------
+    
     Process supports communication with the child process through
     stdin/stdout/stderr.
-
-    The following functions are provided for getting data from the child
-    process or sending data to the child's stdin (For more information,
-    have a look at the documentation of each function):
-
-    * bool @ref closeStdin();
-    * -- Closes the child process's stdin (which causes it to see an  feof(stdin)).
-    Returns False if you try to close stdin for a process that has been started
-    without a communication channel to stdin.
-
-    * bool @ref closeStdout();
-    * -- Closes the child process's stdout.
-    Returns False if you try to close stdout for a process that has been started
-    without a communication channel to stdout.
-
-    * bool @ref closeStderr();
-    * -- Closes the child process's stderr.
-    Returns False if you try to close stderr for a process that has been started
-    without a communication channel to stderr.
-
-
-    @sect QT signals:
-
-    * void @ref receivedStdout(Process  *proc, char  *buffer, int  buflen);
-    *  void @ref receivedStderr(Process  *proc, char  *buffer, int  buflen);
-    *  -- Indicates that new data has arrived from either the
-    child process's stdout or stderr.
-
     """
 
     def __init__(self): 
-        """
-        RunMode self.run_mode
-          How to run the process (RUN_BLOCK, RUN_NOTIFYONEXIT, RUN_DONTCARE). You should
-          not modify this data member directly from derived classes.
-          
-        bool running
-          True if the process is currently running.
-          
-        pid_t pid
-          Returns the process id of the process.
-          If it is called after the process has exited, it returns the process
-          id of the last child process that was created by this instance of
-          Process.
-          Calling it before any child process has been started by this
-          Process instance causes pid to be 0.
-          
-        int status        
-          The process' exit status as returned by "waitpid". You should not
-          modify the value of this data member from derived classes. You should
-          rather use @ref exitStatus than accessing this data member directly
-          since it will probably be made private in further versions of
-          Process.
-          
-        bool run_privileged
-          Controls whether the started process should drop any setuid/segid
-          privileges or whether it should keep them. The default is @p False :
-          drop privileges
-
-        Communication communication
-          Lists the communication links that are activated for the child
-          process.  Should not be modified from derived classes.
-          
-        const char *input_data  // the buffer holding the data
-        int input_sent          // # of bytes already transmitted
-          information about the data that has to be sent to the child:
-
-        ProcessEnv d
-          process environment
-          
-        QValueList<QCString> arguments
-          The list of the process' command line arguments. The first entry
-          in this list is the executable itself.
-        """
-        super(Process, self).__init__()
+        super(Process, self).__init__()          
+        # the process id of the process.
+        # If it is called after the process has exited, it returns the process
+        # id of the last child process that was created by this instance of
+        # Process.
+        # Calling it before any child process has been started by this
+        # Process instance causes pid to be 0.
         self.pid = None
+        # The process' exit status as returned by "waitpid". 
         self.status = None
+        # True if the process is currently running.
         self.running = False
+        # Controls whether the started process should drop any setuid/segid
+        # privileges or whether it should keep them. The default is False :
+        # drop privileges
         self.run_privileged = False
+        # How to run the process (RUN_BLOCK, RUN_NOTIFYONEXIT, RUN_DONTCARE)
         self.run_mode = RUN_NOTIFYONEXIT
+        # Lists the communication links that are activated for the child process
         self.communication = COMM_NOCOMMUNICATION
+        # the buffer holding the data of bytes 
         self._input_data = ''
+        # already transmitted information
         self._input_sent = 0
+        # process environment
         self.d = ProcessEnv()
         # the socket descriptors for stdin/stdout/stderr
         self.in_ = [-1, -1]
@@ -286,8 +167,10 @@ class Process(qt.QObject):
         self._innot = None
         self._outnot = None
         self._errnot = None
-        procctrl.theProcessController.addProcess(self)
+        # The list of the process' command line arguments. The first entry
+        # in this list is the executable itself.
         self._arguments = []
+        procctrl.theProcessController.addProcess(self)
         
     def XXX__del__(self):
         # destroying the Process instance sends a SIGKILL to the
@@ -325,8 +208,8 @@ class Process(qt.QObject):
         """This causes the stdin file descriptor of the child process to be
         closed indicating an "EOF" to the child.
    
-        @return @p False if no communication to the process's stdin
-        had been specified in the call to @ref start().
+        return False if no communication to the process's stdin
+        had been specified in the call to start().
         """
         if self.communication & COMM_STDIN:
             self.communication = self.communication & ~COMM_STDIN
@@ -339,8 +222,8 @@ class Process(qt.QObject):
         """This causes the stdout file descriptor of the child process to be
         closed.
    
-        @return @p False if no communication to the process's stdout
-        had been specified in the call to @ref start().
+        return False if no communication to the process's stdout
+        had been specified in the call to start().
         """
         if self.communication & COMM_STDOUT:
             self.communication = self.communication & ~COMM_STDOUT
@@ -353,8 +236,8 @@ class Process(qt.QObject):
         """This causes the stderr file descriptor of the child process to be
         closed.
 
-        @return @p False if no communication to the process's stderr
-        had been specified in the call to @ref start().
+        return False if no communication to the process's stderr
+        had been specified in the call to start().
         """
         if self.communication & COMM_STDERR:
             self.communication = self.communication & ~COMM_STDERR
@@ -364,10 +247,10 @@ class Process(qt.QObject):
         return False
 
     def normalExit(self):
-        """@return @p True if the process has already finished and has exited
+        """return True if the process has already finished and has exited
         "voluntarily", ie: it has not been killed by a signal.
    
-        Note that you should check @ref Process::exitStatus() to determine
+        Note that you should check exitStatus() to determine
         whether the process completed its task successful or not.
         """
         return self.pid and not self.running and os.WIFEXITED(self.status)
@@ -375,8 +258,8 @@ class Process(qt.QObject):
     def exitStatus(self):
         """Returns the exit status of the process.
    
-        Please use @ref Process::normalExit() to check whether the process has
-        exited cleanly (i.e., @ref Process::normalExit() returns @p True)
+        Please use normalExit() to check whether the process has
+        exited cleanly (i.e., normalExit() returns True)
         before calling this function because if the process did not exit
         normally, it does not have a valid exit status.
         """
@@ -399,7 +282,7 @@ class Process(qt.QObject):
     def childOutput(self, fdno):
         """Called by "slotChildOutput" this function copies data arriving from the
         child process's stdout to the respective buffer and emits the signal
-        "@ref receivedStdout".
+        "receivedStdout".
         """
         if self.communication & COMM_NOREAD:
             len_ = -1
@@ -420,7 +303,7 @@ class Process(qt.QObject):
     def childError(self, fdno):
         """Called by "slotChildError" this function copies data arriving from the
         child process's stdout to the respective buffer and emits the signal
-        "@ref receivedStderr"
+        "receivedStderr"
         """
         buffer = os.read(fdno, 1024)
         len_ = len(buffer)
@@ -561,12 +444,12 @@ class Process(qt.QObject):
         * The starting of the process failed (could not fork).
         * The executable was not found.
    
-        @param comm  Specifies which communication links should be
+        param comm  Specifies which communication links should be
         established to the child process (stdin/stdout/stderr). By default,
         no communication takes place and the respective communication
         signals will never get emitted.
    
-        @return True on success, False on error
+        return True on success, False on error
         (see above for error conditions)
         """
         uid, gid = self._startInit(runmode, comm)
@@ -668,8 +551,8 @@ class Process(qt.QObject):
     def kill(self, signo):
         """Stop the process (by sending it a signal).
         
-        @param signo	The signal to send. The default is SIGTERM.
-        @return @p True if the signal was delivered successfully.
+        param signo	The signal to send. The default is SIGTERM.
+        return True if the signal was delivered successfully.
         """
         os.kill(self.pid, signo)
 
@@ -708,7 +591,7 @@ class Process(qt.QObject):
             self._innot.setEnabled(False)
             self._input_data = ''
             self._input_sent = 0
-            self.emit(qt.SIGNAL("wroteStdin(Process*)"), (self,))
+            self.emit(qt.PYSIGNAL("wroteStdin"), (self,))
         else:
             self._input_sent += os.write(self.in_[1],
                                          self._input_data[self._input_sent:])

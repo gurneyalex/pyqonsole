@@ -59,7 +59,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.20 2005-12-23 09:49:00 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.21 2005-12-26 10:03:59 syt Exp $'
 
 import qt
 
@@ -159,7 +159,7 @@ class Emulation(qt.QObject):
         raise NotImplementedError()
     
     def sendString(self, string):
-        self.emit(qt.PYSIGNAL("sndBlock"), (s,))
+        self.emit(qt.PYSIGNAL("sndBlock"), (string,))
            
     # Keyboard handling
     

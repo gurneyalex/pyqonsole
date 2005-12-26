@@ -33,7 +33,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: history.py,v 1.7 2005-12-23 09:49:01 syt Exp $'
+__revision__ = '$Id: history.py,v 1.8 2005-12-26 10:03:59 syt Exp $'
     
     
 class HistoryTypeNone(object):
@@ -79,9 +79,6 @@ class HistoryScrollNone(object):
         self.type = type_
         self.lines = 0
         
-    def hasScroll(self):
-        return True
-    
     def getLineLen(self, lineno):
         return 0
     
@@ -113,6 +110,9 @@ class HistoryScrollBuffer(HistoryScrollNone):
         self.hist_buffer = [None] * max_lines
         self.wrapped_line = [False] * max_lines
         
+    def hasScroll(self):
+        return True
+    
     def addCells(self, a, wrapped=False):
         """a: list(Ca())"""
         line = a[:] # XXX necessary ?

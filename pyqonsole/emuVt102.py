@@ -25,7 +25,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.17 2005-12-23 09:49:01 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.18 2005-12-26 10:03:59 syt Exp $'
 
 import os
 import qt
@@ -168,7 +168,7 @@ class CharCodes:
     
     def setCharset(self, n, cs):
         self.charset[n & 3] = cs
-        self._useCharset(self.cu_cs)
+        self.useCharset(self.cu_cs)
         
     def save(self):
         self.sa_graphic = self.graphic
@@ -180,7 +180,7 @@ class CharCodes:
         self.pound = self.sa_pound
         self.trans = self.sa_trans[:]
         
-    def _useCharset(self, n):
+    def useCharset(self, n):
         self.cu_cs = n & 3
         self.graphic = (self.charset[n & 3] == '0')
         self.pound = (self.charset[n & 3] == 'A') # This mode is obsolete
@@ -910,6 +910,9 @@ class EmuVt102(Emulation):
         
     def _setAndUseCharset(self, n, cs):
         self._charset[self._scr is self._screen[1]].setCharset(n, cs)
+        
+    def _useCharset(self, n):
+        self._charset[self._scr is self._screen[1]].useCharset(n)
         
     def _saveCursor(self):
         """save cursor position and rendition attribute settings"""

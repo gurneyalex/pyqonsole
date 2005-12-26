@@ -1,3 +1,10 @@
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
 """ Provide the Widget class.
 
 Visible screen contents
@@ -17,7 +24,6 @@ Visible screen contents
 FIXME:
    - 'image' may also be used uninitialized (it isn't in fact) in resizeEvent
    - 'font_a' not used in mouse events
-   - add destructor
 
 TODO
    - evtl. be sensitive to `paletteChange' while using default colors.
@@ -29,28 +35,14 @@ Based on the konsole code from Lars Doelle.
 @author: Benjamin Longuet
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
-@copyright: 2003
+@author: Sylvain Thenault
+@copyright: 2003, 2005
 @organization: CEA-Grenoble
+@organization: Logilab
 @license: CeCILL
-
-
-
-## signals:
-##     void keyPressedSignal(QKeyEvent *e)
-##     void mouseSignal(int cb, int cx, int cy)
-##     void changedImageSizeSignal(int lines, int columns)
-##     void changedHistoryCursor(int value)
-##     void configureRequest( TEWidget*, int state, int x, int y )
-
-##     void clearSelectionSignal()
-##     void beginSelectionSignal( const int x, const int y )
-##     void extendSelectionSignal( const int x, const int y )
-##     void endSelectionSignal(const bool preserve_line_breaks)
-##     void isBusySelecting(bool)
-##     void testIsSelected(const int x, const int y, bool &selected /* result */)
 """
 
-__revision__ = '$Id: widget.py,v 1.31 2005-12-22 17:39:44 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.32 2005-12-26 10:04:00 syt Exp $'
 
 import qt
 
@@ -83,10 +75,7 @@ diPending = 1
 diDragging = 2
 
 class dragInfo:
-##     def __init__(self, state, start, dragObject):
-##       self.state = state
-##       self.start = start
-##       self.dragObject = dragObject
+    """uninstantiable class used to handle drag and drop status"""
     state = None
     start = None
     dragObject = None
@@ -144,11 +133,6 @@ VT100_GRAPHICS = [
     0x252c, 0x2502, 0x2264, 0x2265, 0x03C0, 0x2260, 0x00A3, 0x00b7,
 ]
 
-## def identicalMap(c):
-##     return c 
-
-import sys
-
 class RefValue(object):
     """trick to get a return value by reference from an emitted signal"""
     def __init__(self, value):
@@ -157,15 +141,6 @@ class RefValue(object):
         
 class Widget(qt.QFrame):
     """a widget representing attributed text"""
-
-##     def _print_image(self):
-##         """debug"""
-##         print 'begin image ***********'
-##         for y in xrange(self.lines):
-##             for x in xrange(self.columns):
-##                 sys.stdout.write(unichr(self.image[self._loc(x, y)].c))
-##             sys.stdout.write('\n')
-##         print 'end image ***********'
                 
     def _loc(self, x, y):
         return y * self.columns + x
@@ -184,8 +159,10 @@ class Widget(qt.QFrame):
         self.has_blinker = False
         # hide cursor in paintEvent
         self.cursor_blinking = False
-        self.blink_t = qt.QTimer(self)        # active when self.has_blinker
-        self.blink_cursor_t = qt.QTimer(self) # active when self.has_blinking_cursor
+        # active when self.has_blinker
+        self.blink_t = qt.QTimer(self)
+        # active when self.has_blinking_cursor
+        self.blink_cursor_t = qt.QTimer(self)
         # require Ctrl key for drag
         self.ctrldrag = False
         # do we antialias or not
@@ -225,8 +202,6 @@ class Widget(qt.QFrame):
         self.m_resize_label = None # QLabel
         self.m_resize_timer = None # QTimer
         self.m_line_spacing = 0
-
-        self.cb = qt.QApplication.clipboard() # QClipboard
         
         self.scrollbar = qt.QScrollBar(self)
         self.scrollbar.setCursor(self.arrowCursor)
@@ -234,7 +209,8 @@ class Widget(qt.QFrame):
         self.drop_text = ''
         self._cursor_rect = None #for quick changing of cursor
 
-        self.connect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
+        cb = qt.QApplication.clipboard()
+        self.connect(cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
         self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
         self.connect(self.blink_t, qt.SIGNAL('timeout()'), self.blinkEvent)
         self.connect(self.blink_cursor_t, qt.SIGNAL('timeout()'), self.blinkCursorEvent)
@@ -243,7 +219,6 @@ class Widget(qt.QFrame):
         self.setVTFont(qt.QFont("fixed"))
         self.setColorTable(BASE_COLOR_TABLE) # init color table
         self._qapp.installEventFilter(self) #FIXME: see below
-        #  QCursor::setAutoHideCursor( self, True )
 
         # Init DnD ################################
         self.setAcceptDrops(True) # attempt
@@ -486,11 +461,11 @@ class Widget(qt.QFrame):
 
     def setSelection(self, t):
         # Disconnect signal while WE set the clipboard
-        self.cb = qt.QApplication.clipboard()
+        cb = qt.QApplication.clipboard()
         self.disconnect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
-        self.cb.setSelectionMode(True)
+        cb.setSelectionMode(True)
         qt.QApplication.clipboard().setText(t)
-        self.cb.setSelectionMode(False)
+        cb.setSelectionMode(False)
         qt.QApplication.clipboard().setText(t)
         self.connect(self.cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
 

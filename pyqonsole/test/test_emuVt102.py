@@ -190,8 +190,7 @@ ESC ~ 		Invoke the G1 Character Set as GR (LS1R).
                             emu=[('resetMode', (emuVt102.MODE_AppKeyPad,))])
         #self._test_sequence('\033F')
         self._test_sequence('\033c',
-                            scr0=[('getattr', 'clearSelection'), ('call',),
-                                  ('getattr', 'resetMode'), ('call', (5,)),
+                            scr0=[('getattr', 'resetMode'), ('call', (5,)),
                                   ('getattr', 'resetMode'), ('call', (4,)),
                                   ('getattr', 'reset'), ('call',)],
                             scr1=[('getattr', 'resetMode'), ('call', (5,)),
@@ -200,9 +199,11 @@ ESC ~ 		Invoke the G1 Character Set as GR (LS1R).
                             gui=[('getattr', 'setMouseMarks'), ('call', (True,))],
                             emu=[('resetMode', (9,)), ('saveMode', (9,)),
                                  ('resetMode', (6,)), ('saveMode', (6,)),
+                                 ('setMode', (10,)),
                                  ('resetMode', (7,)), ('saveMode', (7,)),
                                  ('resetMode', (5,)), ('resetMode', (8,)),
-                                 ('resetMode', (4,)), ('setMode', (10,))])
+                                 ('resetMode', (4,))]
+                            )
         #self._test_sequence('\033l')
         #self._test_sequence('\033m')
         self._test_sequence('\033n', emu=[('_useCharset', (2,))])
@@ -236,19 +237,19 @@ C=H or 7 -> Swedish
 C== -> Swiss
         """
         self._test_sequence('\033(0',
-                            emu=[('_setCharset', (0,'0')), ('_useCharset', (0,)), ('_useCharset', (0,))])
+                            emu=[('_setCharset', (0,'0'))])
         self._test_sequence('\033(A',
-                            emu=[('_setCharset', (0, 'A')), ('_useCharset', (0,)), ('_useCharset', (0,))])
+                            emu=[('_setCharset', (0, 'A'))])
         self._test_sequence('\033(B',
-                            emu=[('_setCharset', (0, 'B')), ('_useCharset', (0,)), ('_useCharset', (0,))])
+                            emu=[('_setCharset', (0, 'B'))])
         #self._test_sequence('\033(C')
         #self._test_sequence('\033(E')
         #self._test_sequence('\033(H')
         self._test_sequence('\033(K',
-                            emu=[('_setCharset', (0, 'K',)), ('_useCharset', (0,)), ('_useCharset', (0,))])
+                            emu=[('_setCharset', (0, 'K',))])
         #self._test_sequence('\033(Q')
         self._test_sequence('\033(R',
-                            emu=[('_setCharset', (0, 'R')), ('_useCharset', (0,)), ('_useCharset', (0,))])
+                            emu=[('_setCharset', (0, 'R'))])
         #self._test_sequence('\033(Y')
         #self._test_sequence('\033(Z')
         #self._test_sequence('\033(4')
@@ -260,7 +261,7 @@ C== -> Swiss
             for c in '0ABKR':
                 #print repr('\033%s%s' % (s, c))
                 self._test_sequence('\033%s%s' % (s, c),
-                                    emu=[('_setCharset', (i, c)), ('_useCharset', (0,)), ('_useCharset', (0,))])
+                                    emu=[('_setCharset', (i, c))])
 
     def test_receive_csi_cursor_manipulation(self):
         """Functions using CSI - cursor manipulation
@@ -621,7 +622,6 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                             scr1=[('getattr', 'setMode'), ('call', (screen.MODE_Cursor,))])
         self._test_sequence('\033[?41h')
         self._test_sequence('\033[?47h',
-                            scr0=[('getattr', 'setBusySelecting'), ('call', (False,))],
                             scr1=[('getattr', 'clearSelection'), ('call',)],
                             emu=[('setMode', (emuVt102.MODE_AppScreen,))])
         self._test_sequence('\033[?1000h',
@@ -635,17 +635,13 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                             gui=[('getattr', 'setMouseMarks'), ('call', (False,))],
                             emu=[('setMode', (emuVt102.MODE_Mouse1000,))])
         self._test_sequence('\033[?1047h',
-                            scr0=[('getattr', 'setBusySelecting'), ('call', (False,))],
-                            scr1=[('getattr', 'clearSelection'), ('call',)],
                             emu=[('setMode', (emuVt102.MODE_AppScreen,))])
         self._test_sequence('\033[?1048h',
-                            scr0=[('getattr', 'saveCursor'), ('call',)])
+                            scr1=[('getattr', 'saveCursor'), ('call',)])
         self._test_sequence('\033[?1049h',
                             emu=[('setMode', (emuVt102.MODE_AppScreen,))],
-                            scr0=[('getattr', 'saveCursor'), ('call',),
-                                  ('getattr', 'setBusySelecting'), ('call', (False,))],
-                            scr1=[('getattr', 'clearEntireScreen'), ('call',),
-                                  ('getattr', 'clearSelection'), ('call',)])
+                            scr1=[('getattr', 'saveCursor'), ('call',),
+                                  ('getattr', 'clearEntireScreen'), ('call',)])
 
     def test_receive_csi_dec_private_mode_save(self):
         """Functions using CSI - CSI ? <Pm> s 	Save DEC Private Mode Values.
@@ -701,8 +697,7 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
         #self._test_sequence('\033[?25r')
         self._test_sequence('\033[?41r')
         self._test_sequence('\033[?47r',
-                            emu=[('resetMode', (emuVt102.MODE_AppScreen,))],
-                            scr0=[('getattr', 'clearSelection'), ('call',)])
+                            emu=[('resetMode', (emuVt102.MODE_AppScreen,))])
         self._test_sequence('\033[?1000r',
                             emu=[('resetMode', (emuVt102.MODE_Mouse1000,))],
                             gui=[('getattr', 'setMouseMarks'), ('call', (True,))])
@@ -714,8 +709,7 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                             emu=[('resetMode', (emuVt102.MODE_Mouse1000,))],
                             gui=[('getattr', 'setMouseMarks'), ('call', (True,))])
         self._test_sequence('\033[?1047r',
-                            emu=[('resetMode', (emuVt102.MODE_AppScreen,))],
-                            scr0=[('getattr', 'clearSelection'), ('call',)])
+                            emu=[('resetMode', (emuVt102.MODE_AppScreen,))])
         self._test_sequence('\033[?1048r',
                             scr0=[('getattr', 'restoreCursor'), ('call',)])
         #self._test_sequence('\033[?1049r')
@@ -797,8 +791,7 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
 """        
         self._test_sequence('\033[?41l')
         self._test_sequence('\033[?47l',
-                            emu= [('resetMode', (emuVt102.MODE_AppScreen,))],
-                            scr0=[('getattr', 'clearSelection'), ('call',)])
+                            emu= [('resetMode', (emuVt102.MODE_AppScreen,))])
         self._test_sequence('\033[?1000l',
                             gui=[('getattr', 'setMouseMarks'), ('call', (True,))],
                             emu= [('resetMode', (emuVt102.MODE_Mouse1000,))])
@@ -809,15 +802,13 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                             gui=[('getattr', 'setMouseMarks'), ('call', (True,))],
                             emu=[('resetMode', (emuVt102.MODE_Mouse1000,))])
         self._test_sequence('\033[?1047l',
-                            scr0=[('getattr', 'clearSelection'), ('call',)],
                             scr1=[('getattr', 'clearEntireScreen'), ('call',)],
                             emu=[('resetMode', (emuVt102.MODE_AppScreen,))])
         self._test_sequence('\033[?1048l',
                             scr0=[('getattr', 'restoreCursor'), ('call',)])
         self._test_sequence('\033[?1049l',
                             emu=[('resetMode', (emuVt102.MODE_AppScreen,))],
-                            scr0=[('getattr', 'clearSelection'), ('call',),
-                                  ('getattr', 'restoreCursor'), ('call',)])
+                            scr0=[('getattr', 'restoreCursor'), ('call',)])
 
     def test_receive_csi_device_status_report(self):
         """Functions using CSI - Device status report

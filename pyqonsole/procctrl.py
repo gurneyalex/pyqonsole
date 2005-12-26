@@ -21,13 +21,18 @@ struct waitdata
   int status
 }
 
-// This file is a translation of kprocctrl.[h/cpp]
-//  version 0.3.1, Jan, 8th 1997
-//  (C) Christian Czezatke e9025461@student.tuwien.ac.at
+Based on the konsole code from Lars Doelle.
+
+@author: Lars Doelle
+@author: Sylvain Thenault
+@copyright: 2003, 2005
+@organization: CEA-Grenoble
+@organization: Logilab
+@license: CECILL
 
 XXX review singleton aspect
 """
-__revision__ = '$Id: procctrl.py,v 1.3 2005-12-16 15:31:23 syt Exp $'
+__revision__ = '$Id: procctrl.py,v 1.4 2005-12-26 10:04:00 syt Exp $'
 
 import os
 import errno
