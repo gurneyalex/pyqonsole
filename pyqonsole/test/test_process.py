@@ -21,8 +21,7 @@ class ProcessTC(unittest.TestCase):
     
     def test_start(self):
         p = self.process
-        # XXX set arguments
-        p << 'ls' << '/'
+        p._arguments += ['ls', '/']
         p.start(process.RUN_NOTIFYONEXIT, process.COMM_ALL)
         time.sleep(2)
         # after execution
@@ -34,8 +33,7 @@ class ProcessTC(unittest.TestCase):
 
     def test_start_then_kill(self):
         p = self.process
-        # XXX set arguments
-        p << 'sleep' << '11'
+        p._arguments += ['sleep', '11']
         p.start(process.RUN_NOTIFYONEXIT, process.COMM_ALL)
         p.kill(9)
         time.sleep(2)
