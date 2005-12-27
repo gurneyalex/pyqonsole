@@ -25,7 +25,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.21 2005-12-27 16:53:22 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.22 2005-12-27 23:32:47 syt Exp $'
 
 import os
 import qt
@@ -79,7 +79,7 @@ ESC = 27
 
 # init tokenizer table
 TOK_TBL = []
-def init_tokeniser():
+def init_tokenizer():
     for i in xrange(32):
         TOK_TBL.append(CTL)
     for i in xrange(32, 256):
