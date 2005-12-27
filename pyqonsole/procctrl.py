@@ -32,7 +32,7 @@ Based on the konsole code from Lars Doelle.
 
 XXX review singleton aspect
 """
-__revision__ = '$Id: procctrl.py,v 1.5 2005-12-27 10:26:00 syt Exp $'
+__revision__ = '$Id: procctrl.py,v 1.6 2005-12-27 13:21:45 syt Exp $'
 
 import os
 import errno
@@ -181,7 +181,7 @@ class ProcessController(qt.QObject):
         # XXX
         os.write(self.fd[1], struct.pack('II', 0, 0)) # delayed waitpid()
 
-    def slotDoHousekeeping(self, int):
+    def slotDoHousekeeping(self, _):
         """NOTE: It can happen that QSocketNotifier fires while
         we have already read from the socket. Deal with it.
         

@@ -31,12 +31,12 @@ class ScreenTC(unittest.TestCase):
         screen.showCharacter(ord('a'))
         self.failUnlessEqual(screen.getCursorX(), 1)
         self.failUnlessEqual(screen.getCursorY(), 0)
-        self.failUnlessEqual(image[0][0].c, ord('a'))
+        self.failUnlessEqual(image[0][0].c, u'a')
         for y in xrange(5):
             for x in xrange(10):
                 if y == 0 and x == 0:
                     continue
-                self.failUnlessEqual(image[y][x].c, ord(' '))
+                self.failUnlessEqual(image[y][x].c, u' ')
 
     def test_nextLine(self):
         screen = self.screen
@@ -46,15 +46,15 @@ class ScreenTC(unittest.TestCase):
         self.failUnlessEqual(screen.getCursorY(), 1)
         for y in xrange(5):
             for x in xrange(10):
-                self.failUnlessEqual(image[y][x].c, ord(' '))
+                self.failUnlessEqual(image[y][x].c, u' ')
         #self.failUnlessEqual(screen._hist.hist_buffer[0], [])
 
     def test_getCookedImage(self):
         screen = self.screen
         screen.showCharacter(ord('a'))
         screen.nextLine()
-        image = screen.getCookedImage()
-        expected = [[Ca(ord('a'))] + [Ca() for i in xrange(9)]]
+        image, wrapped = screen.getCookedImage()
+        expected = [[Ca(u'a')] + [Ca() for i in xrange(9)]]
         expected += [[Ca() for i in xrange(10)] for i in xrange(4)]
         expected[1][0].r |= RE_CURSOR # cursor location
         self.failUnlessEqual(image, expected)
@@ -62,10 +62,10 @@ class ScreenTC(unittest.TestCase):
         screen.showCharacter(ord('b'))
         screen.showCharacter(ord('c'))
         screen.nextLine()
-        image = screen.getCookedImage()
-        expected[1][0].c = ord('b')
+        image, wrapped = screen.getCookedImage()
+        expected[1][0].c = u'b'
         expected[1][0].r = 0
-        expected[1][1].c = ord('c')
+        expected[1][1].c = u'c'
         expected[2][0].r |= RE_CURSOR # cursor location
         self.failUnlessEqual(image, expected)
 

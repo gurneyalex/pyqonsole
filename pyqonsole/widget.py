@@ -42,12 +42,12 @@ Based on the konsole code from Lars Doelle.
 @license: CeCILL
 """
 
-__revision__ = '$Id: widget.py,v 1.35 2005-12-27 11:20:38 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.36 2005-12-27 13:21:46 syt Exp $'
 
 import qt
 
-from pyqonsole.screen import Screen
-from pyqonsole.ca import *
+from pyqonsole.ca import DCA, RE_CURSOR, RE_BLINK, RE_UNDERLINE, \
+     TABLE_COLORS, DEFAULT_BACK_COLOR, ColorEntry
 
 # FIXME: the rim should normally be 1, 0 only when running in full screen mode.
 rimX = 0 # left/right rim width
@@ -137,9 +137,6 @@ VT100_GRAPHICS = [
 class Widget(qt.QFrame):
     """a widget representing attributed text"""
                 
-    def _loc(self, x, y):
-        return y * self.columns + x
-    
     def __init__(self, qapp, parent=None, name=''):
         super(Widget, self).__init__(parent, name)
         # application object
@@ -196,7 +193,7 @@ class Widget(qt.QFrame):
         self.m_resize_widget = None # QFrame
         self.m_resize_label = None # QLabel
         self.m_resize_timer = None # QTimer
-        self.m_line_spacing = 0
+        self.line_spacing = 0
         
         self.scrollbar = qt.QScrollBar(self)
         self.scrollbar.setCursor(self.arrowCursor)
@@ -206,9 +203,11 @@ class Widget(qt.QFrame):
 
         cb = qt.QApplication.clipboard()
         self.connect(cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
-        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
+        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
+                     self.scrollChanged)
         self.connect(self.blink_t, qt.SIGNAL('timeout()'), self.blinkEvent)
-        self.connect(self.blink_cursor_t, qt.SIGNAL('timeout()'), self.blinkCursorEvent)
+        self.connect(self.blink_cursor_t, qt.SIGNAL('timeout()'),
+                     self.blinkCursorEvent)
 
         self.setMouseMarks(True)
         self.setVTFont(qt.QFont("fixed"))
@@ -254,11 +253,13 @@ class Widget(qt.QFrame):
         self.update()
 
     def setScroll(self, cursor, lines):
-        self.disconnect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
+        self.disconnect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
+                        self.scrollChanged)
         self.scrollbar.setRange(0,lines)
         self.scrollbar.setSteps(1, self.lines)
         self.scrollbar.setValue(cursor)
-        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'), self.scrollChanged)
+        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
+                     self.scrollChanged)
 
     def doScroll(self, lines):
         self.scrollbar.setValue(self.scrollbar.value()+lines)
@@ -277,16 +278,9 @@ class Widget(qt.QFrame):
             else:
                 self.cursor_blinking = False
         
-    def setCtrlDrag(self, enable):
-        self.ctrldrag = enable
-        
     def setLineSpacing(self, i):
-        self.m_line_spacing = i
+        self.line_spacing = i
         self.setVTFont(self.font()) # Trigger an update.
-        
-    def lineSpacing(self):
-        return self.m_line_spacing
-
 
     def emitSelection(self, useXselection, appendReturn):
         """Paste Clipboard by simulating keypress events"""
@@ -355,7 +349,7 @@ class Widget(qt.QFrame):
                         (cal is ocal or cal == ocal)):
                         break
                     disstrU.append(c)
-                unistr = qt.QString(''.join([unichr(i) for i in disstrU]))
+                unistr = qt.QString(u''.join(disstrU))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x,
                                           self.bY+tLy+self.font_h*y,
@@ -369,7 +363,7 @@ class Widget(qt.QFrame):
         self.setUpdatesEnabled(True)
         if self.has_blinker and not self.blink_t.isActive():
             self.blink_t.start(1000) # 1000 ms
-        if not self.has_blinker and self.blink_t.isActive():
+        elif not self.has_blinker and self.blink_t.isActive():
             self.blink_t.stop()
             self.blinking = False
 
@@ -377,26 +371,27 @@ class Widget(qt.QFrame):
             if self.terminal_size_startup:
                 self.terminal_size_startup = False
                 return
+            widget = self.m_resize_widget
             if not self.m_resize_widget:
                 self.m_resize_widget = qt.QFrame(self)
                 f = self.m_resize_widget.font()
                 f.setPointSize(f.pointSize()*2)
                 f.setBold(True)
-                self.m_resize_widget.setFont(f)
-                self.m_resize_widget.setFrameShape(self.Raised)
-                self.m_resize_widget.setMidLineWidth(4)
-                l = qt.QVBoxLayout( self.m_resize_widget, 10)
-                self.m_resize_label = qt.QLabel("Size: XXX x XXX", self.m_resize_widget)
-                l.addWidget(self.m_resize_label, 1, AlignCenter)
-                self.m_resize_widget.setMinimumWidth(self.m_resize_label.fontMetrics().width("Size: XXX x XXX")+20)
-                self.m_resize_widget.setMinimumHeight(self.m_resize_label.sizeHint().height()+20)
+                widget.setFont(f)
+                widget.setFrameShape(self.Raised)
+                widget.setMidLineWidth(4)
+                l = qt.QVBoxLayout( widget, 10)
+                self.m_resize_label = qt.QLabel("Size: XXX x XXX", widget)
+                l.addWidget(self.m_resize_label, 1, self.AlignCenter)
+                widget.setMinimumWidth(self.m_resize_label.fontMetrics().width("Size: XXX x XXX")+20)
+                widget.setMinimumHeight(self.m_resize_label.sizeHint().height()+20)
                 self.m_resize_timer = qt.QTimer(self)
-                self.connect(self.m_resize_timer, SIGNAL('timeout()'), self.m_resize_widget.hide)
+                self.connect(self.m_resize_timer, qt.SIGNAL('timeout()'), widget.hide)
             sizeStr = qt.QString("Size: %1 x %2").arg(columns).arg(lines)
             self.m_resize_label.setText(sizeStr)
-            self.m_resize_widget.move((width()-self.m_resize_widget.width())/2,
-                                      (height()-self.m_resize_widget.height())/2)
-            self.m_resize_widget.show()
+            widget.move((self.width()-widget.width())/2,
+                                      (self.height()-widget.height())/2)
+            widget.show()
             self.m_resize_timer.start(1000, True)
 
     def setLineWrapped(self, _line_wrapped):
@@ -488,12 +483,11 @@ class Widget(qt.QFrame):
     def onClearSelection(self):
         self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
 
-
     # protected ###############################################################
 
     def styleChange(self, style):
+        """overridden from QWidget"""
         self.propagateSize()
-
 
     def eventFilter(self, obj, e):
         """Keyboard
@@ -575,7 +569,7 @@ class Widget(qt.QFrame):
             self.connect(cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
         return qt.QFrame.eventFilter(self,obj, e)
 
-    def drawAttrStr(self, paint, rect, str, attr, pm, clear):
+    def drawAttrStr(self, paint, rect, qstr, attr, pm, clear):
         """Display Operation - attributed string draw primitive"""
         #print attr.b, attr.f
         if (attr.r & RE_CURSOR) and self.hasFocus() and (not self.has_blinking_cursor or not self.cursor_blinking):
@@ -600,12 +594,12 @@ class Widget(qt.QFrame):
             if (attr.r and RE_CURSOR) and self.cursor_blinking:
                 self.erase(rect)
             paint.setPen(fColor)
-            paint.drawText(rect.x(),rect.y()+self.font_a, str)
+            paint.drawText(rect.x(),rect.y()+self.font_a, qstr)
             if (attr.r & RE_UNDERLINE) or self.color_table[attr.f].bold:
                 paint.setClipRect(rect)
                 if self.color_table[attr.f].bold:
                     paint.setBackgroundMode(self.TransparentMode)
-                    paint.drawText(rect.x()+1,rect.y()+self.font_a, str) # second stroke
+                    paint.drawText(rect.x()+1,rect.y()+self.font_a, qstr) # second stroke
                 if attr.r & RE_UNDERLINE:
                     paint.drawLine(rect.left(), rect.y()+self.font_a+1,
                                    rect.right(),rect.y()+self.font_a+1)
@@ -614,9 +608,9 @@ class Widget(qt.QFrame):
             if pm and self.color_table[attr.b].transparent:
                 self.erase(rect)
                 paint.setBackgroundMode(self.TransparentMode)
-                paint.drawText(rect.x(),rect.y()+self.font_a, str)
+                paint.drawText(rect.x(),rect.y()+self.font_a, qstr)
             paint.setClipRect(rect)
-            paint.drawRect(rect.x(), rect.y(), rect.width(), rect.height()-self.m_line_spacing)
+            paint.drawRect(rect.x(), rect.y(), rect.width(), rect.height()-self.line_spacing)
             paint.setClipping(False)
 
     def paintEvent(self, pe):
@@ -670,7 +664,7 @@ class Widget(qt.QFrame):
                     xlen += 1
                 if (x+xlen < self.columns) and (not image[y][x+xlen].c):
                     xlen += 1 # Adjust for trailing part of multi-column char
-                unistr = qt.QString(''.join([unichr(i) for i in disstrU]))
+                unistr = qt.QString(u''.join(disstrU))
                 self.drawAttrStr(paint,
                                  qt.QRect(self.bX+tLx+self.font_w*x, self.bY+tLy+self.font_h*y, self.font_w*xlen, self.font_h),
                                  unistr, ca, pm != None, False)
@@ -689,7 +683,7 @@ class Widget(qt.QFrame):
 
     def fontChange(self, font):
         fm = qt.QFontMetrics(font) # QFontMetrics fm(font())
-        self.font_h = fm.height() + self.m_line_spacing
+        self.font_h = fm.height() + self.line_spacing
         # waba TEWidget 1.123:
         # "Base character width on widest ASCII character. Self prevents too wide
         #  characters in the presence of double wide (e.g. Japanese) characters."
@@ -887,7 +881,6 @@ class Widget(qt.QFrame):
         pnt_sel_corr = [self.pnt_sel.x(), self.pnt_sel.y() - self.scrollbar.value()]
         swapping = False
         offset = 0
-        image_size = self.lines * self.columns
         if self._word_selection_mode:
             # Extend to word boundaries
             left_not_right = (here[1] < i_pnt_sel_corr[1] or
@@ -991,15 +984,8 @@ class Widget(qt.QFrame):
         """don't erase area"""
         self.repaint(self._cursor_rect, False)
 
-    def focusNextPrevChild(self, next):
-        if next:
-            return False # Self disables changing the active part in konqueror
-                         # when pressing Tab
-        return qt.QFrame.focusNextPrevChild(self, next)
-
-
     def scrollChanged(self, value):
-        self.emit(qt.PYSIGNAL('changedHistoryCursor'), (self.scrollbar.value(),)) # expose
+        self.emit(qt.PYSIGNAL('changedHistoryCursor'), (value,))
 
     def blinkEvent(self):
         """Display operation"""
@@ -1014,8 +1000,8 @@ class Widget(qt.QFrame):
 
     def _clearImage(self):
         """initialize the image, for internal use only"""
-        self._image = [[DCA for x in xrange(self.columns)]
-                       for y in xrange(self.lines)]
+        self._image = [[DCA for _ in xrange(self.columns)]
+                       for _ in xrange(self.lines)]
 
     def _makeImage(self):
         # calculate geometry first
@@ -1023,19 +1009,19 @@ class Widget(qt.QFrame):
         self.scrollbar.resize(qt.QApplication.style().pixelMetric(qt.QStyle.PM_ScrollBarExtent),
                               self.contentsRect().height())
         if self.scroll_loc == SCRNONE:
-           self.bX = 1
-           self.columns = (self.contentsRect().width() - 2 * rimX) / self.font_w
-           self.scrollbar.hide()
+            self.bX = 1
+            self.columns = (self.contentsRect().width() - 2 * rimX) / self.font_w
+            self.scrollbar.hide()
         elif self.scroll_loc == SCRLEFT:
-           self.bX = 1+self.scrollbar.width()
-           self.columns = (self.contentsRect().width() - 2 * rimX - self.scrollbar.width()) / self.font_w
-           self.scrollbar.move(self.contentsRect().topLeft())
-           self.scrollbar.show()
+            self.bX = 1+self.scrollbar.width()
+            self.columns = (self.contentsRect().width() - 2 * rimX - self.scrollbar.width()) / self.font_w
+            self.scrollbar.move(self.contentsRect().topLeft())
+            self.scrollbar.show()
         elif self.scroll_loc ==  SCRRIGHT:
-           self.bX = 1
-           self.columns = (self.contentsRect().width()  - 2 * rimX - self.scrollbar.width()) / self.font_w
-           self.scrollbar.move(self.contentsRect().topRight() - qt.QPoint(self.scrollbar.width()-1,0))
-           self.scrollbar.show()
+            self.bX = 1
+            self.columns = (self.contentsRect().width()  - 2 * rimX - self.scrollbar.width()) / self.font_w
+            self.scrollbar.move(self.contentsRect().topRight() - qt.QPoint(self.scrollbar.width()-1,0))
+            self.scrollbar.show()
         if self.columns < 1:
             self.columns = 1
         # FIXME: support 'rounding' styles

@@ -24,7 +24,7 @@ class CaTest(unittest.TestCase):
     def testInit(self):
         """ Test the __init__ method.
         """
-        self.assertEqual(self.c1.c, ord(' '))
+        self.assertEqual(self.c1.c, u' ')
         self.assertEqual(self.c1.f, DEFAULT_FORE_COLOR)
         self.assertEqual(self.c1.b, DEFAULT_BACK_COLOR)
         self.assertEqual(self.c1.r, DEFAULT_RENDITION)
@@ -37,25 +37,25 @@ class CaTest(unittest.TestCase):
     def testNotEqualC(self):
         """ Test the __ne__ method.
         """
-        self.c2.c='a'
+        self.c2.c = 'a'
         self.assertNotEqual(self.c1, self.c2)
         
     def testNotEqualF(self):
         """ Test the __ne__ method.
         """
-        self.c2.f=1
+        self.c2.f = 1
         self.assertNotEqual(self.c1, self.c2)
         
     def testNotEqualB(self):
         """ Test the __ne__ method.
         """
-        self.c2.b=0
+        self.c2.b = 0
         self.assertNotEqual(self.c1, self.c2)
         
     def testNotEqualR(self):
         """ Test the __ne__ method.
         """
-        self.c2.r=1
+        self.c2.r = 1
         self.assertNotEqual(self.c1, self.c2)
 
 

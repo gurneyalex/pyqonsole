@@ -20,11 +20,11 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.13 2005-12-23 09:49:00 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.14 2005-12-27 13:21:45 syt Exp $"
 
 BASE_COLORS = 2+8
-INTENSITIES = 2
-TABLE_COLORS = INTENSITIES * BASE_COLORS
+_INTENSITIES = 2
+TABLE_COLORS = _INTENSITIES * BASE_COLORS
 
 DEFAULT_FORE_COLOR = 0
 DEFAULT_BACK_COLOR = 1
@@ -42,7 +42,7 @@ class Ca(object):
     """
     __slots__ = ('c', 'f', 'b', 'r')
     
-    def __init__(self, c=ord(' '), f=DEFAULT_FORE_COLOR,
+    def __init__(self, c=u' ', f=DEFAULT_FORE_COLOR,
                  b=DEFAULT_BACK_COLOR, r=DEFAULT_RENDITION):
         self.c = c # character
         self.f = f # foreground color
@@ -60,28 +60,30 @@ class Ca(object):
                 self.b != other.b or self.r != other.r)
 
     def __repr__(self):
-        return '%r %s %s %r' % (chr(self.c), self.f, self.b, self.r)
+        """to help debugging"""
+        return '%r %s %s %r' % (self.c, self.f, self.b, self.r)
 
     def isSpace(self):
-        return unichr(self.c).isspace()
+        """return true if this character can be considered as a space"""
+        return self.c.isspace()
 
     def charClass(self, word_characters=u":@-./_~"):
         """return a kind of category for this char
-        * space
-        * alpha numeric
-        * other
+        * space ('  ')
+        * alpha numeric ('a')
+        * other (1)
         """
-        ch = unichr(self.c)
-        if ch.isspace():
+        char = self.c
+        if char.isspace():
             return ' '
-        if ch.isalnum() or ch in word_characters:
+        if char.isalnum() or char in word_characters:
             return 'a'
         # everything else is weird
         return 1
 
 ##     # XXX for debugging
 ##     def setC(self, c):
-##         assert isinstance(c, int)
+##         assert c is None or isinstance(c, unicode)
 ##         self._c = c
 ##     def getC(self):
 ##         return self._c

@@ -59,7 +59,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.22 2005-12-27 10:50:45 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.23 2005-12-27 13:21:45 syt Exp $'
 
 import qt
 
@@ -258,11 +258,11 @@ class Emulation(qt.QObject):
         self._bulk_nl_cnt = 0
         self._bulk_in_cnt = 0
         if self._connected:
-            image = self._scr.getCookedImage() # Get the image
+            image, wrapped = self._scr.getCookedImage() # Get the image
             self._gui.setImage(image, self._scr.lines, self._scr.columns) #  Actual refresh
             self._gui.setCursorPos(self._scr.getCursorX(), self._scr.getCursorY())
             # FIXME: Check that we do not trigger other draw event here
-            self._gui.setLineWrapped(self._scr.getCookedLineWrapped())
+            self._gui.setLineWrapped(wrapped)
             self._gui.setScroll(self._scr.hist_cursor, self._scr.getHistLines())
             
     def _bulkStart(self):

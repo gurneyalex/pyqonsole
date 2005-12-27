@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.27 2005-12-22 17:39:44 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.28 2005-12-27 13:21:45 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -64,16 +64,12 @@ class Screen:
     coordonate are stored as 2d point (y, x)
     """
     
-    def _loc(self, x, y):
-        return y*self.columns+x
-
-    
     def __init__(self, l=1, c=1):
         # Screen image
         self.lines = l
         self.columns = c
-        self._image = [[DCA for j in xrange(c)] for i in xrange(l+1)]
-        self._lineWrapped = [False for i in xrange(l+1)]
+        self._image = [[DCA for _ in xrange(c)] for _ in xrange(l+1)]
+        self._line_wrapped = [False for _ in xrange(l+1)]
         # History buffer
         self.hist_cursor = 0
         self._hist = HistoryScrollBuffer(1000)
@@ -246,7 +242,7 @@ class Screen:
         self._cu_x = max(0, self._cu_x-1)
         if (BS_CLEARS):
             oldca = self._image[self._cu_y][self._cu_x]
-            self._image[self._cu_y][self._cu_x] = Ca(ord(' '), oldca.f, oldca.b, oldca.r)
+            self._image[self._cu_y][self._cu_x] = Ca(u' ', oldca.f, oldca.b, oldca.r)
         
     def clear(self):
         """Clear the entire screen and home the cursor"""
@@ -277,14 +273,14 @@ class Screen:
         if n == 0:
             n = 1
         p = max(0, min(self._cu_x+n-1, self.columns-1))
-        self._clearImage([self._cu_y, self._cu_x], [self._cu_y, p], ' ')
+        self._clearImage([self._cu_y, self._cu_x], [self._cu_y, p], u' ')
         
     def deleteChars(self, n):
         if n == 0:
             n = 1
         p = max(0, min(self._cu_x+n, self.columns-1))
         self._moveImage([self._cu_y, self._cu_x], [self._cu_y, p], [self._cu_y, self.columns-1])
-        self._clearImage([self._cu_y, self.columns-n], [self._cu_y, self.columns-1], ' ')
+        self._clearImage([self._cu_y, self.columns-n], [self._cu_y, self.columns-1], u' ')
         
     def insertChars(self, n):
         if n == 0:
@@ -292,7 +288,7 @@ class Screen:
         p = max(0, min(self.columns-1-n, self.columns-1))
         q = max(0, min(self._cu_x+n, self.columns-1))
         self._moveImage([self._cu_y, q], [self._cu_y, self._cu_x], [self._cu_y, p])
-        self._clearImage([self._cu_y, self._cu_x], [self._cu_y, q-1], ' ')
+        self._clearImage([self._cu_y, self._cu_x], [self._cu_y, q-1], u' ')
         
     def deleteLines(self, n):
         if n == 0:
@@ -346,25 +342,27 @@ class Screen:
         self._effectiveRendition()
         
     def clearEntireScreen(self):
-        self._clearImage([0, 0], [self.lines-1, self.columns-1], ' ')
+        self._clearImage([0, 0], [self.lines-1, self.columns-1], u' ')
         
     def clearToEndOfScreen(self):
-        self._clearImage([self._cu_y, self._cu_x], [self.lines-1, self.columns-1], ' ')
+        self._clearImage([self._cu_y, self._cu_x],
+                         [self.lines-1, self.columns-1], u' ')
         
     def clearToBeginOfScreen(self):
-        self._clearImage([0, 0], [self._cu_y, self._cu_x], ' ')
+        self._clearImage([0, 0], [self._cu_y, self._cu_x], u' ')
         
     def clearEntireLine(self):
-        self._clearImage([self._cu_y, 0], [self._cu_y, self.columns-1], ' ')
+        self._clearImage([self._cu_y, 0], [self._cu_y, self.columns-1], u' ')
         
     def clearToEndOfLine(self):
-        self._clearImage([self._cu_y, self._cu_x], [self._cu_y, self.columns-1], ' ')
+        self._clearImage([self._cu_y, self._cu_x],
+                         [self._cu_y, self.columns-1], u' ')
         
     def clearToBeginOfLine(self):
-        self._clearImage([self._cu_y, 0], [self._cu_y, self._cu_x], ' ')
+        self._clearImage([self._cu_y, 0], [self._cu_y, self._cu_x], u' ')
         
     def helpAlign(self):
-        self._clearImage([0, 0], [self.lines-1, self.columns-1], 'E')
+        self._clearImage([0, 0], [self.lines-1, self.columns-1], u'E')
         
     def setRendition(self, re):
         self._cu_re = self._cu_re | re
@@ -418,7 +416,7 @@ class Screen:
             return
         if self._cu_x+w > self.columns:
             if self.getMode(MODE_Wrap):
-                self._lineWrapped[self._cu_y] = True
+                self._line_wrapped[self._cu_y] = True
                 self.nextLine()
             else:
                 self._cu_x = self.columns-w
@@ -427,10 +425,12 @@ class Screen:
         cpt = [self._cu_y, self._cu_x]
         self.checkSelection(cpt, cpt)
         line = self._image[self._cu_y]
-        line[self._cu_x] = Ca(c, self._eff_fg, self._eff_bg, self._eff_re)
+        line[self._cu_x] = Ca(unichr(c), self._eff_fg, self._eff_bg,
+                              self._eff_re)
         self._cu_x += w
         for i in xrange(1, w):
-            line[self._cu_x + i] = Ca(0, self._eff_fg, self._eff_bg, self._eff_re)
+            line[self._cu_x + i] = Ca(None, self._eff_fg, self._eff_bg,
+                                      self._eff_re)
         
     def resizeImage(self, lines, columns):
         if lines == self.lines and columns == self.columns:
@@ -448,9 +448,9 @@ class Screen:
         for y in xrange(min(lines, self.lines)):
             for x in xrange(min(columns, self.columns)):
                 newimg[y][x] = self._image[y][x]
-            newwrapped[y] = self._lineWrapped[y]
+            newwrapped[y] = self._line_wrapped[y]
         self._image = newimg
-        self._lineWrapped = newwrapped
+        self._line_wrapped = newwrapped
         self.lines = lines
         self.columns = columns
         self._cu_x = min(self._cu_x, self.columns-1)
@@ -462,52 +462,43 @@ class Screen:
         
     def getCookedImage(self):
         #print 'cooked image', self.lines, self._hist.lines, self.hist_cursor
-        image_size = self.lines * self.columns
-        merged = [[DCA for x in xrange(self.columns)] for y in xrange(self.lines)]
-        y = 0
+        image = [[DCA for x in xrange(self.columns)] for y in xrange(self.lines)]
+        wrapped = [False for i in xrange(self.lines)]
         hist = self._hist
         actual_y = hist.lines - self.hist_cursor
         # get lines from history
-        while y < self.lines and y < actual_y:
+        for y in xrange(min(self.lines, actual_y)):
             yq = y + self.hist_cursor
             len_ = min(self.columns, hist.getLineLen(yq))
-            merged[y][:len_] = hist.getCells(yq, 0, len_)
+            image[y][:len_] = hist.getCells(yq, 0, len_)
             for x in xrange(self.columns):
                 q = [yq, x]
                 if q >= self._sel_topleft and q <= self._sel_bottomright:
-                    self._reverseRendition(merged, x, y)
-            y += 1
+                    self._reverseRendition(image, x, y)
+            wrapped[y] = self._hist.isWrappedLine(y+self.hist_cursor)
         # get lines from the actual screen
         for y in xrange(actual_y, self.lines):
             yq = y + self.hist_cursor
             yr = y - actual_y
             for x in xrange(self.columns):
                 q = [yq, x]
-                merged[y][x] = self._image[yr][x]
+                image[y][x] = self._image[yr][x]
                 if q >= self._sel_topleft and q <= self._sel_bottomright:
-                    self._reverseRendition(merged, x, y)
+                    self._reverseRendition(image, x, y)
+            wrapped[y] = self._line_wrapped[y-actual_y]
         # reverse rendition on screen mode
         if self.getMode(MODE_Screen):
             for y in xrange(self.lines):
                 for x in xrange(self.columns):
-                    self._reverseRendition(merged, x, y)
+                    self._reverseRendition(image, x, y)
         # update cursor
         cuy = self._cu_y + actual_y
         if self.getMode(MODE_Cursor) and \
                cuy < self.lines and self._cu_x < self.columns:
-            ca = merged[cuy][self._cu_x]
-            merged[cuy][self._cu_x] = Ca(ca.c, ca.f, ca.b, ca.r | RE_CURSOR)
-        return merged
-    
-    def getCookedLineWrapped(self):
-        result = [False for i in xrange(self.lines)]
-        actual_y = self._hist.lines - self.hist_cursor
-        for y in xrange(min(self.lines, actual_y)):
-            result[y] = self._hist.isWrappedLine(y+self.hist_cursor)
-        for y in xrange(actual_y, self.lines):
-            result[y] = self._lineWrapped[y-actual_y]
-        return result
-    
+            ca = image[cuy][self._cu_x]
+            image[cuy][self._cu_x] = Ca(ca.c, ca.f, ca.b, ca.r | RE_CURSOR)
+        return image, wrapped
+        
     def getHistLines(self):
         return self._hist.lines
     
@@ -523,7 +514,6 @@ class Screen:
         return self._hist.hasScroll()
     
     def _clearImage(self, loca, loce, c):
-        c = ord(c)
         # Clear entire selection if overlaps region to be moved
         if self._overlapSelection(loca, loce):
             self.clearSelection()
@@ -531,7 +521,7 @@ class Screen:
         for y in xrange(loca[0], loce[0]+1):
             for x in xrange(loca[1], loce[1]+1):
                 self._image[y][x] = ca
-            self._lineWrapped[y] = False
+            self._line_wrapped[y] = False
     
     def _moveImage(self, dest, loca, loce):
         #print 'move image', dest, loca, loce
@@ -542,7 +532,7 @@ class Screen:
             dy = loce[0] - ys + 1
             self._image[dest[0]:dest[0]+dy] = [lines[:] for lines in self._image[ys:ys+dy]]
             for i in xrange(dy):
-                self._lineWrapped[dest[0]+i] = self._lineWrapped[ys+i]
+                self._line_wrapped[dest[0]+i] = self._line_wrapped[ys+i]
         else:
             xs = loca[1]
             dx = loce[1] - xs + 1
@@ -567,7 +557,7 @@ class Screen:
             if self._sel_bottomright < [0, 0]:
                 self.clearSelection()
             elif self._sel_topleft < [0, 0]:
-                    self._sel_topleft = [0, 0]
+                self._sel_topleft = [0, 0]
             if beginIsSTL:
                 self._sel_begin = self._sel_topleft
             else:
@@ -576,16 +566,18 @@ class Screen:
     def _scrollUp(self, from_, n):
         if n <= 0 or from_+n > self._margin_b:
             return
-        self._moveImage([from_, 0], [from_+n, 0], [self._margin_b, self.columns-1])
-        self._clearImage([self._margin_b-n+1, 0], [self._margin_b, self.columns-1], ' ')
+        ecoord = [self._margin_b, self.columns-1]
+        self._moveImage([from_, 0], [from_+n, 0], ecoord)
+        self._clearImage([self._margin_b-n+1, 0], ecoord, u' ')
         
     def _scrollDown(self, from_, n):
         if n <= 0 or from_ > self._margin_b:
             return
         if from_+n > self._margin_b:
             n = self._margin_b-from_
-        self._moveImage([from_+n, 0], [from_, 0], [self._margin_b-n, self.columns-1])
-        self._clearImage([from_, 0], [from_+n-1, self.columns-1], ' ')
+        self._moveImage([from_+n, 0], [from_, 0],
+                        [self._margin_b-n, self.columns-1])
+        self._clearImage([from_, 0], [from_+n-1, self.columns-1], u' ')
         
     def _addHistoryLine(self):
         """Add the first image's line to history buffer
@@ -596,10 +588,10 @@ class Screen:
             return
         end = self.columns - 1
         while end >= 0 and (self._image[0][end] is DCA or
-                            self._image[0][end] == DCA) and not self._lineWrapped[0]:
+                            self._image[0][end] == DCA) and not self._line_wrapped[0]:
             end -= 1
         oldHistLines = self._hist.lines
-        self._hist.addCells(self._image[0][:end+1], self._lineWrapped[0])
+        self._hist.addCells(self._image[0][:end+1], self._line_wrapped[0])
         newHistLines = self._hist.lines
         # Adjust history cursor
         beginIsTL = (self._sel_begin == self._sel_topleft)
@@ -704,8 +696,8 @@ class Screen:
                     eol = self._sel_bottomright[1] + 1
                 while hX < eol:
                     c = self._hist.getCells(hY, hX, 1)[0].c
-                    if c:
-                        m.append(unichr(c))
+                    if c is not None:
+                        m.append(c)
                     self._incPoint(s)
                     hX += 1
                 if s <= self._sel_bottomright:
@@ -730,20 +722,20 @@ class Screen:
                     while eol > s:
                         pt = self._subPoints(eol, histBR)
                         ca = self._image[pt[0]][pt[1]]
-                        if (not ca.c or ca.isSpace()) and not self._lineWrapped[pt[0]]:
+                        if (not ca.c or ca.isSpace()) and not self._line_wrapped[pt[0]]:
                             break
                         self._incPoint(eol, -1)
                 elif eol == self._sel_bottomright:
                     pt = self._subPoints(eol, histBR)
-                    if not self._lineWrapped[pt[0]]:
+                    if not self._line_wrapped[pt[0]]:
                         addNewLine = True
                 else:
                     eol = self._sel_bottomright
                 while s <= eol:
                     pt = self._subPoints(s, histBR)
                     c = self._image[pt[0]][pt[1]].c
-                    if c:
-                        m.append(unichr(c))
+                    if c is not None:
+                        m.append(c)
                     self._incPoint(s)
                 if eol < self._sel_bottomright:
                     if eol[1] +1 == self.columns: #(eol + 1) % self.columns == 0:

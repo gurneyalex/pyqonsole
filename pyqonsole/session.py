@@ -22,7 +22,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.8 2005-12-26 10:04:00 syt Exp $'
+__revision__ = '$Id: session.py,v 1.9 2005-12-27 13:21:46 syt Exp $'
 
 import os
 
@@ -37,7 +37,7 @@ class Session(qt.QObject):
     """A Session is a combination of one PTyProcess and one Emulation instances
     """
 
-    def __init__(self, w, pgm, args, term, sessionid='session-1', cwd=None):
+    def __init__(self, gui, pgm, args, term, sessionid='session-1', cwd=None):
         super(Session, self).__init__()
         self.monitor_activity = False
         self.__monitor_silence = False # see the property below
@@ -52,19 +52,16 @@ class Session(qt.QObject):
         self.state_icon_name = ''
         self.title = ''
         self.user_title = ''
-        self.te = w
+        self.te = gui
         self.pgm = pgm
         self.args = args
         self.term = term
         self.session_id = sessionid
         self.cwd = cwd
-        
         self.sh = pty_.PtyProcess()
         self.em = emuVt102.EmuVt102(self.te)
         self.monitor_timer = qt.QTimer(self)
-
-        self.sh.setSize(self.te.lines, self.te.columns) # not absolutely necessary
-        
+        self.sh.setSize(self.te.lines, self.te.columns)
         self.connect(self.sh, qt.PYSIGNAL('block_in'), self.em.onRcvBlock)
         self.connect(self.em, qt.PYSIGNAL('imageSizeChanged'), self.sh.setSize)
         self.connect(self.em, qt.PYSIGNAL('sndBlock'), self.sh.sendBytes)
@@ -95,7 +92,8 @@ class Session(qt.QObject):
         self.sh.run(self.pgm, self.args, self.term, True)
         if self.cwd:
             os.chdir(cwd_save)
-        self.sh.setWriteable(False) # We are reachable via kwrited XXX not needed by pyqonsole ?
+        # We are reachable via kwrited XXX not needed by pyqonsole ?            
+        self.sh.setWriteable(False)
 
 
     def setUserTitle(self, what, caption):

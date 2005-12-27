@@ -1,3 +1,23 @@
+# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+#
+"""module used to launch pyqonsole independantly
+
+Based on the konsole code from Lars Doelle.
+
+@author: Lars Doelle
+@author: Sylvain Thenault
+@copyright: 2003, 2005
+@organization: CEA-Grenoble
+@organization: Logilab
+@license: CECILL
+"""
+
+__revision__ = '$Id: main.py,v 1.13 2005-12-27 13:21:45 syt Exp $'
 
 import sys
 import os
@@ -5,7 +25,6 @@ import pwd
 
 import qt
 
-from pyqonsole import keytrans
 from pyqonsole.widget import Widget
 from pyqonsole.session import Session
 from pyqonsole.history import HistoryTypeBuffer
@@ -29,7 +48,7 @@ def setFont(te, fontno):
     f = qt.QFont()
     if FONTS[fontno][0] == '-':
         f.setRawName(FONTS[fontno])
-        if not f.exactMatch() and fontno != DEFAULTFONT:
+        if not f.exactMatch():
             return
     else:
         f.setFamily("fixed")

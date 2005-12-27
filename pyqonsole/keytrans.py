@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.7 2005-12-26 10:03:59 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.8 2005-12-27 13:21:45 syt Exp $'
 
 
 import re
@@ -110,7 +110,7 @@ class KeyTrans:
     """
     
     def __init__(self, path='[buildin]'):
-        self.hdr = ''
+        self._hdr = ''
         self.num = 0
         self.path = path
         if path == '[buildin]':
@@ -161,7 +161,7 @@ class KeyTrans:
     def hdr(self):
         if not self._file_read:
             self.readConfig()
-        return self.hdr
+        return self._hdr
 
 
 
@@ -378,7 +378,7 @@ class KeytabReader:
         if not (string[0] == '"' and string[-1] == '"'):
             self._reportError('malformed string %s' % string)
         else:
-            kt.hdr = string[1:-1] # unquote
+            kt._hdr = string[1:-1] # unquote
         
     def _parseKey(self, kt, string):
         '''example key lines
