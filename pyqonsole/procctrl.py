@@ -32,7 +32,7 @@ Based on the konsole code from Lars Doelle.
 
 XXX review singleton aspect
 """
-__revision__ = '$Id: procctrl.py,v 1.6 2005-12-27 13:21:45 syt Exp $'
+__revision__ = '$Id: procctrl.py,v 1.7 2005-12-27 14:47:48 syt Exp $'
 
 import os
 import errno
@@ -74,15 +74,16 @@ class ProcessController(qt.QObject):
         self.handler_set = False
         self.process_list = []
         self.fd = os.pipe()
-        self.delayed_children_cleanup_timer = qt.QTimer()
+        # delayed children cleanup timer
+        self._dcc_timer = qt.QTimer()
         fcntl.fcntl(self.fd[0], fcntl.F_SETFL, os.O_NONBLOCK)
         notifier = qt.QSocketNotifier(self.fd[0], qt.QSocketNotifier.Read, self)
-        self.connect(notifier, qt.SIGNAL('activated(int)'), self.slotDoHousekeeping)
-        self.connect(self.delayed_children_cleanup_timer, qt.SIGNAL('timeout()'),
-                     self.delayedChildrenCleanup)
+        self.connect(notifier, qt.SIGNAL('activated(int)'),
+                     self.slotDoHousekeeping)
+        self.connect(self._dcc_timer, qt.SIGNAL('timeout()'),
+                                self.delayedChildrenCleanup)
         theProcessController = self
         self.setupHandlers()
-
 
 ##     def __del__(self):
 ##         global theProcessController
@@ -93,7 +94,6 @@ class ProcessController(qt.QObject):
 ##         os.close(self.fd[1])
 ##         del self.notifier
 ##         theProcessController = None
-
 
     def setupHandlers(self):
         if self.handler_set:
@@ -204,7 +204,7 @@ class ProcessController(qt.QObject):
             return
         pid, status = struct.unpack('II', bytes_read)
         if pid == 0:
-            self.delayed_children_cleanup_timer.start(100, True)
+            self._dcc_timer.start(100, True)
             return
         for process in self.process_list:
             if process.pid == pid:
@@ -236,8 +236,8 @@ class ProcessController(qt.QObject):
         // and defered handling to delayedChildrenCleanup()
         // Make sure to handle that first.
         """
-        if self.delayed_children_cleanup_timer.isActive():
-            self.delayed_children_cleanup_timer.stop()
+        if self._dcc_timer.isActive():
+            self._dcc_timer.stop()
             self.delayedChildrenCleanup()
         while True:
             rlist, wlist, xlist  = select.select([self.fd[0]], [], [], timeout)

@@ -25,7 +25,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.19 2005-12-27 10:26:00 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.20 2005-12-27 14:47:47 syt Exp $'
 
 import os
 import qt
@@ -205,11 +205,12 @@ class EmuVt102(Emulation):
     - Modes and Charset State
     """
 
-    def __init__(self, w):
-        super(EmuVt102, self).__init__(w)
+    def __init__(self, gui):
+        super(EmuVt102, self).__init__(gui)
         self._pbuf = []
         self._argv = [0]
-        self._print_fd = None # file used while in print mode
+        # file used while in print mode
+        self._print_fd = None 
         # mapping with mode as key and a boolean indicating wether it's
         # activated as value
         self._curr_mode = {}
@@ -217,7 +218,7 @@ class EmuVt102(Emulation):
         self._charset = [CharCodes(), CharCodes()]
         self._hold_screen = False
         self.reset()
-        self.connect(self._gui, qt.PYSIGNAL("mouseSignal"), self.onMouse)
+        gui.myconnect("mouseSignal", self.onMouse)
         
     def reset(self):
         self._resetToken()
@@ -428,7 +429,7 @@ class EmuVt102(Emulation):
         elif token == TY_CTL('G'):
             if self._connected: # VT100
                 self._gui.bell()
-                self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYBELL,))
+                self.myemit("notifySessionState", (NOTIFYBELL,))
         elif token == TY_CTL('H') : self._scr.backSpace() # VT100
         elif token == TY_CTL('I') : self._scr.tabulate()  # VT100
         elif token == TY_CTL('J') : self._scr.newLine()   # VT100
@@ -764,7 +765,7 @@ class EmuVt102(Emulation):
             self.reportErrorToken('xterm hack', len(self._pbuf), self._pbuf[-1])
         string = ''.join([chr(c) for c in self._pbuf[i+1:-1]])
         # arg=0 changes title and icon, arg=1 only icon, arg=2 only title
-        self.emit(qt.PYSIGNAL('changeTitle'), (arg, string))
+        self.myemit('changeTitle', (arg, string))
 
     # Obsolete stuff
     
@@ -823,7 +824,7 @@ class EmuVt102(Emulation):
         """char received from the gui"""
         if not self._connected: # Someone else gets the keys
             return
-        self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYNORMAL,))
+        self.myemit("notifySessionState", (NOTIFYNORMAL,))
         ev_state = ev.state()
         try:
             entry = self._key_trans.findEntry(ev.key(),
@@ -845,27 +846,27 @@ class EmuVt102(Emulation):
             elif cmd == kt.CMD_scrollLineDown:  self._gui.doScroll(+1)
             elif cmd == kt.CMD_prevSession:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("nextSession"), ())
+                    self.myemit("nextSession")
                 else:
-                    self.emit(qt.PYSIGNAL("prevSession"), ())
+                    self.myemit("prevSession")
             elif cmd == kt.CMD_nextSession:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("prevSession"), ())
+                    self.myemit("prevSession")
                 else:
-                    self.emit(qt.PYSIGNAL("nextSession"))
-            elif cmd == kt.CMD_newSession: self.emit(qt.PYSIGNAL("newSession"), ())
-            elif cmd == kt.CMD_renameSession: self.emit(qt.PYSIGNAL("renameSession"), ())
-            elif cmd == kt.CMD_activateMenu: self.emit(qt.PYSIGNAL("activateMenu"), ())
+                    self.myemit("nextSession")
+            elif cmd == kt.CMD_newSession: self.myemit("newSession")
+            elif cmd == kt.CMD_renameSession: self.myemit("renameSession")
+            elif cmd == kt.CMD_activateMenu: self.myemit("activateMenu")
             elif cmd == kt.CMD_moveSessionLeft:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("moveSessionRight"), ())
+                    self.myemit("moveSessionRight")
                 else:
-                    self.emit(qt.PYSIGNAL("moveSessionLeft"), ())
+                    self.myemit("moveSessionLeft")
             elif cmd == kt.CMD_moveSessionRight:
                 if qt.QApplication.reverseLayout():
-                    self.emit(qt.PYSIGNAL("moveSessionLeft"), ())
+                    self.myemit("moveSessionLeft")
                 else:
-                    self.emit(qt.PYSIGNAL("moveSessionRight"), ())
+                    self.myemit("moveSessionRight")
             elif cmd == kt.CMD_scrollLock: self._onScrollLock()            
         
         # Revert to non-history when typing

@@ -59,11 +59,11 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.23 2005-12-27 13:21:45 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.24 2005-12-27 14:47:48 syt Exp $'
 
 import qt
 
-from pyqonsole import keytrans
+from pyqonsole import Signalable, keytrans
 from pyqonsole.screen import Screen
 
 
@@ -75,7 +75,7 @@ NOTIFYSILENCE = 3
 BULK_TIMEOUT = 20
 
 
-class Emulation(qt.QObject):
+class Emulation(Signalable, qt.QObject):
     """This class acts as the controler between the Screen class (Model) and
     Widget class (View). It's actually a common abstract base class for
     different terminal implementations, and so should be subclassed.
@@ -87,9 +87,9 @@ class Emulation(qt.QObject):
 
     It is also responsible to refresh the Widget by certain rules.
     """
-    def __init__(self, w):
+    def __init__(self, gui):
         super(Emulation, self).__init__()
-        self._gui = w
+        self._gui = gui
         # 0 = primary, 1 = alternate
         self._screen = [Screen(self._gui.lines, self._gui.columns),
                         Screen(self._gui.lines, self._gui.columns)]
@@ -106,16 +106,17 @@ class Emulation(qt.QObject):
         self._bulk_timer = qt.QTimer(self)
         self._bulk_nl_cnt = 0 # bulk new line counter
         self._bulk_in_cnt = 0 # bulk counter
-        self.connect(self._bulk_timer, qt.SIGNAL("timeout()"), self._showBulk)
-        self.connect(self._gui, qt.PYSIGNAL("changedImageSizeSignal"), self.onImageSizeChange)
-        self.connect(self._gui, qt.PYSIGNAL("changedHistoryCursor"), self.onHistoryCursorChange)
-        self.connect(self._gui, qt.PYSIGNAL("keyPressedSignal"), self.onKeyPress)
-        self.connect(self._gui, qt.PYSIGNAL("beginSelectionSignal"), self.onSelectionBegin)
-        self.connect(self._gui, qt.PYSIGNAL("extendSelectionSignal"), self.onSelectionExtend)
-        self.connect(self._gui, qt.PYSIGNAL("endSelectionSignal"), self.setSelection)
-        self.connect(self._gui, qt.PYSIGNAL("clearSelectionSignal"), self.clearSelection)
-        self.connect(self._gui, qt.PYSIGNAL("isBusySelecting"), self.isBusySelecting)
-        self.connect(self._gui, qt.PYSIGNAL("testIsSelected"), self.testIsSelected)
+        self._bulk_timer.connect(self._bulk_timer, qt.SIGNAL("timeout()"),
+                                 self._showBulk)
+        gui.myconnect("changedImageSizeSignal", self.onImageSizeChange)
+        gui.myconnect("changedHistoryCursor", self.onHistoryCursorChange)
+        gui.myconnect("keyPressedSignal", self.onKeyPress)
+        gui.myconnect("beginSelectionSignal", self.onSelectionBegin)
+        gui.myconnect("extendSelectionSignal", self.onSelectionExtend)
+        gui.myconnect("endSelectionSignal", self.setSelection)
+        gui.myconnect("clearSelectionSignal", self.clearSelection)
+        gui.myconnect("isBusySelecting", self.isBusySelecting)
+        gui.myconnect("testIsSelected", self.testIsSelected)
         
     def __del__(self):
         self._bulk_timer.stop()
@@ -159,7 +160,7 @@ class Emulation(qt.QObject):
         raise NotImplementedError()
     
     def sendString(self, string):
-        self.emit(qt.PYSIGNAL("sndBlock"), (string,))
+        self.myemit("sndBlock", (string,))
            
     # Keyboard handling
     
@@ -168,7 +169,7 @@ class Emulation(qt.QObject):
         raise NotImplementedError()
             
     def onRcvBlock(self, block):
-        self.emit(qt.PYSIGNAL("notifySessionState"), (NOTIFYACTIVITY,))
+        self.myemit("notifySessionState", (NOTIFYACTIVITY,))
         self._bulkStart()
         self._bulk_in_cnt += 1
         for c in block:
@@ -224,12 +225,12 @@ class Emulation(qt.QObject):
         """
         if not self._connected:
             return
-        print 'emulation.onImageSizeChange', lines, columns
+        #print 'emulation.onImageSizeChange', lines, columns
         self._screen[0].resizeImage(lines, columns)
         self._screen[1].resizeImage(lines, columns)
         self._showBulk()
         # Propagate event to serial line
-        self.emit(qt.PYSIGNAL("imageSizeChanged"), (lines, columns))
+        self.myemit("imageSizeChanged", (lines, columns))
     
     def onHistoryCursorChange(self, cursor):
         if self._connected:
@@ -248,7 +249,7 @@ class Emulation(qt.QObject):
         # FIXME This goes strange ways
         # Can we put this straight or explain it at least?
         # XXX moreover no one is connected to this signal...
-        self.emit(qt.PYSIGNAL("changeColumns"), (columns,))
+        self.myemit("changeColumns", (columns,))
         
     def _bulkNewLine(self):
         self._bulk_nl_cnt += 1
@@ -274,5 +275,3 @@ class Emulation(qt.QObject):
             self._showBulk()
         else:
             self._bulk_timer.start(BULK_TIMEOUT, True)
-            
-        

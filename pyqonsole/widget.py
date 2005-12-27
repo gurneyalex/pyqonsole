@@ -42,10 +42,11 @@ Based on the konsole code from Lars Doelle.
 @license: CeCILL
 """
 
-__revision__ = '$Id: widget.py,v 1.36 2005-12-27 13:21:46 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.37 2005-12-27 14:47:48 syt Exp $'
 
 import qt
 
+from pyqonsole import Signalable
 from pyqonsole.ca import DCA, RE_CURSOR, RE_BLINK, RE_UNDERLINE, \
      TABLE_COLORS, DEFAULT_BACK_COLOR, ColorEntry
 
@@ -134,7 +135,7 @@ VT100_GRAPHICS = [
 ]
 
         
-class Widget(qt.QFrame):
+class Widget(Signalable, qt.QFrame):
     """a widget representing attributed text"""
                 
     def __init__(self, qapp, parent=None, name=''):
@@ -214,6 +215,7 @@ class Widget(qt.QFrame):
         self.setColorTable(BASE_COLOR_TABLE) # init color table
         self._qapp.installEventFilter(self) #FIXME: see below
 
+        self._compose_length = 0
         # Init DnD ################################
         self.setAcceptDrops(True) # attempt
         dragInfo.state = diNone
@@ -291,14 +293,14 @@ class Widget(qt.QFrame):
         if not text.isEmpty():
             text.replace(qt.QRegExp("\n"), "\r")
         ev = qt.QKeyEvent(qt.QEvent.KeyPress, 0, -1, 0, text)
-        self.emit(qt.PYSIGNAL('keyPressedSignal'), (ev,)) # expose as a big fat keypress event
-        self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+        self.myemit('keyPressedSignal', (ev,)) # expose as a big fat keypress event
+        self.myemit('clearSelectionSignal')
         qt.QApplication.clipboard().setSelectionMode(False)
   
     def emitText(self,  text):
         if not text.isEmpty():
             ev = qt.QKeyEvent(qt.QEvent.KeyPress, 0, -1, 0, text)
-            self.emit(qt.PYSIGNAL('keyPressedSignal'), (ev,)) # expose as a big fat keypress event
+            self.myemit('keyPressedSignal', (ev,)) # expose as a big fat keypress event
 
     def setImage(self, newimg, lines, columns):
         """Display Operation - The image can only be set completely.
@@ -422,7 +424,7 @@ class Widget(qt.QFrame):
         #      `emu' will call back via `setImage'.
         # expose resizeEvent
         self.resizing = True
-        self.emit(qt.PYSIGNAL('changedImageSizeSignal'), (self.lines, self.columns))
+        self.myemit('changedImageSizeSignal', (self.lines, self.columns))
         self.resizing = False
 
     def calcSize(self, cols, lins):        
@@ -481,7 +483,7 @@ class Widget(qt.QFrame):
         self.emitSelection(False, False)
 
     def onClearSelection(self):
-        self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+        self.myemit('clearSelectionSignal')
 
     # protected ###############################################################
 
@@ -523,7 +525,7 @@ class Widget(qt.QFrame):
                 self.blinkCursorEvent()
             else:
                 self.cursor_blinking = False
-            self.emit(qt.PYSIGNAL('keyPressedSignal'), (e,)) # expose
+            self.myemit('keyPressedSignal', (e,)) # expose
             # in Qt2 when key events were propagated up the tree 
             # (unhandled? . parent widget) they passed the event filter only once at
             # the beginning. in qt3 self has changed, that is, the event filter is 
@@ -532,41 +534,41 @@ class Widget(qt.QFrame):
             # activates also the global event filter) . That's why we stop propagation
             # here.
             return True
-        composeLength = 0
         if e.type() == qt.QEvent.IMStart:
-            composeLength = 0
+            self._compose_length = 0
             e.accept()
             return False
         if e.type() == qt.QEvent.IMCompose:
             text = qt.QString()
-            if composeLength:
-                text.setLength(composeLength)
-                for i in xrange(composeLength):
+            if self._compose_length:
+                text.setLength(self._compose_length)
+                for i in xrange(self._compose_length):
                     text[i] = '\010'
-            composeLength = e.text().length()
+            self._compose_length = e.text().length()
             text += e.text()
             if not text.isEmpty():
                 ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1,0, text)
-                self.emit(qt.PYSIGNAL('keyPressedSignal'), (ke,))
+                self.myemit('keyPressedSignal', (ke,))
             e.accept()
             return False
         if e.type() == qt.QEvent.IMEnd:
             text = qt.QString()
-            if composeLength:
-                text.setLength(composeLength)
-                for i in xrange(composeLength):
+            if self._compose_length:
+                text.setLength(self._compose_length)
+                for i in xrange(self._compose_length):
                     text[i] = '\010'
             text += e.text()
             if not text.isEmpty():
                 ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1,0, text)
-                self.emit(qt.PYSIGNAL('keyPressedSignal'), (ke,))
+                self.myemit('keyPressedSignal', (ke,))
             e.accept()
             return False
-        cb = qt.QApplication.clipboard()
         if e.type() == qt.QEvent.Enter:
-            self.disconnect(cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
-        if e.type() == qt.QEvent.Leave:
-            self.connect(cb, qt.PYSIGNAL('dataChanged()'), self.onClearSelection)
+            cb = qt.QApplication.clipboard()
+            self.disconnect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
+        elif e.type() == qt.QEvent.Leave:
+            cb = qt.QApplication.clipboard()
+            self.connect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
         return qt.QFrame.eventFilter(self,obj, e)
 
     def drawAttrStr(self, paint, rect, qstr, attr, pm, clear):
@@ -743,15 +745,15 @@ class Widget(qt.QFrame):
         if not self.mouse_marks and not (ev.state() & self.ShiftButton):
             # Send just _ONE_ click event, since the first click of the double click
             # was already sent by the click handler!
-            self.emit(qt.PYSIGNAL('mouseSignal'), (0, x+1, y+1)) # left button
+            self.myemit('mouseSignal', (0, x+1, y+1)) # left button
             return
-        self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+        self.myemit('clearSelectionSignal')
         self.i_pnt_sel = qt.QPoint(x, y + self.scrollbar.value())
         self._word_selection_mode = True
         self._act_sel = 2 # within selection
-        self.emit(qt.PYSIGNAL('beginSelectionSignal'), self._wordStart(x, y))
-        self.emit(qt.PYSIGNAL('extendSelectionSignal'), self._wordEnd(x, y))
-        self.emit(qt.PYSIGNAL('endSelectionSignal'), (self.preserve_line_breaks,))
+        self.myemit('beginSelectionSignal', self._wordStart(x, y))
+        self.myemit('extendSelectionSignal', self._wordEnd(x, y))
+        self.myemit('endSelectionSignal', (self.preserve_line_breaks,))
         self._possible_triple_click = True
         qt.QTimer.singleShot(qt.QApplication.doubleClickInterval(), self._tripleClickTimeout)
     
@@ -768,12 +770,12 @@ class Widget(qt.QFrame):
             topleft  = self.contentsRect().topLeft()
             # XXX: this is the only place where we add self.font_w/2, why ?
             pos = qt.QPoint((ev.x()-topleft.x()-self.bX+(self.font_w/2)) / self.font_w, y)
-            self.emit(qt.PYSIGNAL('isBusySelecting'), (True,)) # Keep it steady...
+            self.myemit('isBusySelecting', (True,)) # Keep it steady...
             # Drag only when the Control key is hold
             selected = [False]
             # The receiver of the testIsSelected() signal will adjust 
             # 'selected' accordingly.
-            self.emit(qt.PYSIGNAL('testIsSelected'), (pos.x(), y, selected))
+            self.myemit('testIsSelected', (pos.x(), y, selected))
             selected = selected[0]
             if (not self.ctrldrag or ev.state() & self.ControlButton) and selected:
                 # The user clicked inside selected text
@@ -784,45 +786,45 @@ class Widget(qt.QFrame):
                 dragInfo.state = diNone
                 self.preserve_line_breaks = not (ev.state() & self.ControlButton)
                 if self.mouse_marks or (ev.state() & self.ShiftButton):
-                    self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+                    self.myemit('clearSelectionSignal')
                     pos.setY(y + self.scrollbar.value())
                     self.i_pnt_sel = self.pnt_sel = pos
                     self._act_sel = 1 # left mouse button pressed but nothing selected yet.
                     self.grabMouse() # handle with care!
                 else:
-                    self.emit(qt.PYSIGNAL('mouseSignal'), (0, x+1, y+1)) # Left button
+                    self.myemit('mouseSignal', (0, x+1, y+1)) # Left button
         elif ev.button() == self.MidButton:
             if self.mouse_marks or (not self.mouse_marks and (ev.state() & self.ShiftButton)):
                 self.emitSelection(True, ev.state() & self.ControlButton)
             else:
-                self.emit(qt.PYSIGNAL('mouseSignal'), (1, x+1, y+1))
+                self.myemit('mouseSignal', (1, x+1, y+1))
         elif ev.button() == self.RightButton:
             if self.mouse_marks or (ev.state() & self.ShiftButton):
-                self.emit(qt.PYSIGNAL('configureRequest'), (self, ev.state() & (self.ShiftButton|self.ControlButton), ev.x(), ev.y()))
+                self.myemit('configureRequest', (self, ev.state() & (self.ShiftButton|self.ControlButton), ev.x(), ev.y()))
             else:
-                self.emit(qt.PYSIGNAL('mouseSignal'), (2, x+1, y+1))
+                self.myemit('mouseSignal', (2, x+1, y+1))
 
     def mouseReleaseEvent(self, ev):
         x, y = self._evXY(ev)
         if ev.button() == self.LeftButton:
-            self.emit(qt.PYSIGNAL('isBusySelecting'), (False,)) # Ok.. we can breath again.
+            self.myemit('isBusySelecting', (False,)) # Ok.. we can breath again.
             if dragInfo.state == diPending:
                 # We had a drag event pending but never confirmed.  Kill selection
-                self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+                self.myemit('clearSelectionSignal', ())
             else:
                 if self._act_sel > 1:
-                    self.emit(qt.PYSIGNAL('endSelectionSignal'), (self.preserve_line_breaks,))
+                    self.myemit('endSelectionSignal', (self.preserve_line_breaks,))
                 self._act_sel = 0
                 #FIXME: emits a release event even if the mouse is
                 #       outside the range. The procedure used in `mouseMoveEvent'
                 #       applies here, too.
                 if not self.mouse_marks and not (ev.state() & self.ShiftButton):
-                    self.emit(qt.PYSIGNAL('mouseSignal'), (3, x+1, y + 1)) # release
+                    self.myemit('mouseSignal', (3, x+1, y + 1)) # release
                 self.releaseMouse()
             dragInfo.state = diNone
         if not self.mouse_marks and ((ev.button() == self.RightButton and not (ev.state() & self.ShiftButton))
                                      or ev.button() == self.MidButton):
-            self.emit(qt.PYSIGNAL('mouseSignal'), (3, x+1, y+1))
+            self.myemit('mouseSignal', (3, x+1, y+1))
             self.releaseMouse()
     
     def mouseMoveEvent(self, ev):
@@ -954,25 +956,25 @@ class Widget(qt.QFrame):
         if here == ohere:
             return # It's not left, it's not right.
         if self._act_sel < 2 or swapping:
-            self.emit(qt.PYSIGNAL('beginSelectionSignal'), (ohere[0]-1-offset, ohere[1]))
+            self.myemit('beginSelectionSignal', (ohere[0]-1-offset, ohere[1]))
         self._act_sel = 2 # within selection
         self.pnt_sel = qt.QPoint(here[0], here[1] + self.scrollbar.value())
-        self.emit(qt.PYSIGNAL('extendSelectionSignal'), (here[0] + offset, here[1]))
+        self.myemit('extendSelectionSignal', (here[0] + offset, here[1]))
         
     def mouseTripleClickEvent(self, ev):
         x, y = self._evXY(ev)
         self.i_pnt_sel = qt.QPoint(x, y)
-        self.emit(qt.PYSIGNAL('clearSelectionSignal'), ())
+        self.myemit('clearSelectionSignal')
         self._line_selection_mode = True
         self._word_selection_mode = False
         self._act_sel = 2 # within selection
         while self.i_pnt_sel.y()>0 and self._line_wrapped[self.i_pnt_sel.y()-1]:
             self.i_pnt_sel.setY(self.i_pnt_sel.y() - 1)
-        self.emit(qt.PYSIGNAL('beginSelectionSignal'), (0, self.i_pnt_sel.y()))
+        self.myemit('beginSelectionSignal', (0, self.i_pnt_sel.y()))
         while self.i_pnt_sel.y()<self.lines-1 and self._line_wrapped[self.i_pnt_sel.y()]:
             self.i_pnt_sel.setY(self.i_pnt_sel.y() + 1)
-        self.emit(qt.PYSIGNAL('extendSelectionSignal'), (self.columns-1, self.i_pnt_sel.y()))
-        self.emit(qt.PYSIGNAL('endSelectionSignal'), (self.preserve_line_breaks,))
+        self.myemit('extendSelectionSignal', (self.columns-1, self.i_pnt_sel.y()))
+        self.myemit('endSelectionSignal', (self.preserve_line_breaks,))
         self.i_pnt_sel.setY(self.i_pnt_sel.y() + self.scrollbar.value())
 
 
@@ -985,7 +987,7 @@ class Widget(qt.QFrame):
         self.repaint(self._cursor_rect, False)
 
     def scrollChanged(self, value):
-        self.emit(qt.PYSIGNAL('changedHistoryCursor'), (value,))
+        self.myemit('changedHistoryCursor', (value,))
 
     def blinkEvent(self):
         """Display operation"""

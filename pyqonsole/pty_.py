@@ -35,9 +35,10 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: pty_.py,v 1.21 2005-12-27 11:20:38 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.22 2005-12-27 14:47:48 syt Exp $'
 
 import os
+import errno
 import select
 import signal
 import stat
@@ -51,7 +52,7 @@ from termios import tcgetattr, tcsetattr, VINTR, VQUIT, VERASE, \
 
 import qt
 
-from pyqonsole import CTRL, procctrl
+from pyqonsole import CTRL, Signalable, procctrl
 
 
 class Job:
@@ -64,7 +65,7 @@ class Job:
         return self.start == len(self.string)
 
     
-class PtyProcess(qt.QObject):
+class PtyProcess(Signalable, qt.QObject):
     """fork a process using a controlling terminal
 
     Ptys provide a pseudo terminal connection to a program, with child process
@@ -106,8 +107,8 @@ class PtyProcess(qt.QObject):
         self.openPty()
         self._pending_send_jobs = []
         self._pending_send_job_timer = None
-        self.connect(self, qt.PYSIGNAL('receivedStdout'), self.dataReceived)
-        self.connect(self, qt.PYSIGNAL('processExited'),  self.donePty)
+        self.myconnect('receivedStdout', self.dataReceived)
+        self.myconnect('processExited',  self.donePty)
         
     def XXX__del__(self):
         # destroying the Process instance sends a SIGKILL to the
@@ -174,18 +175,21 @@ class PtyProcess(qt.QObject):
         else:
             written = 0
             while written < len(string):
-                written += os.write(self.master_fd, string[written:])
-                #if ( errno==EAGAIN || errno==EINTR )
-                #      appendSendJob(s,len)
-                #      return
+                try:
+                    written += os.write(self.master_fd, string[written:])
+                except OSError, ex:
+                    if ex.errno in (errno.EAGAIN, errno.EINTR):
+                        self.appendSendJob(string)
+                    return
 
     def appendSendJob(self, string):
         """"""
         self._pending_send_jobs.append(Job(string))
         if not self._pending_send_job_timer:
             self._pending_send_job_timer = qt.QTimer()
-            self.connect(self._pending_send_job_timer, qt.SIGNAL('timeout()'),
-                         self.doSendJobs)
+            self._pending_send_job_timer.connect(self._pending_send_job_timer,
+                                                 qt.SIGNAL('timeout()'),
+                                                 self.doSendJobs)
         self._pending_send_job_timer.start(0)
 
     def doSendJobs(self):
@@ -216,7 +220,7 @@ class PtyProcess(qt.QObject):
 ##         f = open("pty.log", "a")
 ##         f.write(buf)
 ##         f.close()
-        self.emit(qt.PYSIGNAL('block_in'), (buf,))
+        self.myemit('block_in', (buf,))
               
     def donePty(self):
         """qt slot"""
@@ -224,7 +228,7 @@ class PtyProcess(qt.QObject):
 ##             utmp = UtmpProcess(self.master_fd, '-d',
 ##                                os.ttyname(self.slave_fd))
 ##             utmp.start(RUN_BLOCK)
-        self.emit(qt.PYSIGNAL('done'), (self.exitStatus(),))
+        self.myemit('done', (self.exitStatus(),))
 
     def detach(self):
         """Detaches Process from child process. All communication is closed.
@@ -279,7 +283,7 @@ class PtyProcess(qt.QObject):
             self.status = state
         self.commClose()
         # also emit a signal if the process was run Blocking
-        self.emit(qt.PYSIGNAL('processExited'), (self,))
+        self.myemit('processExited')
 
     def childOutput(self, fdno):
         """Called by "slotChildOutput" this function copies data arriving from
@@ -291,7 +295,7 @@ class PtyProcess(qt.QObject):
         # len_ at least, dataReceived does it in the c++
         # version. I emulate this by passing a list
         lenlist = [len_]
-        self.emit(qt.PYSIGNAL("receivedStdout"), (fdno, lenlist))
+        self.myemit("receivedStdout", (fdno, lenlist))
         len_ = lenlist[0]
         return len_
 

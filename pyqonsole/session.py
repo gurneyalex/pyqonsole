@@ -22,25 +22,25 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.9 2005-12-27 13:21:46 syt Exp $'
+__revision__ = '$Id: session.py,v 1.10 2005-12-27 14:47:48 syt Exp $'
 
 import os
 
 import qt
 
-from pyqonsole import pty_, emulation, emuVt102
+from pyqonsole import Signalable, pty_, emulation, emuVt102
 
 
 SILENCE_TIMEOUT = 10000 # milliseconds
 
-class Session(qt.QObject):
+class Session(Signalable, qt.QObject):
     """A Session is a combination of one PTyProcess and one Emulation instances
     """
 
     def __init__(self, gui, pgm, args, term, sessionid='session-1', cwd=None):
         super(Session, self).__init__()
         self.monitor_activity = False
-        self.__monitor_silence = False # see the property below
+        self._monitor_silence = False # see the property below
         self.master_mode = False
         # FIXME: using the indices here is propably very bad. We should use a
         # persistent reference instead.
@@ -62,27 +62,28 @@ class Session(qt.QObject):
         self.em = emuVt102.EmuVt102(self.te)
         self.monitor_timer = qt.QTimer(self)
         self.sh.setSize(self.te.lines, self.te.columns)
-        self.connect(self.sh, qt.PYSIGNAL('block_in'), self.em.onRcvBlock)
-        self.connect(self.em, qt.PYSIGNAL('imageSizeChanged'), self.sh.setSize)
-        self.connect(self.em, qt.PYSIGNAL('sndBlock'), self.sh.sendBytes)
-        self.connect(self.em, qt.PYSIGNAL('changeTitle'), self.setUserTitle)
-        self.connect(self.em, qt.PYSIGNAL('notifySessionState'), self.notifySessionState)
-        self.connect(self.monitor_timer, qt.SIGNAL('timeout()'), self.monitorTimerDone)
-        self.connect( self.sh, qt.PYSIGNAL('done'), self.done)
+        self.sh.myconnect('block_in', self.em.onRcvBlock)
+        self.sh.myconnect('done', self.done)
+        self.em.myconnect('imageSizeChanged', self.sh.setSize)
+        self.em.myconnect('sndBlock', self.sh.sendBytes)
+        self.em.myconnect('changeTitle', self.setUserTitle)
+        self.em.myconnect('notifySessionState', self.notifySessionState)
+        self.monitor_timer.connect(self.monitor_timer, qt.SIGNAL('timeout()'),
+                                   self.monitorTimerDone)
 
     def __del__(self):
-        self.disconnect(self.sh, qt.PYSIGNAL('done'), self.done)
+        self.sh.mydisconnect('done', self.done)
 
     def setMonitorSilence(self, monitor):
-        if self.__monitor_silence == monitor:
+        if self._monitor_silence == monitor:
             return
-        self.__monitor_silence = monitor
+        self._monitor_silence = monitor
         if monitor:
             self.monitor_timer.start(SILENCE_TIMEOUT, True)
         else:
             self.monitor_timer.stop()
     def getMonitorSilence(self):
-        return self.__monitor_silence
+        return self._monitor_silence
     monitor_silence = property(getMonitorSilence, setMonitorSilence)
     
     def run(self):
@@ -106,7 +107,7 @@ class Session(qt.QObject):
             self.user_title = caption
         if what in (0, 1):
             self.icon_text = caption
-        self.emit(qt.PYSIGNAL('updateTitle'), ())
+        self.myemit('updateTitle', ())
 
     def fullTitle(self):
         if self.user_title:
@@ -120,7 +121,7 @@ class Session(qt.QObject):
         return False
 
     def monitorTimerDone(self):
-        self.emit(qt.PYSIGNAL('notifySessionState'), (emulation.NOTIFYSILENCE,))
+        self.myemit('notifySessionState', (emulation.NOTIFYSILENCE,))
         self.monitor_timer.start(SILENCE_TIMEOUT, True)
 
     def notifySessionState(self, state):
@@ -130,10 +131,10 @@ class Session(qt.QObject):
                 self.monitor_timer.start(SILENCE_TIMEOUT, True)
             if not self.monitor_activity:
                 return
-        self.emit(qt.PYSIGNAL('notifySessionState'), (state,))
+        self.myemit('notifySessionState', (state,))
 
     def done(self, status):
-        self.emit(qt.PYSIGNAL('done'), (self, status,))
+        self.myemit('done', (self, status,))
 
     def terminate(self):
         # XXX

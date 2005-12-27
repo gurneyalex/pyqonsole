@@ -17,7 +17,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: main.py,v 1.13 2005-12-27 13:21:45 syt Exp $'
+__revision__ = '$Id: main.py,v 1.14 2005-12-27 14:47:48 syt Exp $'
 
 import sys
 import os
@@ -91,7 +91,7 @@ def main(argv):
     def quit(*args, **kwargs):
         print 'quitting'
         appli.quit()
-    appli.connect(session, qt.PYSIGNAL('done'), quit)
+    session.myconnect('done', quit)
     appli.exec_loop()
 
 def profile(argv):

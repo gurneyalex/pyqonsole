@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.28 2005-12-27 13:21:45 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.29 2005-12-27 14:47:48 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -56,7 +56,7 @@ BS_CLEARS = False
 #REVERSE_WRAPPED_LINES = True # For debug wrapped lines
     
 
-class Screen:
+class Screen(object):
     """
     the screen is a list of lists (columns * lines), i.e. get column 4
     of line 2 with _image[3][1] (index start at 0...)
