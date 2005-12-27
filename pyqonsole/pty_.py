@@ -35,19 +35,16 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: pty_.py,v 1.18 2005-12-27 10:26:01 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.19 2005-12-27 10:47:45 syt Exp $'
 
 import os
-import pwd
-import grp
 import select
 import signal
-import socket
 import stat
 import sys
 from pty import openpty
 from struct import pack
-from fcntl import ioctl, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC
+from fcntl import ioctl, fcntl, F_SETFL
 from resource import getrlimit, RLIMIT_NOFILE
 from termios import tcgetattr, tcsetattr, VINTR, VQUIT, VERASE, \
      TIOCSPGRP, TCSANOW, TIOCSWINSZ, TIOCSCTTY
@@ -126,7 +123,8 @@ class PtyProcess(qt.QObject):
         # list of valid processes
         procctrl.theProcessController.removeProcess(self)
         # this must happen before we kill the child
-        # TODO: block the signal while removing the current process from the process list
+        # TODO: block the signal while removing the current process from the
+        # process list
         if self.running:
             self.kill(signal.SIGKILL)
         # Clean up open fd's and socket notifiers.
@@ -201,15 +199,14 @@ class PtyProcess(qt.QObject):
 
     def doSendJobs(self):
         """qt slot"""
-        written = 0
-        while pending_send_jobs:
-            job = pending_send_jobs[0]
+        while self.pending_send_jobs:
+            job = self.pending_send_jobs[0]
             job.start += os.write(self.master_fd, job.string[job.start:])
             #if ( errno!=EAGAIN and errno!=EINTR )
-            #   pending_send_jobs.remove(pending_send_jobs.begin())
+            #   self.pending_send_jobs.remove(self.pending_send_jobs.begin())
             #   return
             if job.finished():
-                pending_send_jobs.remove(job)
+                self.pending_send_jobs.remove(job)
         if self.pending_send_job_timer:
             self.pending_send_job_timer.stop()
 
@@ -233,7 +230,8 @@ class PtyProcess(qt.QObject):
     def donePty(self):
         """qt slot"""
 ##         if HAVE_UTEMPTER and self.addutmp:
-##             utmp = UtmpProcess(self.master_fd, '-d', os.ttyname(self.slave_fd))
+##             utmp = UtmpProcess(self.master_fd, '-d',
+##                                os.ttyname(self.slave_fd))
 ##             utmp.start(RUN_BLOCK)
         #elif defined(USE_LOGIN)
         #  char *tty_name=ttyname(0)
@@ -246,8 +244,6 @@ class PtyProcess(qt.QObject):
         #endif
         #if (needGrantPty) chownpty(fd,False)
         self.emit(qt.PYSIGNAL('done'), (self.exitStatus(),))
-
-
 
     def detach(self):
         """Detaches Process from child process. All communication is closed.
@@ -305,9 +301,9 @@ class PtyProcess(qt.QObject):
         self.emit(qt.PYSIGNAL('processExited'), (self,))
 
     def childOutput(self, fdno):
-        """Called by "slotChildOutput" this function copies data arriving from the
-        child process's stdout to the respective buffer and emits the signal
-        "receivedStdout".
+        """Called by "slotChildOutput" this function copies data arriving from
+        the child process's stdout to the respective buffer and emits the
+        signal "receivedStdout".
         """
         len_ = -1
         # NB <alf>:the slot is supposed to change the value of
@@ -318,31 +314,13 @@ class PtyProcess(qt.QObject):
         len_ = lenlist[0]
         return len_
 
-    def childError(self, fdno):
-        """Called by "slotChildError" this function copies data arriving from the
-        child process's stdout to the respective buffer and emits the signal
-        "receivedStderr"
-        """
-        buffer = os.read(fdno, 1024)
-        len_ = len(buffer)
-        if buffer:
-            self.emit(qt.PYSIGNAL("receivedStderr"),
-                      (self, buffer, len_))
-        return len_
-
-    # Functions for setting up the sockets for communication:
-    #
-    # - parentSetupCommunication completes communication socket setup in the parent
-    # - commClose frees all allocated communication resources in the parent
-    #   after the process has exited
-    
     def _parentSetupCommunication(self):
-        """Called right after a (successful) fork on the parent side. This function
-        will usually do some communications cleanup, like closing the reading end
-        of the "stdin" communication channel.
+        """Called right after a (successful) fork on the parent side. This
+        function will do some communications cleanup, like closing
+        the reading end of the "stdin" communication channel.
    
-        Furthermore, it must also create the QSocketNotifiers "innot", "outnot" and
-        "errnot" and connect their Qt slots to the respective Process member functions.
+        Furthermore, it must also create the "outnot" QSocketNotifiers
+        and connect its Qt slots to the respective member functions.
         """
         os.close(self.out[1])
         # fcntl(out[0], F_SETFL, O_NONBLOCK))
@@ -354,15 +332,14 @@ class PtyProcess(qt.QObject):
         """Should clean up the communication links to the child after it has
         exited. Should be called from "processHasExited".
         """
-        # If both channels are being read we need to make sure that one socket buffer
-        # doesn't fill up whilst we are waiting for data on the other (causing a deadlock).
-        # Hence we need to use select.
-        # Once one or other of the channels has reached EOF (or given an error) go back
-        # to the usual mechanism.
+        # If both channels are being read we need to make sure that one socket
+        # buffer doesn't fill up whilst we are waiting for data on the other
+        # (causing a deadlock). Hence we need to use select.
+        # Once one or other of the channels has reached EOF (or given an error)
+        # go back to the usual mechanism.
         fcntl(self.out[0], F_SETFL, os.O_NONBLOCK)
         self._outnot = None
-        b_out = True
-        while b_out:
+        while True:
             # * If the process is still running we block until we
             # receive data. (p_timeout = 0, no timeout)
             # * If the process has already exited, we only check
@@ -373,15 +350,14 @@ class PtyProcess(qt.QObject):
             else:
                 timeout = 0
             rfds = [self.out[0]]
-            rlist, wlist, xlist = select.select(rfds, [], [], timeout)
+            rlist = select.select(rfds, [], [], timeout)[0]
             if not rlist:
                 break
-            if b_out and self.out[0] in rlist:
-                ret = 1
-                while ret > 0:
-                    ret = self.childOutput(self.out[0])
-                if ret == 0:
-                    b_out = False
+            ret = 1
+            while ret > 0:
+                ret = self.childOutput(self.out[0])
+            if ret == 0:
+                break
         os.close(self.out[0])
 
     def start(self):
@@ -428,10 +404,7 @@ class PtyProcess(qt.QObject):
         # gdb gets confused when the application runs from gdb.
         uid = os.getuid()
         gid = os.getgid()
-        # get password entry to know user name / default group
-        #pw_entry = pwd.getpwuid(uid)
         self.running = True
-        #QApplication::flushX()
         return uid, gid
     
     def _childStart(self, uid, gid, fd, arguments):
@@ -445,12 +418,12 @@ class PtyProcess(qt.QObject):
         for i in range(1, signal.NSIG):
             try:
                 signal.signal(i, signal.SIG_DFL)
-            except RuntimeError, exc:
-                #print 'error resetting signal handler for sig %d: %s' % (i, exc)
+            except RuntimeError, ex:
+                #print 'error resetting signal handler for sig %d: %s' % (i, ex)
                 continue
         # Don't know why, but his is vital for SIGHUP to find the child.
         # Could be, we get rid of the controling terminal by this.
-        soft, hard = getrlimit(RLIMIT_NOFILE)
+        soft = getrlimit(RLIMIT_NOFILE)[0]
         # We need to close all remaining fd's.
         # Especially the one used by Process.start to see if we are running ok.
         for i in range(soft):
@@ -465,7 +438,7 @@ class PtyProcess(qt.QObject):
         os.dup2(tt, sys.stderr.fileno())
         if tt > 2:
             os.close(tt)
-        # Setup job control #################
+        # Setup job control
         # This is pretty obscure stuff which makes the session
         # to be the controlling terminal of a process group.
         os.setsid()
@@ -497,7 +470,7 @@ class PtyProcess(qt.QObject):
             os.environ['TERM'] = self.term
         ioctl(0, TIOCSWINSZ, pack('4H', self.wsize[0], self.wsize[1], 0, 0))
         # finally, pass to the new program
-        os.execvp(self._arguments[0], self._arguments)
+        os.execvp(arguments[0], arguments)
         sys.exit(1) # control should never come here.
         
     def _parentStart(self, fd):
