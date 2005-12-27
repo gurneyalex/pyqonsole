@@ -35,7 +35,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: pty_.py,v 1.20 2005-12-27 11:04:00 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.21 2005-12-27 11:20:38 syt Exp $'
 
 import os
 import select
@@ -95,25 +95,17 @@ class PtyProcess(qt.QObject):
         self.status = None
         # True if the process is currently running.
         self.running = False
-        # the buffer holding the data of bytes 
-        self._input_data = ''
-        # already transmitted information
-        self._input_sent = 0
         # the stdout socket descriptors
         self.out = [-1, -1]
         # the socket notifiers for the above socket descriptors
         self._outnot = None
-        # The list of the process' command line arguments. The first entry
-        # in this list is the executable itself.
-        self._arguments = []
         procctrl.theProcessController.addProcess(self)        
         self.wsize = (0, 0)
         self.addutmp = False
         self.term = None
-        #self.needGrantPty = False
         self.openPty()
-        self.pending_send_jobs = []
-        self.pending_send_job_timer = None
+        self._pending_send_jobs = []
+        self._pending_send_job_timer = None
         self.connect(self, qt.PYSIGNAL('receivedStdout'), self.dataReceived)
         self.connect(self, qt.PYSIGNAL('processExited'),  self.donePty)
         
@@ -140,8 +132,7 @@ class PtyProcess(qt.QObject):
         """
         self.term = term
         self.addutmp = addutmp
-        self._arguments = [pgm] + args
-        self.start()
+        self.start([pgm] + args)
         self.resume()
         
     def openPty(self):
@@ -178,7 +169,7 @@ class PtyProcess(qt.QObject):
         
     def sendBytes(self, string):
         """sends len bytes through the line"""
-        if self.pending_send_jobs:
+        if self._pending_send_jobs:
             self.appendSendJob(string)
         else:
             written = 0
@@ -190,25 +181,25 @@ class PtyProcess(qt.QObject):
 
     def appendSendJob(self, string):
         """"""
-        self.pending_send_jobs.append(Job(string))
-        if not self.pending_send_job_timer:
-            self.pending_send_job_timer = qt.QTimer()
-            self.connect(self.pending_send_job_timer, qt.SIGNAL('timeout()'),
+        self._pending_send_jobs.append(Job(string))
+        if not self._pending_send_job_timer:
+            self._pending_send_job_timer = qt.QTimer()
+            self.connect(self._pending_send_job_timer, qt.SIGNAL('timeout()'),
                          self.doSendJobs)
-        self.pending_send_job_timer.start(0)
+        self._pending_send_job_timer.start(0)
 
     def doSendJobs(self):
         """qt slot"""
-        while self.pending_send_jobs:
-            job = self.pending_send_jobs[0]
+        while self._pending_send_jobs:
+            job = self._pending_send_jobs[0]
             job.start += os.write(self.master_fd, job.string[job.start:])
             #if ( errno!=EAGAIN and errno!=EINTR )
-            #   self.pending_send_jobs.remove(self.pending_send_jobs.begin())
+            #   self._pending_send_jobs.remove(self._pending_send_jobs.begin())
             #   return
             if job.finished():
-                self.pending_send_jobs.remove(job)
-        if self.pending_send_job_timer:
-            self.pending_send_job_timer.stop()
+                self._pending_send_jobs.remove(job)
+        if self._pending_send_job_timer:
+            self._pending_send_job_timer.stop()
 
     def dataReceived(self, fd, lenlist):
         """qt slot: indicates that a block of data is received """
@@ -233,16 +224,6 @@ class PtyProcess(qt.QObject):
 ##             utmp = UtmpProcess(self.master_fd, '-d',
 ##                                os.ttyname(self.slave_fd))
 ##             utmp.start(RUN_BLOCK)
-        #elif defined(USE_LOGIN)
-        #  char *tty_name=ttyname(0)
-        #  if (tty_name)
-        #  {
-        #        if (strncmp(tty_name, "/dev/", 5) == 0)
-        #            tty_name += 5
-        #        logout(tty_name)
-        #  }
-        #endif
-        #if (needGrantPty) chownpty(fd,False)
         self.emit(qt.PYSIGNAL('done'), (self.exitStatus(),))
 
     def detach(self):
@@ -362,7 +343,7 @@ class PtyProcess(qt.QObject):
                 break
         os.close(self.out[0])
 
-    def start(self):
+    def start(self, arguments):
         """Starts the process.
         
         For a detailed description of the various run modes and communication
@@ -383,22 +364,22 @@ class PtyProcess(qt.QObject):
         return True on success, False on error
         (see above for error conditions)
         """
-        uid, gid = self._startInit()
+        uid, gid = self._startInit(arguments)
         fd = os.pipe()
         # note that we use fork() and not vfork() because vfork() has unclear
         # semantics and is not standardized.
         self.pid = os.fork()
         #print 'pid', self.pid
         if 0 == self.pid:
-            self._childStart(uid, gid, fd, self._arguments)            
+            self._childStart(uid, gid, fd, arguments)
         else:
             self._parentStart(fd)
 
-    def _startInit(self):
+    def _startInit(self, arguments):
         """initialisation part of the start method"""
         if self.running:
             raise Exception('cannot start a process that is already running')
-        if not self._arguments:
+        if not arguments:
             raise Exception('no executable has been assigned')
         self.status = 0
         self.setupCommunication()
@@ -413,6 +394,7 @@ class PtyProcess(qt.QObject):
         """parent process part of the start method"""
         if fd[0]:
             os.close(fd[0])
+        # drop privileges
         os.setgid(gid)
         os.setuid(uid)
         tt = self.slave_fd
@@ -463,10 +445,6 @@ class PtyProcess(qt.QObject):
         tcsetattr(0, TCSANOW, tty_attrs);
 
         #os.close(self.master_fd)
-
-        # drop privileges
-        os.setgid(os.getgid())
-        os.setuid(os.getuid())
         # propagate emulation
         if self.term:
             os.environ['TERM'] = self.term
@@ -479,8 +457,6 @@ class PtyProcess(qt.QObject):
         """parent process part of the start method"""
         if fd[1]:
             os.close(fd[1])
-        # Discard any data for stdin that might still be there
-        self._input_data = ''
         # Check whether client could be started.
         if fd[0]:
             while True:

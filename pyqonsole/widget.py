@@ -42,7 +42,7 @@ Based on the konsole code from Lars Doelle.
 @license: CeCILL
 """
 
-__revision__ = '$Id: widget.py,v 1.34 2005-12-27 10:50:45 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.35 2005-12-27 11:20:38 syt Exp $'
 
 import qt
 
@@ -781,7 +781,7 @@ class Widget(qt.QFrame):
             # 'selected' accordingly.
             self.emit(qt.PYSIGNAL('testIsSelected'), (pos.x(), y, selected))
             selected = selected[0]
-            if (not self.ctrldrag or ev.state() & self.ControlButton) and selected.value:
+            if (not self.ctrldrag or ev.state() & self.ControlButton) and selected:
                 # The user clicked inside selected text
                 dragInfo.state = diPending
                 dragInfo.start = ev.pos()
