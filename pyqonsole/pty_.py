@@ -35,43 +35,26 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: pty_.py,v 1.17 2005-12-26 10:04:00 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.18 2005-12-27 10:26:01 syt Exp $'
 
 import os
-import sys
+import pwd
+import grp
+import select
+import signal
+import socket
 import stat
+import sys
 from pty import openpty
 from struct import pack
-from fcntl import ioctl, fcntl, F_SETFL
+from fcntl import ioctl, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC
 from resource import getrlimit, RLIMIT_NOFILE
 from termios import tcgetattr, tcsetattr, VINTR, VQUIT, VERASE, \
      TIOCSPGRP, TCSANOW, TIOCSWINSZ, TIOCSCTTY
-import signal
 
 import qt
 
-from pyqonsole.process import Process, RUN_BLOCK, RUN_NOTIFYONEXIT, \
-     COMM_STDOUT, COMM_NOREAD
-
-HAVE_UTEMPTER = os.path.exists("/usr/sbin/utempter")
-
-
-def CTRL(c):
-    return ord(c) - ord("@")
-
-class UtmpProcess(Process):
-
-    def __init__(self, fd, option, ttyname):
-        super(UtmpProcess, self).__init__()
-        self.cmd_fd = fd
-        assert option in ('-a', '-q')
-        self << "/usr/sbin/utempter" << option << ttyname
-
-    def _childSetupCommunication(self):
-        os.dup2(self.cmd_fd, 0)   
-        os.dup2(self.cmd_fd, 1)   
-        os.dup2(self.cmd_fd, 3)
-        return 1
+from pyqonsole import CTRL, procctrl
 
 
 class Job:
@@ -84,10 +67,11 @@ class Job:
         return self.start == len(self.string)
 
     
-class PtyProcess(Process):
+class PtyProcess(qt.QObject):
     """fork a process using a controlling terminal
 
-    Ptys provide a pseudo terminal connection to a program.
+    Ptys provide a pseudo terminal connection to a program, with child process
+    invocation, monitoring and control.
 
     Although closely related to pipes, these pseudo terminal connections have
     some ability, that makes it nessesary to uses them. Most importent, they
@@ -103,6 +87,29 @@ class PtyProcess(Process):
 
     def __init__(self):
         super(PtyProcess, self).__init__()
+        # the process id of the process.
+        # If it is called after the process has exited, it returns the process
+        # id of the last child process that was created by this instance of
+        # Process.
+        # Calling it before any child process has been started by this
+        # Process instance causes pid to be 0.
+        self.pid = None
+        # The process' exit status as returned by "waitpid". 
+        self.status = None
+        # True if the process is currently running.
+        self.running = False
+        # the buffer holding the data of bytes 
+        self._input_data = ''
+        # already transmitted information
+        self._input_sent = 0
+        # the stdout socket descriptors
+        self.out = [-1, -1]
+        # the socket notifiers for the above socket descriptors
+        self._outnot = None
+        # The list of the process' command line arguments. The first entry
+        # in this list is the executable itself.
+        self._arguments = []
+        procctrl.theProcessController.addProcess(self)        
         self.wsize = (0, 0)
         self.addutmp = False
         self.term = None
@@ -113,6 +120,19 @@ class PtyProcess(Process):
         self.connect(self, qt.PYSIGNAL('receivedStdout'), self.dataReceived)
         self.connect(self, qt.PYSIGNAL('processExited'),  self.donePty)
         
+    def XXX__del__(self):
+        # destroying the Process instance sends a SIGKILL to the
+        # child process (if it is running) after removing it from the
+        # list of valid processes
+        procctrl.theProcessController.removeProcess(self)
+        # this must happen before we kill the child
+        # TODO: block the signal while removing the current process from the process list
+        if self.running:
+            self.kill(signal.SIGKILL)
+        # Clean up open fd's and socket notifiers.
+        self.closeStdout()
+        # TODO: restore SIGCHLD and SIGPIPE handler if this is the last Process
+        
     def run(self, pgm, args, term, addutmp):
         """start the client program
         
@@ -122,125 +142,18 @@ class PtyProcess(Process):
         """
         self.term = term
         self.addutmp = addutmp
-        #self.clearArguments() # XXX not needed because of the code below
         self._arguments = [pgm] + args
-        self.start(RUN_NOTIFYONEXIT, COMM_STDOUT | COMM_NOREAD)
+        self.start()
         self.resume()
-
-    def startPgm(self, pgm, args, term):
-        """only used internally. See `run' for interface"""
-        tt = self.makePty() # slave_fd
-        # reset signal handlers for child process
-        for i in range(1, signal.NSIG):
-            try:
-                signal.signal(i, signal.SIG_DFL)
-            except RuntimeError, exc:
-                print 'error resetting signal handler for sig %d: %s' % (i, exc)
-
-        # Don't know why, but his is vital for SIGHUP to find the child.
-        # Could be, we get rid of the controling terminal by this.
-        soft, hard = getrlimit(RLIMIT_NOFILE)
-        # We need to close all remaining fd's.
-        # Especially the one used by Process.start to see if we are running ok.
-        for i in range(soft):
-            # FIXME: (result of merge) Check if (not) closing fd is OK)
-            if i != tt:# and i != self.master_fd):
-                try:
-                    os.close(i)
-                except OSError:
-                    continue
-        os.dup2(tt, sys.stdin.fileno())
-        os.dup2(tt, sys.stdout.fileno())
-        os.dup2(tt, sys.stderr.fileno())
-        if tt > 2:
-            os.close(tt)
-
-        # Setup job control #################
-
-        # This is pretty obscure stuff which makes the session
-        # to be the controlling terminal of a process group.
-        os.setsid()
-
-        ioctl(0, TIOCSCTTY, '')
-        # This sequence is necessary for event propagation. Omitting this
-        # is not noticeable with all clients (bash,vi). Because bash
-        # heals this, use '-e' to test it.
-        pgrp = os.getpid()                          
-        ioctl(0, TIOCSPGRP, pack('i', pgrp))
-
-        # XXX FIXME: the following crashes
-#        os.setpgid(0, 0)
-#        os.close(os.open(os.ttyname(tt), os.O_WRONLY))
-#        os.setpgid(0, 0)
-
-        tty_attrs = tcgetattr(0)
-        tty_attrs[-1][VINTR] = CTRL('C')
-        tty_attrs[-1][VQUIT] = CTRL('\\')
-        tty_attrs[-1][VERASE] = 0177
-        tcsetattr(0, TCSANOW, tty_attrs);
-
-        #os.close(self.master_fd)
-
-        # drop privileges
-        os.setgid(os.getgid())
-        os.setuid(os.getuid())
-
-        # propagate emulation
-        if self.term:
-            os.environ['TERM'] = term
-        #print 'PTY propage size', self.wsize
-        ioctl(0, TIOCSWINSZ, pack('4H', self.wsize[0], self.wsize[1], 0, 0))
-
-        # finally, pass to the new program
-        os.execvp(pgm, args)
-        #execvp("/bin/bash", argv);
-        sys.exit(1) # control should never come here.
         
     def openPty(self):
         """"""
         self.master_fd, self.slave_fd = openpty()
-        print os.ttyname(self.master_fd)
-        print os.ttyname(self.slave_fd)
+        #print os.ttyname(self.master_fd)
+        #print os.ttyname(self.slave_fd)
         fcntl(self.master_fd, F_SETFL, os.O_NDELAY)
         return self.master_fd
-        
-    def makePty(self):
-        """"""
-        # XXX: is master_fd already unlocked? Is it a problem if yes?
-        #ifdef HAVE_UNLOCKPT
-        #unlockpt(fd)
-        #endif
-        # Stamp utmp/wtmp if we have and want them
-        if HAVE_UTEMPTER and self.addutmp:
-            utmp = UtmpProcess(self.master_fd, '-a', os.ttyname(self.slave_fd))
-            utmp.start(process.RUN_BLOCK)
-        #ifdef USE_LOGIN
-        #  char *str_ptr
-        #  struct utmp l_struct
-        #  memset(&l_struct, 0, sizeof(struct utmp))
-        #  if (! (str_ptr=getlogin()) ) {
-        #    if ( ! (str_ptr=getenv("LOGNAME"))) {
-        #      abort()
-        #    }
-        #  }
-        #  strncpy(l_struct.ut_name, str_ptr, UT_NAMESIZE)
-        #  if (gethostname(l_struct.ut_host, UT_HOSTSIZE) == -1) {
-        #     if (errno != ENOMEM)
-        #        abort()
-        #     l_struct.ut_host[UT_HOSTSIZE]=0
-        #  }
-        #  if (! (str_ptr=ttyname(tt)) ) {
-        #    abort()
-        #  }
-        #  if (strncmp(str_ptr, "/dev/", 5) == 0)
-        #       str_ptr += 5
-        #  strncpy(l_struct.ut_line, str_ptr, UT_LINESIZE)
-        #  time(&l_struct.ut_time) 
-        #  login(&l_struct)
-        #endif
-        return self.slave_fd
-
-            
+                    
     def setWriteable(self, writeable):
         """set the slave pty writable"""
         ttyname = os.ttyname(self.slave_fd)
@@ -253,23 +166,17 @@ class PtyProcess(Process):
                 
     def setSize(self, lines, columns):
         """Informs the client program about the actual size of the window."""
-        print 'PTY set size', lines, columns
+        #print 'PTY set size', lines, columns
         self.wsize = (lines, columns)
         if self.master_fd is None:
             return
-        print 'PTY propagate size'
+        #print 'PTY propagate size'
         ioctl(self.master_fd, TIOCSWINSZ, pack('4H', lines, columns, 0, 0))
         
-    def setupCommunication(self, comm):
+    def setupCommunication(self):
         """overriden from Process"""
         self.out[0] = self.master_fd
         self.out[1] = os.dup(2) # Dummy
-        self.communication = comm
-        
-    def _childSetupCommunication(self):
-        """overriden from Process"""
-        pgm = self._arguments[0]
-        self.startPgm(pgm, self._arguments, self.term)
         
     def sendBytes(self, string):
         """sends len bytes through the line"""
@@ -325,9 +232,9 @@ class PtyProcess(Process):
               
     def donePty(self):
         """qt slot"""
-        if HAVE_UTEMPTER:
-            utmp = UtmpProcess(self.master_fd, '-d', os.ttyname(self.slave_fd))
-            utmp.start(RUN_BLOCK)
+##         if HAVE_UTEMPTER and self.addutmp:
+##             utmp = UtmpProcess(self.master_fd, '-d', os.ttyname(self.slave_fd))
+##             utmp.start(RUN_BLOCK)
         #elif defined(USE_LOGIN)
         #  char *tty_name=ttyname(0)
         #  if (tty_name)
@@ -342,50 +249,306 @@ class PtyProcess(Process):
 
 
 
-## #define PTY_FILENO 3
-## #define BASE_CHOWN "qonsole_grantpty"
+    def detach(self):
+        """Detaches Process from child process. All communication is closed.
+        
+        No exit notification is emitted any more for the child process.
+        Deleting the Process will no longer kill the child process.
+        Note that the current process remains the parent process of the child
+        process.
+        """
+        procctrl.theProcessController.removeProcess(self)
+        self.running = False
+        self.pid = 0
+        # clean up open fd's and socket notifiers.
+        self.closeStdout()
 
-## int chownpty(int fd, int grant)
-## # param fd: the fd of a master pty.
-## # param grant: 1 to grant, 0 to revoke
-## # returns 1 on success 0 on fail
-## {
-##   struct sigaction newsa, oldsa;
-##   newsa.sa_handler = SIG_DFL;
-##   newsa.sa_mask = sigset_t();
-##   newsa.sa_flags = 0;
-##   sigaction(SIGCHLD, &newsa, &oldsa);
+    def closeStdout(self):
+        """This causes the stdout file descriptor of the child process to be
+        closed.
+   
+        return False if no communication to the process's stdout
+        had been specified in the call to start().
+        """
+        self._outnot = None
+        os.close(self.out[0])
 
-##   pid_t pid = fork();
-##   if (pid < 0)
-##   {
-##     # restore previous SIGCHLD handler
-##     sigaction(SIGCHLD, &oldsa, NULL);
+    def normalExit(self):
+        """return True if the process has already finished and has exited
+        "voluntarily", ie: it has not been killed by a signal.
+   
+        Note that you should check exitStatus() to determine
+        whether the process completed its task successful or not.
+        """
+        return self.pid and not self.running and os.WIFEXITED(self.status)
+    
+    def exitStatus(self):
+        """Returns the exit status of the process.
+   
+        Please use normalExit() to check whether the process has
+        exited cleanly (i.e., normalExit() returns True)
+        before calling this function because if the process did not exit
+        normally, it does not have a valid exit status.
+        """
+        return os.WEXITSTATUS(self.status)
+    
+    def processHasExited(self, state):
+        """Immediately called after a process has exited. This function normally
+        calls commClose to close all open communication channels to this
+        process and emits the "processExited" signal.
+        """
+        if self.running:
+            self.running = False
+            self.status = state
+        self.commClose()
+        # also emit a signal if the process was run Blocking
+        self.emit(qt.PYSIGNAL('processExited'), (self,))
 
-##     return 0;
-##   }
-##   if (pid == 0)
-##   {
-##     # We pass the master pseudo terminal as file descriptor PTY_FILENO. */
-##     if (fd != PTY_FILENO and dup2(fd, PTY_FILENO) < 0) exit(1);
-## #    QString path = locate("exe", BASE_CHOWN);
-##     QString path = BASE_CHOWN;
-##     execle(path.ascii(), BASE_CHOWN, grant?"--grant":"--revoke", NULL, NULL);
-##     exit(1); # should not be reached
-##   }
+    def childOutput(self, fdno):
+        """Called by "slotChildOutput" this function copies data arriving from the
+        child process's stdout to the respective buffer and emits the signal
+        "receivedStdout".
+        """
+        len_ = -1
+        # NB <alf>:the slot is supposed to change the value of
+        # len_ at least, dataReceived does it in the c++
+        # version. I emulate this by passing a list
+        lenlist = [len_]
+        self.emit(qt.PYSIGNAL("receivedStdout"), (fdno, lenlist))
+        len_ = lenlist[0]
+        return len_
 
-##   if (pid > 0) {
-##     int w;
-## retry:
-##     int rc = waitpid (pid, &w, 0);
-##     if ((rc == -1) and (errno == EINTR))
-##       goto retry;
+    def childError(self, fdno):
+        """Called by "slotChildError" this function copies data arriving from the
+        child process's stdout to the respective buffer and emits the signal
+        "receivedStderr"
+        """
+        buffer = os.read(fdno, 1024)
+        len_ = len(buffer)
+        if buffer:
+            self.emit(qt.PYSIGNAL("receivedStderr"),
+                      (self, buffer, len_))
+        return len_
 
-##     # restore previous SIGCHLD handler
-##     sigaction(SIGCHLD, &oldsa, NULL);
+    # Functions for setting up the sockets for communication:
+    #
+    # - parentSetupCommunication completes communication socket setup in the parent
+    # - commClose frees all allocated communication resources in the parent
+    #   after the process has exited
+    
+    def _parentSetupCommunication(self):
+        """Called right after a (successful) fork on the parent side. This function
+        will usually do some communications cleanup, like closing the reading end
+        of the "stdin" communication channel.
+   
+        Furthermore, it must also create the QSocketNotifiers "innot", "outnot" and
+        "errnot" and connect their Qt slots to the respective Process member functions.
+        """
+        os.close(self.out[1])
+        # fcntl(out[0], F_SETFL, O_NONBLOCK))
+        self._outnot = qt.QSocketNotifier(self.out[0], qt.QSocketNotifier.Read, self)
+        self.connect(self._outnot, qt.SIGNAL('activated(int)'), self.slotChildOutput)
+        self.suspend()
 
-##     return (rc != -1 and WIFEXITED(w) and WEXITSTATUS(w) == 0);
-##   }
+    def commClose(self):
+        """Should clean up the communication links to the child after it has
+        exited. Should be called from "processHasExited".
+        """
+        # If both channels are being read we need to make sure that one socket buffer
+        # doesn't fill up whilst we are waiting for data on the other (causing a deadlock).
+        # Hence we need to use select.
+        # Once one or other of the channels has reached EOF (or given an error) go back
+        # to the usual mechanism.
+        fcntl(self.out[0], F_SETFL, os.O_NONBLOCK)
+        self._outnot = None
+        b_out = True
+        while b_out:
+            # * If the process is still running we block until we
+            # receive data. (p_timeout = 0, no timeout)
+            # * If the process has already exited, we only check
+            # the available data, we don't wait for more.
+            # (p_timeout = &timeout, timeout immediately)
+            if self.running:
+                timeout = None
+            else:
+                timeout = 0
+            rfds = [self.out[0]]
+            rlist, wlist, xlist = select.select(rfds, [], [], timeout)
+            if not rlist:
+                break
+            if b_out and self.out[0] in rlist:
+                ret = 1
+                while ret > 0:
+                    ret = self.childOutput(self.out[0])
+                if ret == 0:
+                    b_out = False
+        os.close(self.out[0])
 
-##   return 0; #dummy.
-## }
+    def start(self):
+        """Starts the process.
+        
+        For a detailed description of the various run modes and communication
+        semantics, have a look at the general description of the Process class.
+        
+        The following problems could cause this function to raise an exception:
+   
+        * The process is already running.
+        * The command line argument list is empty.
+        * The starting of the process failed (could not fork).
+        * The executable was not found.
+   
+        param comm  Specifies which communication links should be
+        established to the child process (stdin/stdout/stderr). By default,
+        no communication takes place and the respective communication
+        signals will never get emitted.
+   
+        return True on success, False on error
+        (see above for error conditions)
+        """
+        uid, gid = self._startInit()
+        fd = os.pipe()
+        # note that we use fork() and not vfork() because vfork() has unclear
+        # semantics and is not standardized.
+        self.pid = os.fork()
+        #print 'pid', self.pid
+        if 0 == self.pid:
+            self._childStart(uid, gid, fd, self._arguments)            
+        else:
+            self._parentStart(fd)
+
+    def _startInit(self):
+        """initialisation part of the start method"""
+        if self.running:
+            raise Exception('cannot start a process that is already running')
+        if not self._arguments:
+            raise Exception('no executable has been assigned')
+        self.status = 0
+        self.setupCommunication()
+        # We do this in the parent because if we do it in the child process
+        # gdb gets confused when the application runs from gdb.
+        uid = os.getuid()
+        gid = os.getgid()
+        # get password entry to know user name / default group
+        #pw_entry = pwd.getpwuid(uid)
+        self.running = True
+        #QApplication::flushX()
+        return uid, gid
+    
+    def _childStart(self, uid, gid, fd, arguments):
+        """parent process part of the start method"""
+        if fd[0]:
+            os.close(fd[0])
+        os.setgid(gid)
+        os.setuid(uid)
+        tt = self.slave_fd
+        # reset signal handlers for child process
+        for i in range(1, signal.NSIG):
+            try:
+                signal.signal(i, signal.SIG_DFL)
+            except RuntimeError, exc:
+                #print 'error resetting signal handler for sig %d: %s' % (i, exc)
+                continue
+        # Don't know why, but his is vital for SIGHUP to find the child.
+        # Could be, we get rid of the controling terminal by this.
+        soft, hard = getrlimit(RLIMIT_NOFILE)
+        # We need to close all remaining fd's.
+        # Especially the one used by Process.start to see if we are running ok.
+        for i in range(soft):
+            # FIXME: (result of merge) Check if (not) closing fd is OK)
+            if i != tt:# and i != self.master_fd):
+                try:
+                    os.close(i)
+                except OSError:
+                    continue
+        os.dup2(tt, sys.stdin.fileno())
+        os.dup2(tt, sys.stdout.fileno())
+        os.dup2(tt, sys.stderr.fileno())
+        if tt > 2:
+            os.close(tt)
+        # Setup job control #################
+        # This is pretty obscure stuff which makes the session
+        # to be the controlling terminal of a process group.
+        os.setsid()
+        ioctl(0, TIOCSCTTY, '')
+        # This sequence is necessary for event propagation. Omitting this
+        # is not noticeable with all clients (bash,vi). Because bash
+        # heals this, use '-e' to test it.
+        pgrp = os.getpid()                          
+        ioctl(0, TIOCSPGRP, pack('i', pgrp))
+
+        # XXX FIXME: the following crashes
+#        os.setpgid(0, 0)
+#        os.close(os.open(os.ttyname(tt), os.O_WRONLY))
+#        os.setpgid(0, 0)
+
+        tty_attrs = tcgetattr(0)
+        tty_attrs[-1][VINTR] = CTRL('C')
+        tty_attrs[-1][VQUIT] = CTRL('\\')
+        tty_attrs[-1][VERASE] = 0177
+        tcsetattr(0, TCSANOW, tty_attrs);
+
+        #os.close(self.master_fd)
+
+        # drop privileges
+        os.setgid(os.getgid())
+        os.setuid(os.getuid())
+        # propagate emulation
+        if self.term:
+            os.environ['TERM'] = self.term
+        ioctl(0, TIOCSWINSZ, pack('4H', self.wsize[0], self.wsize[1], 0, 0))
+        # finally, pass to the new program
+        os.execvp(self._arguments[0], self._arguments)
+        sys.exit(1) # control should never come here.
+        
+    def _parentStart(self, fd):
+        """parent process part of the start method"""
+        if fd[1]:
+            os.close(fd[1])
+        # Discard any data for stdin that might still be there
+        self._input_data = ''
+        # Check whether client could be started.
+        if fd[0]:
+            while True:
+                resultByte = os.read(fd[0], 1)
+                if not resultByte:
+                    break # success
+                if ord(resultByte) == 1:
+                    # Error
+                    self.running = False
+                    os.close(fd[0])
+                    self.pid = 0
+                    return False
+                #if not resultByte:
+                #    # if ((errno == ECHILD) or (errno == EINTR))
+                #    continue # Ignore
+                break # success
+        if fd[0]:
+            os.close(fd[0])
+        self._parentSetupCommunication()
+        
+    def kill(self, signo):
+        """Stop the process (by sending it a signal).
+        
+        param signo	The signal to send. The default is SIGTERM.
+        return True if the signal was delivered successfully.
+        """
+        os.kill(self.pid, signo)
+
+    def suspend(self):
+        """Suspend processing of data from stdout of the child process.
+        """
+        if self._outnot:
+            self._outnot.setEnabled(False)
+
+    def resume(self):
+        """Resume processing of data from stdout of the child process.
+        """
+        if self._outnot:
+            self._outnot.setEnabled(True)
+
+    def slotChildOutput(self, fdno):
+        """This slot gets activated when data from the child's stdout arrives.
+        It usually calls "childOutput"
+        """
+        if not self.childOutput(fdno):
+            self.closeStdout()

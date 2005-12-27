@@ -85,6 +85,7 @@ class MyEmuVt102(emuVt102.EmuVt102):
             
     _setCharset = logged(emuVt102.EmuVt102._setCharset, '_setCharset')
     _useCharset = logged(emuVt102.EmuVt102._useCharset, '_useCharset')
+    _setAndUseCharset = logged(emuVt102.EmuVt102._setAndUseCharset, '_setAndUseCharset')
     setMode = logged(emuVt102.EmuVt102.setMode, 'setMode')
     resetMode = logged(emuVt102.EmuVt102.resetMode, 'resetMode')
     saveMode = logged(emuVt102.EmuVt102.saveMode, 'saveMode')

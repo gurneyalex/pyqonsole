@@ -32,7 +32,7 @@ Based on the konsole code from Lars Doelle.
 
 XXX review singleton aspect
 """
-__revision__ = '$Id: procctrl.py,v 1.4 2005-12-26 10:04:00 syt Exp $'
+__revision__ = '$Id: procctrl.py,v 1.5 2005-12-27 10:26:00 syt Exp $'
 
 import os
 import errno
@@ -43,8 +43,6 @@ import struct
 import sys
 
 import qt
-
-from pyqonsole.process import RUN_BLOCK
 
 def waitChildren():
     """wait for all children process, yield (pid, status) each time one
@@ -210,15 +208,7 @@ class ProcessController(qt.QObject):
             return
         for process in self.process_list:
             if process.pid == pid:
-                # process has exited, so do emit the respective events
-                if process.run_mode == RUN_BLOCK:
-                    # If the reads are done blocking then set the status in proc
-                    # but do nothing else because Process will perform the other
-                    # actions of processHasExited.
-                    process.status = status
-                    process.runs = False
-                else:
-                    process.processHasExited(status)
+                process.processHasExited(status)
                 return
 
     def delayedChildrenCleanup(self):

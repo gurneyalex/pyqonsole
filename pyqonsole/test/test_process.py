@@ -1,12 +1,12 @@
 import unittest
 import time
 
-from pyqonsole import process, procctrl
+from pyqonsole import pty_, procctrl
 
 
 class ProcessTC(unittest.TestCase):
     def setUp(self):
-        self.process = p = process.Process()
+        self.process = p = pty_.PtyProcess()
         
     def test_base(self):
         p = self.process
@@ -16,13 +16,10 @@ class ProcessTC(unittest.TestCase):
         self.failUnlessEqual(p.running, False)
         self.failUnlessEqual(p.pid, None)
         self.failUnlessEqual(p.status, None)
-        self.failUnlessEqual(p.run_mode, process.RUN_NOTIFYONEXIT)
-        self.failUnlessEqual(p.communication, process.COMM_NOCOMMUNICATION)
     
     def test_start(self):
         p = self.process
-        p._arguments += ['ls', '/']
-        p.start(process.RUN_NOTIFYONEXIT, process.COMM_ALL)
+        p.run('ls', ['/'], 'xterm', False)
         time.sleep(2)
         # after execution
         self.failUnlessEqual(p.running, True) # XXX
@@ -33,8 +30,7 @@ class ProcessTC(unittest.TestCase):
 
     def test_start_then_kill(self):
         p = self.process
-        p._arguments += ['sleep', '11']
-        p.start(process.RUN_NOTIFYONEXIT, process.COMM_ALL)
+        p.run('sleep', ['11'], 'xterm', False)
         p.kill(9)
         time.sleep(2)
         # after execution

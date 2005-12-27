@@ -25,14 +25,14 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.18 2005-12-26 10:03:59 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.19 2005-12-27 10:26:00 syt Exp $'
 
 import os
 import qt
 
 import pyqonsole.keytrans as kt
 from pyqonsole.emulation import Emulation, NOTIFYBELL, NOTIFYNORMAL
-from pyqonsole import screen, widget, ca
+from pyqonsole import CTRL, screen, widget, ca
 
 # Qt chars shortcuts
 ControlButton = qt.QEvent.ControlButton
@@ -109,8 +109,6 @@ def eps(p, s, cc, C):
     return p >= 3 and s[2] != ord('?') and s[2] != ord('>') and cc < 256 and (TOK_TBL[cc] & C) == C
 def ees(p, cc, C):
     return p >= 3 and cc < 256 and (TOK_TBL[cc] & C) == C
-
-def CNTL(c): return ord(c) - ord('@')
 
 
 class CharCodes:
@@ -322,7 +320,7 @@ class EmuVt102(Emulation):
             # This means, they do neither a resetToken nor a pushToToken. Some of them, do
             # of course. Guess this originates from a weakly layered handling of the X-on
             # X-off protocol, which comes really below this level.
-            if cc == CNTL('X') or cc == CNTL('Z') or cc == ESC: # VT100: CAN or SUB
+            if cc == CTRL('X') or cc == CTRL('Z') or cc == ESC: # VT100: CAN or SUB
                 self._resetToken()
             if cc != ESC:
                 self.tau(TY_CTL(chr(cc+ord('@'))), 0, 0)
@@ -739,7 +737,7 @@ class EmuVt102(Emulation):
             
     def printScan(self, cc):
         assert self._print_fd
-        if cc == CNTL('Q') or cc == CNTL('S') or cc == 0:
+        if cc == CTRL('Q') or cc == CTRL('S') or cc == 0:
             return
         self._pbuf.append(cc) # advance the state
         s = self._pbuf

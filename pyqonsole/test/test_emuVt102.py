@@ -1093,9 +1093,9 @@ ESC < 		Exit VT52 mode (Enter VT100 mode).
         self._test_sequence('\033D',
                             scr0=[('getattr', 'cursorLeft'), ('call', (1,))])
         self._test_sequence('\033F',
-                            emu= [('_useCharset', (0,))])
+                            emu= [('_setAndUseCharset', (0, '0'))])
         self._test_sequence('\033G',
-                            emu= [('_useCharset', (0,))])
+                            emu= [('_setAndUseCharset', (0, 'B'))])
         self._test_sequence('\033H',
                             scr0=[('getattr', 'setCursorYX'), ('call', (1, 1))])
         self._test_sequence('\033I',
