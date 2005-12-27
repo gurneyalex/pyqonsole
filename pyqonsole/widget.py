@@ -42,7 +42,7 @@ Based on the konsole code from Lars Doelle.
 @license: CeCILL
 """
 
-__revision__ = '$Id: widget.py,v 1.33 2005-12-26 10:19:24 alf Exp $'
+__revision__ = '$Id: widget.py,v 1.34 2005-12-27 10:50:45 syt Exp $'
 
 import qt
 
@@ -132,11 +132,6 @@ VT100_GRAPHICS = [
     0xF800, 0xF801, 0x2500, 0xF803, 0xF804, 0x251c, 0x2524, 0x2534,
     0x252c, 0x2502, 0x2264, 0x2265, 0x03C0, 0x2260, 0x00A3, 0x00b7,
 ]
-
-class RefValue(object):
-    """trick to get a return value by reference from an emitted signal"""
-    def __init__(self, value):
-        self.value = value
 
         
 class Widget(qt.QFrame):
@@ -781,10 +776,11 @@ class Widget(qt.QFrame):
             pos = qt.QPoint((ev.x()-topleft.x()-self.bX+(self.font_w/2)) / self.font_w, y)
             self.emit(qt.PYSIGNAL('isBusySelecting'), (True,)) # Keep it steady...
             # Drag only when the Control key is hold
-            selected = RefValue(False)
+            selected = [False]
             # The receiver of the testIsSelected() signal will adjust 
             # 'selected' accordingly.
             self.emit(qt.PYSIGNAL('testIsSelected'), (pos.x(), y, selected))
+            selected = selected[0]
             if (not self.ctrldrag or ev.state() & self.ControlButton) and selected.value:
                 # The user clicked inside selected text
                 dragInfo.state = diPending

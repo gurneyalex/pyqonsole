@@ -59,7 +59,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: emulation.py,v 1.21 2005-12-26 10:03:59 syt Exp $'
+__revision__ = '$Id: emulation.py,v 1.22 2005-12-27 10:50:45 syt Exp $'
 
 import qt
 
@@ -201,7 +201,7 @@ class Emulation(qt.QObject):
         
     def testIsSelected(self, x, y, ref):
         if self._connected:
-            ref.value = self._scr.testIsSelected(x, y)
+            ref[0] = self._scr.testIsSelected(x, y)
     
     def clearSelection(self):
         if self._connected:
