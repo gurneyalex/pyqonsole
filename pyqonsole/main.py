@@ -17,9 +17,10 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: main.py,v 1.14 2005-12-27 14:47:48 syt Exp $'
+__revision__ = '$Id: main.py,v 1.15 2005-12-27 15:38:06 syt Exp $'
 
 import sys
+import signal
 import os
 import pwd
 
@@ -64,7 +65,7 @@ def findExecutablePath(progname):
         fullname = os.path.join(dirname, progname)
         if os.path.isfile(fullname) and os.access(fullname, os.X_OK):
             return fullname
-    raise ValueError('%s not found in PATH' %progname)
+    raise ValueError('%s not found in PATH' % progname)
 
 def main(argv):
     appli = qt.QApplication(argv)
@@ -89,9 +90,10 @@ def main(argv):
     session.setHistory(HistoryTypeBuffer(1000))
     session.run()
     def quit(*args, **kwargs):
-        print 'quitting'
         appli.quit()
     session.myconnect('done', quit)
+    # XXX dunno why I've to do that to make Ctrl-C in the original term working 
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     appli.exec_loop()
 
 def profile(argv):
