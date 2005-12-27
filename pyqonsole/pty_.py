@@ -35,7 +35,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: pty_.py,v 1.19 2005-12-27 10:47:45 syt Exp $'
+__revision__ = '$Id: pty_.py,v 1.20 2005-12-27 11:04:00 syt Exp $'
 
 import os
 import select
@@ -324,8 +324,10 @@ class PtyProcess(qt.QObject):
         """
         os.close(self.out[1])
         # fcntl(out[0], F_SETFL, O_NONBLOCK))
-        self._outnot = qt.QSocketNotifier(self.out[0], qt.QSocketNotifier.Read, self)
-        self.connect(self._outnot, qt.SIGNAL('activated(int)'), self.slotChildOutput)
+        self._outnot = qt.QSocketNotifier(self.out[0],
+                                          qt.QSocketNotifier.Read, self)
+        self.connect(self._outnot, qt.SIGNAL('activated(int)'),
+                     self.slotChildOutput)
         self.suspend()
 
     def commClose(self):
@@ -482,18 +484,15 @@ class PtyProcess(qt.QObject):
         # Check whether client could be started.
         if fd[0]:
             while True:
-                resultByte = os.read(fd[0], 1)
-                if not resultByte:
+                bytes = os.read(fd[0], 1)
+                if not bytes:
                     break # success
-                if ord(resultByte) == 1:
+                if ord(bytes) == 1:
                     # Error
                     self.running = False
                     os.close(fd[0])
                     self.pid = 0
                     return False
-                #if not resultByte:
-                #    # if ((errno == ECHILD) or (errno == EINTR))
-                #    continue # Ignore
                 break # success
         if fd[0]:
             os.close(fd[0])
