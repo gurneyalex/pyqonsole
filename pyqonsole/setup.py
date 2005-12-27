@@ -1,4 +1,7 @@
-__revision__ = '$Id: setup.py,v 1.3 2005-12-20 14:30:51 alf Exp $'
+# pylint: disable-msg=W0142,W0403,W0404,E0611,W0613,W0622,W0622,W0704,R0904
+""" Generic Setup script, takes package info from __pkginfo__.py file """
+
+__revision__ = '$Id: setup.py,v 1.4 2005-12-27 16:53:23 syt Exp $'
 
 import os
 import sys

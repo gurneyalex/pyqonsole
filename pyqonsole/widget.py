@@ -42,7 +42,7 @@ Based on the konsole code from Lars Doelle.
 @license: CeCILL
 """
 
-__revision__ = '$Id: widget.py,v 1.37 2005-12-27 14:47:48 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.38 2005-12-27 16:53:23 syt Exp $'
 
 import qt
 
@@ -257,7 +257,7 @@ class Widget(Signalable, qt.QFrame):
     def setScroll(self, cursor, lines):
         self.disconnect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
                         self.scrollChanged)
-        self.scrollbar.setRange(0,lines)
+        self.scrollbar.setRange(0, lines)
         self.scrollbar.setSteps(1, self.lines)
         self.scrollbar.setValue(cursor)
         self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
@@ -446,7 +446,7 @@ class Widget(Signalable, qt.QFrame):
     def bell(self):
         if self.bell_mode == BELLSYSTEM:
             qt.QApplication.beep()
-        if self.bell_mode==BELLVISUAL:
+        if self.bell_mode == BELLVISUAL:
             self._swapColorTable()
             qt.QTimer.singleShot(200, self._swapColorTable)
 
@@ -547,7 +547,7 @@ class Widget(Signalable, qt.QFrame):
             self._compose_length = e.text().length()
             text += e.text()
             if not text.isEmpty():
-                ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1,0, text)
+                ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1, 0, text)
                 self.myemit('keyPressedSignal', (ke,))
             e.accept()
             return False
@@ -559,7 +559,7 @@ class Widget(Signalable, qt.QFrame):
                     text[i] = '\010'
             text += e.text()
             if not text.isEmpty():
-                ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1,0, text)
+                ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1, 0, text)
                 self.myemit('keyPressedSignal', (ke,))
             e.accept()
             return False
@@ -569,7 +569,7 @@ class Widget(Signalable, qt.QFrame):
         elif e.type() == qt.QEvent.Leave:
             cb = qt.QApplication.clipboard()
             self.connect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
-        return qt.QFrame.eventFilter(self,obj, e)
+        return qt.QFrame.eventFilter(self, obj, e)
 
     def drawAttrStr(self, paint, rect, qstr, attr, pm, clear):
         """Display Operation - attributed string draw primitive"""
@@ -596,21 +596,21 @@ class Widget(Signalable, qt.QFrame):
             if (attr.r and RE_CURSOR) and self.cursor_blinking:
                 self.erase(rect)
             paint.setPen(fColor)
-            paint.drawText(rect.x(),rect.y()+self.font_a, qstr)
+            paint.drawText(rect.x(), rect.y()+self.font_a, qstr)
             if (attr.r & RE_UNDERLINE) or self.color_table[attr.f].bold:
                 paint.setClipRect(rect)
                 if self.color_table[attr.f].bold:
                     paint.setBackgroundMode(self.TransparentMode)
-                    paint.drawText(rect.x()+1,rect.y()+self.font_a, qstr) # second stroke
+                    paint.drawText(rect.x()+1, rect.y()+self.font_a, qstr) # second stroke
                 if attr.r & RE_UNDERLINE:
                     paint.drawLine(rect.left(), rect.y()+self.font_a+1,
-                                   rect.right(),rect.y()+self.font_a+1)
+                                   rect.right(), rect.y()+self.font_a+1)
                 paint.setClipping(False)
         if (attr.r & RE_CURSOR) and not self.hasFocus():
             if pm and self.color_table[attr.b].transparent:
                 self.erase(rect)
                 paint.setBackgroundMode(self.TransparentMode)
-                paint.drawText(rect.x(),rect.y()+self.font_a, qstr)
+                paint.drawText(rect.x(), rect.y()+self.font_a, qstr)
             paint.setClipRect(rect)
             paint.drawRect(rect.x(), rect.y(), rect.width(), rect.height()-self.line_spacing)
             paint.setClipping(False)
@@ -1022,7 +1022,7 @@ class Widget(Signalable, qt.QFrame):
         elif self.scroll_loc ==  SCRRIGHT:
             self.bX = 1
             self.columns = (self.contentsRect().width()  - 2 * rimX - self.scrollbar.width()) / self.font_w
-            self.scrollbar.move(self.contentsRect().topRight() - qt.QPoint(self.scrollbar.width()-1,0))
+            self.scrollbar.move(self.contentsRect().topRight() - qt.QPoint(self.scrollbar.width()-1, 0))
             self.scrollbar.show()
         if self.columns < 1:
             self.columns = 1
@@ -1034,7 +1034,7 @@ class Widget(Signalable, qt.QFrame):
     def _swapColorTable(self):
         color = self.color_table[1]
         self.color_table[1] = self.color_table[0]
-        self.color_table[0]= color
+        self.color_table[0] = color
         self.update()
     
     def _tripleClickTimeout(self):

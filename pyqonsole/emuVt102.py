@@ -25,7 +25,7 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @license: CECILL
 """
 
-__revision__ = '$Id: emuVt102.py,v 1.20 2005-12-27 14:47:47 syt Exp $'
+__revision__ = '$Id: emuVt102.py,v 1.21 2005-12-27 16:53:22 syt Exp $'
 
 import os
 import qt
@@ -48,15 +48,24 @@ MODE_Ansi      = screen.MODES_SCREEN+4
 
 # Tokens
 TY_CHR = 0
-def TY_CTL(A): return ((ord(A) & 0xff) << 8) | 1
-def TY_ESC(A): return ((ord(A) & 0xff) << 8) | 2
-def TY_ESC_CS(A, B): return ((ord(B) & 0xffff) << 16) | ((ord(A) & 0xff) << 8) | 3
-def TY_ESC_DE(A):    return                             ((ord(A) & 0xff) << 8) | 4
-def TY_CSI_PS(A, N): return ((N      & 0xffff) << 16) | ((ord(A) & 0xff) << 8) | 5
-def TY_CSI_PN(A):    return                             ((ord(A) & 0xff) << 8) | 6
-def TY_CSI_PR(A, N): return ((N      & 0xffff) << 16) | ((ord(A) & 0xff) << 8) | 7
-def TY_VT52(A):      return                             ((ord(A) & 0xff) << 8) | 8
-def TY_CSI_PG(A):    return                             ((ord(A) & 0xff) << 8) | 9
+def TY_CTL(A):
+    return ((ord(A) & 0xff) << 8) | 1
+def TY_ESC(A):
+    return ((ord(A) & 0xff) << 8) | 2
+def TY_ESC_CS(A, B):
+    return ((ord(B) & 0xffff) << 16) | ((ord(A) & 0xff) << 8) | 3
+def TY_ESC_DE(A):
+    return ((ord(A) & 0xff) << 8) | 4
+def TY_CSI_PS(A, N):
+    return ((N & 0xffff) << 16) | ((ord(A) & 0xff) << 8) | 5
+def TY_CSI_PN(A):
+    return ((ord(A) & 0xff) << 8) | 6
+def TY_CSI_PR(A, N):
+    return ((N & 0xffff) << 16) | ((ord(A) & 0xff) << 8) | 7
+def TY_VT52(A):
+    return ((ord(A) & 0xff) << 8) | 8
+def TY_CSI_PG(A):
+    return ((ord(A) & 0xff) << 8) | 9
 
 # Character Classes used while decoding
 CTL = 1
@@ -70,18 +79,20 @@ ESC = 27
 
 # init tokenizer table
 TOK_TBL = []
-for i in xrange(32):
-    TOK_TBL.append(CTL)
-for i in xrange(32, 256):
-    TOK_TBL.append(CHR)
-for s in "@ABCDGHLMPXcdfry":
-    TOK_TBL[ord(s)] |= CPN
-for s in "0123456789":
-    TOK_TBL[ord(s)] |= DIG
-for s in "()+*%":
-    TOK_TBL[ord(s)] |= SCS
-for s in "()+*#[]%":
-    TOK_TBL[ord(s)] |= GRP
+def init_tokeniser():
+    for i in xrange(32):
+        TOK_TBL.append(CTL)
+    for i in xrange(32, 256):
+        TOK_TBL.append(CHR)
+    for s in "@ABCDGHLMPXcdfry":
+        TOK_TBL[ord(s)] |= CPN
+    for s in "0123456789":
+        TOK_TBL[ord(s)] |= DIG
+    for s in "()+*%":
+        TOK_TBL[ord(s)] |= SCS
+    for s in "()+*#[]%":
+        TOK_TBL[ord(s)] |= GRP
+init_tokenizer()
 
 # decoder helpers
 def lec(p, s, P, L, C):

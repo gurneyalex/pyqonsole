@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.8 2005-12-27 13:21:45 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.9 2005-12-27 16:53:22 syt Exp $'
 
 
 import re
@@ -344,6 +344,7 @@ class KeytabReader:
     def __init__(self, path, stream):
         self.stream = stream
         self.path = path
+        self.linno = None
 
     def parseTo(self, kt):
         """fill the given KeyTrans according to the parsed stream
@@ -437,7 +438,7 @@ class KeytabReader:
             self._reportError('keystroke already assigned in line %d' % entry.ref)
             
     def _reportError(self, msg):
-        print >>sys.stderr, '%s line %s: %s' % (self.linno, self.path, msg)
+        print >> sys.stderr, '%s line %s: %s' % (self.linno, self.path, msg)
 
 
 loadAll()

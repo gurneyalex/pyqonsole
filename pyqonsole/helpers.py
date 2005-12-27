@@ -1,5 +1,5 @@
-""" This module contains all C implemented function.
+"""This module contains all C implemented function.
 """
-__revision__ = '$Id: helpers.py,v 1.2 2005-12-09 09:11:12 alf Exp $'
+__revision__ = '$Id: helpers.py,v 1.3 2005-12-27 16:53:22 syt Exp $'
 
-from _helpers import *
+from pyqonsole._helpers import *

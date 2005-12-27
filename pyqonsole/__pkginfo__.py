@@ -1,9 +1,9 @@
 # pylint: disable-msg=W0622
 """pyqonsole packaging information"""
 
-__revision__ = '$Id: __pkginfo__.py,v 1.1 2005-12-20 14:30:51 alf Exp $'
+__revision__ = '$Id: __pkginfo__.py,v 1.2 2005-12-27 16:53:22 syt Exp $'
 
-modname="pyqonsole"
+modname = "pyqonsole"
 numversion = (1, 0, 0)
 version = '.'.join([str(num) for num in numversion])
 license = 'CeCILL'
@@ -24,8 +24,8 @@ scripts = [join('bin', 'pyqonsole')]
 
 try:
     from distutils.core import Extension
-    ext_modules=[Extension('pyqonsole._helpers',
-                     sources = ['helpers.c'])]
+    ext_modules = [Extension('pyqonsole._helpers',
+                             sources = ['helpers.c'])]
 except:
     pass
 

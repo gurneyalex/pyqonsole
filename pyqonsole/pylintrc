@@ -22,4 +22,4 @@ argument-rgx=[a-z][a-z0-9_]*$
 # Regular expression which should only match correct variable names
 variable-rgx=[a-z][a-z0-9_]*$
 
-good-names=i,j,k,x,y,ex,_,c,f,b,r,ca,Ca,tr
+good-names=i,j,k,x,y,ex,ev,_,c,f,b,r,ca,Ca,tr

@@ -32,7 +32,7 @@ Based on the konsole code from Lars Doelle.
 
 XXX review singleton aspect
 """
-__revision__ = '$Id: procctrl.py,v 1.7 2005-12-27 14:47:48 syt Exp $'
+__revision__ = '$Id: procctrl.py,v 1.8 2005-12-27 16:53:22 syt Exp $'
 
 import os
 import errno
@@ -98,18 +98,6 @@ class ProcessController(qt.QObject):
     def setupHandlers(self):
         if self.handler_set:
             return
-        #struct sigaction act
-        #act.sa_handler = sigCHLDHandler
-        #sigemptyset(&(act.sa_mask))
-        #sigaddset(&(act.sa_mask), SIGCHLD)
-        #XXX # Make sure we don't block this signal. gdb tends to do that :-(
-        #XXX sigprocmask(SIG_UNBLOCK, &(act.sa_mask), 0)
-        #XXX act.sa_flags = SA_NOCLDSTOP
-        #XXX # CC: take care of SunOS which automatically restarts interrupted system
-        #XXX # calls (and thus does not have SA_RESTART)
-        #XXX #ifdef SA_RESTART
-        #XXX act.sa_flags |= SA_RESTART
-        #XXX #endif
         self.old_sigCHLDHandler = signal.getsignal(signal.SIGCHLD)
         signal.signal(signal.SIGCHLD, self.sigCHLDHandler)
         #sigaction( SIGCHLD, &act, &self.old_sigCHLDHandler )
@@ -195,12 +183,13 @@ class ProcessController(qt.QObject):
                 if ex.errno == errno.EAGAIN:
                     return
                 if ex.errno == errno.EINTR:
-                    print >>sys.stderr, ("Error: pipe read returned errno=%d "
-                                         "in ProcessController::slotDoHousekeeping\n") %ex.errno
+                    msg = ("Error: pipe read returned errno=%d "
+                           "in ProcessController::slotDoHousekeeping")
+                    print >> sys.stderr, msg % ex.errno
                     return
         if len(bytes_read) != struct.calcsize('II'):
-            print >>sys.stderr, ("Error: Could not read info from signal handler %d <> %d!\n"
-                                   % (len(bytes_read), struct.calcsize('II')))
+            msg = "Error: Could not read info from signal handler %d <> %d!"
+            print >> sys.stderr, msg % (len(bytes_read), struct.calcsize('II'))
             return
         pid, status = struct.unpack('II', bytes_read)
         if pid == 0:
@@ -230,7 +219,8 @@ class ProcessController(qt.QObject):
         * starting an event loop.
         * This function may cause Process to emit any of its signals.
         *
-        * @return True if a process exited, False if no process exited within @p timeout seconds.
+        * return True if a process exited, False if no process exited within
+          @p timeout seconds.
         // Due to a race condition the signal handler may have
         // failed to detect that a pid belonged to a Process
         // and defered handling to delayedChildrenCleanup()
