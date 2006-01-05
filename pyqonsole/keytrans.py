@@ -20,16 +20,26 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.9 2005-12-27 16:53:22 syt Exp $'
+__revision__ = '$Id: keytrans.py,v 1.10 2006-01-05 13:15:02 alf Exp $'
 
 
 import re
 import sys
-from os.path import basename, dirname, splitext, join
+from os.path import basename, dirname, splitext, join, isfile
 
 import qt
 
-DEFAULT_KEYTAB_FILE = join(dirname(__file__), 'default.keytab')
+for _path in [dirname(__file__),
+              '/usr/share/pyqonsole',
+              '/usr/local/share/pyqonsole'
+              os.environ.get('PYQONSOLE_KEYTAB_DIR', './')]:
+    DEFAULT_KEYTAB_FILE = join(_path, 'default.keytab')
+    if isfile(DEFAULT_KEYTAB_FILE):
+        break
+else:
+    raise ValueError("Unable to find default.keytab."
+                     "Set the PYQONSOLE_KEYTAB_DIR environment variable.")
+del _path
 
 BITS_NewLine   = 0
 BITS_BsHack    = 1
@@ -109,11 +119,11 @@ class KeyTrans:
     Takes part in a collection themself.
     """
     
-    def __init__(self, path='[buildin]'):
+    def __init__(self, path='[builtin]'):
         self._hdr = ''
         self.num = 0
         self.path = path
-        if path == '[buildin]':
+        if path == '[builtin]':
             self.id = 'default'
         else:
             self.id = splitext(basename(path))[0]
@@ -129,7 +139,7 @@ class KeyTrans:
         if self._file_read:
             return
         self._file_read = True
-        if self.path == '[buildin]':
+        if self.path == '[builtin]':
             buf = open(DEFAULT_KEYTAB_FILE)
         else: 
             buf = open(self.path)
