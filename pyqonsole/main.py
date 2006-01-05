@@ -17,7 +17,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: main.py,v 1.15 2005-12-27 15:38:06 syt Exp $'
+__revision__ = '$Id: main.py,v 1.16 2006-01-05 13:22:37 alf Exp $'
 
 import sys
 import signal
@@ -74,7 +74,7 @@ def main(argv):
     te.setMinimumSize(150, 70)
     te.setFocus()
     te.setBackgroundMode(qt.Qt.PaletteBackground)
-    setFont(te, 5) # 15
+    setFont(te, 4) # medium
     te.resize(te.calcSize(80, 25))
     appli.setMainWidget(te)
     te.show()
