@@ -20,7 +20,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: keytrans.py,v 1.10 2006-01-05 13:15:02 alf Exp $'
+__revision__ = '$Id: keytrans.py,v 1.11 2006-01-05 13:24:50 alf Exp $'
 
 
 import re
@@ -31,8 +31,9 @@ import qt
 
 for _path in [dirname(__file__),
               '/usr/share/pyqonsole',
-              '/usr/local/share/pyqonsole'
-              os.environ.get('PYQONSOLE_KEYTAB_DIR', './')]:
+              '/usr/local/share/pyqonsole',
+              os.environ.get('PYQONSOLE_KEYTAB_DIR', './'),
+              ]:
     DEFAULT_KEYTAB_FILE = join(_path, 'default.keytab')
     if isfile(DEFAULT_KEYTAB_FILE):
         break
