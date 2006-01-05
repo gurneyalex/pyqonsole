@@ -1,7 +1,7 @@
 # pylint: disable-msg=W0622
 """pyqonsole packaging information"""
 
-__revision__ = '$Id: __pkginfo__.py,v 1.3 2006-01-05 13:19:48 alf Exp $'
+__revision__ = '$Id: __pkginfo__.py,v 1.4 2006-01-05 13:20:30 alf Exp $'
 
 modname = "pyqonsole"
 numversion = (0, 1, 0)
@@ -22,12 +22,9 @@ mailinglist = "mailto://python-projects@logilab.org"
 from os.path import join
 scripts = [join('bin', 'pyqonsole')]
 
-try:
-    from distutils.core import Extension
-    ext_modules = [Extension('pyqonsole._helpers',
-                             sources = ['helpers.c'])]
-except:
-    pass
+from distutils.core import Extension
+ext_modules = [Extension('pyqonsole._helpers',
+                         sources = ['helpers.c'])]
 
 data_files = [('share/pyqonsole/', ['default.keymap'])]
 
