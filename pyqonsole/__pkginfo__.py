@@ -1,10 +1,10 @@
 # pylint: disable-msg=W0622
 """pyqonsole packaging information"""
 
-__revision__ = '$Id: __pkginfo__.py,v 1.2 2005-12-27 16:53:22 syt Exp $'
+__revision__ = '$Id: __pkginfo__.py,v 1.3 2006-01-05 13:19:48 alf Exp $'
 
 modname = "pyqonsole"
-numversion = (1, 0, 0)
+numversion = (0, 1, 0)
 version = '.'.join([str(num) for num in numversion])
 license = 'CeCILL'
 copyright = '''WRITEME'''
@@ -28,6 +28,8 @@ try:
                              sources = ['helpers.c'])]
 except:
     pass
+
+data_files = [('share/pyqonsole/', ['default.keymap'])]
 
 pyversions = ['2.3', '2.4']
 
