@@ -1,6 +1,6 @@
-pyqonsole (1.0-1) unstable; urgency=low
+pyqonsole (0.1.0-1) unstable; urgency=low
 
   * Initial package
 
- -- Alexandre Fayolle <afayolle@debian.org>  Thu, 15 Dec 2005 17:27:50 +0100
+ -- Alexandre Fayolle <afayolle@debian.org>  Thu,  5 Jan 2006 14:16:33 +0100
 
