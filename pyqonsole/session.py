@@ -22,7 +22,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.10 2005-12-27 14:47:48 syt Exp $'
+__revision__ = '$Id: session.py,v 1.11 2006-01-10 09:43:34 syt Exp $'
 
 import os
 
@@ -31,12 +31,13 @@ import qt
 from pyqonsole import Signalable, pty_, emulation, emuVt102
 
 
-SILENCE_TIMEOUT = 10000 # milliseconds
 
 class Session(Signalable, qt.QObject):
     """A Session is a combination of one PTyProcess and one Emulation instances
     """
 
+    SILENCE_TIMEOUT = 10000 # milliseconds
+    
     def __init__(self, gui, pgm, args, term, sessionid='session-1', cwd=None):
         super(Session, self).__init__()
         self.monitor_activity = False
@@ -68,8 +69,7 @@ class Session(Signalable, qt.QObject):
         self.em.myconnect('sndBlock', self.sh.sendBytes)
         self.em.myconnect('changeTitle', self.setUserTitle)
         self.em.myconnect('notifySessionState', self.notifySessionState)
-        self.monitor_timer.connect(self.monitor_timer, qt.SIGNAL('timeout()'),
-                                   self.monitorTimerDone)
+        self.connect(self.monitor_timer, qt.SIGNAL('timeout()'), self.monitorTimerDone)
 
     def __del__(self):
         self.sh.mydisconnect('done', self.done)
@@ -79,7 +79,7 @@ class Session(Signalable, qt.QObject):
             return
         self._monitor_silence = monitor
         if monitor:
-            self.monitor_timer.start(SILENCE_TIMEOUT, True)
+            self.monitor_timer.start(self.SILENCE_TIMEOUT, True)
         else:
             self.monitor_timer.stop()
     def getMonitorSilence(self):
@@ -122,13 +122,13 @@ class Session(Signalable, qt.QObject):
 
     def monitorTimerDone(self):
         self.myemit('notifySessionState', (emulation.NOTIFYSILENCE,))
-        self.monitor_timer.start(SILENCE_TIMEOUT, True)
+        self.monitor_timer.start(self.SILENCE_TIMEOUT, True)
 
     def notifySessionState(self, state):
         if state == emulation.NOTIFYACTIVITY:
             if self.monitor_silence:
                 self.monitor_timer.stop()
-                self.monitor_timer.start(SILENCE_TIMEOUT, True)
+                self.monitor_timer.start(self.SILENCE_TIMEOUT, True)
             if not self.monitor_activity:
                 return
         self.myemit('notifySessionState', (state,))

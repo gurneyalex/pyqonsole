@@ -95,7 +95,7 @@ ESC _ 	Application Program Command (APC is 0x9f)
         #self._test_sequence('\033W')
         #self._test_sequence('\033X')
         self._test_sequence('\033Z',
-                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
+                            emu=[('sndBlock', ('\x1b[?1;2c',))])
         
     def test_receive_single_char_functions(self):
         """Single-character functions
@@ -113,9 +113,9 @@ HT 	Horizontal Tab
 VT 	Vertical Tab same as LF
         """
         self._test_sequence('\05', # ENQ
-                            emu=[('9sndBlock', ('',))])
+                            emu=[('sndBlock', ('',))])
         self._test_sequence('\07', # BELL
-                            emu=[('9notifySessionState', (1,))],      
+                            emu=[('notifySessionState', (1,))],      
                             gui=[('getattr', 'bell'), ('call',)])
         self._test_sequence('\010', # BS
                             scr0=[('getattr', 'backSpace'), ('call',)])
@@ -449,17 +449,17 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                 <Pc> indicates the ROM cartridge registration number (always zero) 
         """
         self._test_sequence('\033[c',
-                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
+                            emu=[('sndBlock', ('\x1b[?1;2c',))])
         self._test_sequence('\033[0c',
-                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
+                            emu=[('sndBlock', ('\x1b[?1;2c',))])
         self._test_sequence('\033[1c',
-                            emu=[('9sndBlock', ('\x1b[?1;2c',))])
+                            emu=[('sndBlock', ('\x1b[?1;2c',))])
         self._test_sequence('\033[>c',
-                            emu=[('9sndBlock', ('\x1b[>0;115;0c',))])
+                            emu=[('sndBlock', ('\x1b[>0;115;0c',))])
         self._test_sequence('\033[>0c',
-                            emu=[('9sndBlock', ('\x1b[>0;115;0c',))])
+                            emu=[('sndBlock', ('\x1b[>0;115;0c',))])
         self._test_sequence('\033[>1c',
-                            emu=[('9sndBlock', ('\x1b[>0;115;0c',))])
+                            emu=[('sndBlock', ('\x1b[>0;115;0c',))])
         
     def test_receive_csi_charater_attributes(self):
         """Functions using CSI - CSI <Pm> m 	Character Attributes (SGR)
@@ -606,7 +606,7 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
                             emu=[('setMode', (emuVt102.MODE_AppCuKeys,))])
         #self._test_sequence('\033[?2h')
         self._test_sequence('\033[?3h',
-                            emu=[('9changeColumns', (132,))])
+                            emu=[('changeColumns', (132,))])
         self._test_sequence('\033[?4h')
         self._test_sequence('\033[?5h',
                             scr0=[('getattr', 'setMode'), ('call', (screen.MODE_Screen,))])
@@ -742,7 +742,7 @@ CSI > <Ps> c 	Send Device Attributes (Secondary DA)
 <Ps>=25 -> Hide Cursor (DECTCEM)
         """
         self._test_sequence('\033[?3l',
-                            emu=[('9changeColumns', (80,))])
+                            emu=[('changeColumns', (80,))])
         self._test_sequence('\033[?4l')
         self._test_sequence('\033[?5l',
                             scr0=[('getattr', 'resetMode'), ('call', (screen.MODE_Screen,))])
@@ -839,9 +839,9 @@ CSI <Ps> x 	Request Terminal Parameters (DECREQTPARM)
 		0 -> STP flags
         """
         self._test_sequence('\033[5n',
-                            emu=[('9sndBlock', ('\x1b[0n',))])
+                            emu=[('sndBlock', ('\x1b[0n',))])
         self._test_sequence('\033[6n',
-                            emu=[('9sndBlock', ('\x1b[2;2R',))],
+                            emu=[('sndBlock', ('\x1b[2;2R',))],
                             scr0=[('getattr', 'getCursorX'), ('getattr', 'getCursorY')])
         #self._test_sequence('\033[?6n')
         #self._test_sequence('\033[?15n')
@@ -849,11 +849,11 @@ CSI <Ps> x 	Request Terminal Parameters (DECREQTPARM)
         #self._test_sequence('\033[?26n')
         #self._test_sequence('\033[?53n')
         self._test_sequence('\033[x',                            # XXX \x1b[0 ?
-                            emu=[('9sndBlock', ('\x1b[2;1;1;112;112;1;0x',))])
+                            emu=[('sndBlock', ('\x1b[2;1;1;112;112;1;0x',))])
         self._test_sequence('\033[0x',                           # XXX \x1b[0 ?
-                            emu=[('9sndBlock', ('\x1b[2;1;1;112;112;1;0x',))])
+                            emu=[('sndBlock', ('\x1b[2;1;1;112;112;1;0x',))])
         self._test_sequence('\033[1x',                           # XXX \x1b[2 ?
-                            emu=[('9sndBlock', ('\x1b[3;1;1;112;112;1;0x',))])
+                            emu=[('sndBlock', ('\x1b[3;1;1;112;112;1;0x',))])
 
     def test_receive_csi_media_copy(self):
         """Functions using CSI - Media Copy
@@ -935,22 +935,23 @@ OSC <Ps> ; <Pt> BEL
 This is implemented as a 'XTerm hack' in emuVt102
         """
         self._test_sequence('\033]0;blablabla\07', # BELL is \007
-                            emu=[('9changeTitle', (0, 'blablabla'))])
+                            emu=[('changeTitle', (0, 'blablabla'))])
         self._test_sequence('\033]1;blablabla\07',
-                            emu=[('9changeTitle', (1, 'blablabla'))])
+                            emu=[('changeTitle', (1, 'blablabla'))])
         self._test_sequence('\033]2;blablabla\07',
-                            emu=[('9changeTitle', (2, 'blablabla'))])
+                            emu=[('changeTitle', (2, 'blablabla'))])
 
-    def test_missing_vi_code1(self):
-        """CSI ? <Pm> l
+## XXX
+##     def test_missing_vi_code1(self):
+##         """CSI ? <Pm> l
         
-	<Ps>=12 -> Stop Blinking Cursor (att610)
-        """
-        self._test_sequence('\033[?12l')
+## 	<Ps>=12 -> Stop Blinking Cursor (att610)
+##         """
+##         self._test_sequence('\033[?12l')
         
-    def test_missing_vi_code3(self):
-        """?"""
-        self._test_sequence('\033[?12;25h')
+##     def test_missing_vi_code3(self):
+##         """?"""
+##         self._test_sequence('\033[?12;25h')
 
         
         
@@ -1107,7 +1108,7 @@ ESC < 		Exit VT52 mode (Enter VT100 mode).
         self._test_sequence('\033Y12',
                             scr0=[('getattr', 'setCursorYX'), ('call', (18, 19))]) # XXX
         self._test_sequence('\033Z',
-                            emu=[('9sndBlock', ('\x1b/Z',))])
+                            emu=[('sndBlock', ('\x1b/Z',))])
         self._test_sequence('\033=',
                             emu=[('setMode', (emuVt102.MODE_AppKeyPad,))])
         self._test_sequence('\033>',

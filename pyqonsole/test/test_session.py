@@ -7,12 +7,13 @@ from qt import QApplication
 
 from pyqonsole import session, emulation
 
-session.SILENCE_TIMEOUT = 1 # milliseconds
-
 class MySession(session.Session):
     def emit(self, signal, args):
         self._logs.append( (signal, args) )
         session.Session.emit(self, signal, args)
+    def myemit(self, signal, args=()):
+        self._logs.append( (signal, args) )
+        session.Session.myemit(self, signal, args)
 
 class SessionTC(NoScreenTC):
     
@@ -25,12 +26,14 @@ class SessionTC(NoScreenTC):
     def test_monitor_silence(self):
         app = QApplication([])
         session = self.session
+        session.SILENCE_TIMEOUT = 1 # 1 millisecond instead of 10000 to be quicker
         self.failUnlessEqual(session.monitor_silence, False)
+        self.failUnlessEqual(session.monitor_timer.isActive(), False)
         session.monitor_silence = True
         self.failUnlessEqual(session.monitor_timer.isActive(), True)
         time.sleep(2e-3) # 2 * SILENCE_TIMEOUT (in seconds)
         app.processEvents()
-        self.failUnless(('9notifySessionState', (emulation.NOTIFYSILENCE,)) in session._logs)
+        self.failUnless(('notifySessionState', (emulation.NOTIFYSILENCE,)) in session._logs)
         session.monitor_silence = False
         self.failUnlessEqual(session.monitor_timer.isActive(), False)
         app.quit()
@@ -42,7 +45,7 @@ class SessionTC(NoScreenTC):
         self.failUnlessEqual(session._logs, [])
         session.monitor_activity = True
         session.notifySessionState(emulation.NOTIFYACTIVITY)
-        self.failUnlessEqual(session._logs, [('9notifySessionState', (2,))])
+        self.failUnlessEqual(session._logs, [('notifySessionState', (2,))])
 
     def test_keymap(self):
         session = self.session
@@ -55,21 +58,21 @@ class SessionTC(NoScreenTC):
     def test_title(self):
         session = self.session
         session.setUserTitle(0, 'bonjour')
-        self.failUnlessEqual(session._logs, [('9updateTitle', ())])
+        self.failUnlessEqual(session._logs, [('updateTitle', ())])
         self.failUnlessEqual(session.title, '')
         self.failUnlessEqual(session.user_title, 'bonjour')
         self.failUnlessEqual(session.icon_text, 'bonjour')
         self.failUnlessEqual(session.fullTitle(), 'bonjour - ')
         reset_logs()
         session.setUserTitle(1, 'hello')
-        self.failUnlessEqual(session._logs, [('9updateTitle', ())])
+        self.failUnlessEqual(session._logs, [('updateTitle', ())])
         self.failUnlessEqual(session.title, '')
         self.failUnlessEqual(session.user_title, 'bonjour')
         self.failUnlessEqual(session.icon_text, 'hello')
         self.failUnlessEqual(session.fullTitle(), 'bonjour - ')
         reset_logs()
         session.setUserTitle(2, 'oYe')
-        self.failUnlessEqual(session._logs, [('9updateTitle', ())])
+        self.failUnlessEqual(session._logs, [('updateTitle', ())])
         self.failUnlessEqual(session.title, '')
         self.failUnlessEqual(session.user_title, 'oYe')
         self.failUnlessEqual(session.icon_text, 'hello')
