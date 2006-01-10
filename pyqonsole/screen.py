@@ -37,7 +37,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.29 2005-12-27 14:47:48 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.30 2006-01-10 09:51:07 syt Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
@@ -435,12 +435,11 @@ class Screen(object):
     def resizeImage(self, lines, columns):
         if lines == self.lines and columns == self.columns:
             return
-        print 'screen.resize', lines, columns
         if self._cu_y > lines+1:
             self._margin_b = self.lines-1
-            for i in xrange(self._cu_y-(lines-1)):
+            for i in xrange(self._cu_y - (lines-1)):
                 self._addHistoryLine()
-                self._scrollUp()
+                self._scrollUp(self._margin_t, 1)
         # Make new image
         newimg = [[DCA for x in xrange(columns)] for y in xrange(lines+1)]
         newwrapped = [False for y in xrange(lines+1)]
