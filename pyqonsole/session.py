@@ -1,4 +1,4 @@
-# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -17,12 +17,12 @@ Based on the konsole code from Lars Doelle.
 
 @author: Lars Doelle
 @author: Sylvain Thenault
-@copyright: 2003, 2005
+@copyright: 2003, 2005-2006
 @organization: Logilab
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.11 2006-01-10 09:43:34 syt Exp $'
+__revision__ = '$Id: session.py,v 1.12 2006-01-10 10:01:44 syt Exp $'
 
 import os
 

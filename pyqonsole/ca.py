@@ -1,4 +1,4 @@
-# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -14,20 +14,20 @@ Based on the konsole code from Lars Doelle.
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
 @author: Sylvain Thenault
-@copyright: 2003, 2005
+@copyright: 2003, 2005-2006
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CECILL
 """
 
-__revision__ = "$Id: ca.py,v 1.14 2005-12-27 13:21:45 syt Exp $"
+__revision__ = "$Id: ca.py,v 1.15 2006-01-10 10:01:40 syt Exp $"
 
 BASE_COLORS = 2+8
 _INTENSITIES = 2
 TABLE_COLORS = _INTENSITIES * BASE_COLORS
 
-DEFAULT_FORE_COLOR = 0
-DEFAULT_BACK_COLOR = 1
+DEFAULT_FORE_COLOR = -1
+DEFAULT_BACK_COLOR = 0
 
 DEFAULT_RENDITION = 0
 RE_BOLD = 2**0

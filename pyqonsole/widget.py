@@ -1,4 +1,4 @@
-# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -36,13 +36,13 @@ Based on the konsole code from Lars Doelle.
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
 @author: Sylvain Thenault
-@copyright: 2003, 2005
+@copyright: 2003, 2005-2006
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CeCILL
 """
 
-__revision__ = '$Id: widget.py,v 1.38 2005-12-27 16:53:23 syt Exp $'
+__revision__ = '$Id: widget.py,v 1.39 2006-01-10 10:01:46 syt Exp $'
 
 import qt
 
@@ -565,7 +565,11 @@ class Widget(Signalable, qt.QFrame):
             return False
         if e.type() == qt.QEvent.Enter:
             cb = qt.QApplication.clipboard()
-            self.disconnect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
+            try:
+                self.disconnect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
+            except RuntimeError:
+                # slot isn't connected
+                pass
         elif e.type() == qt.QEvent.Leave:
             cb = qt.QApplication.clipboard()
             self.connect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
