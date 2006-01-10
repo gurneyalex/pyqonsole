@@ -3,3 +3,4 @@ include helpers.h
 include helpers.c
 include default.keytab
 include bin/pyqonsole
+include Makefile
