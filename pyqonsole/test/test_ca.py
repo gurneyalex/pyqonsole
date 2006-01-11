@@ -46,11 +46,6 @@ class CaTest(unittest.TestCase):
         self.c2.f = 1
         self.assertNotEqual(self.c1, self.c2)
         
-    def testNotEqualB(self):
-        """ Test the __ne__ method.
-        """
-        self.c2.b = 0
-        self.assertNotEqual(self.c1, self.c2)
         
     def testNotEqualR(self):
         """ Test the __ne__ method.
