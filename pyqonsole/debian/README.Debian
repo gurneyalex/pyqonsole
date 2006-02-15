@@ -1,6 +1,8 @@
 pyqonsole for Debian
 --------------------
 
-<possible notes regarding this package - if none, delete this file>
+If you want to run the tests, you will need to install the
+python-logilab-common package. I did not include it in the
+dependencies, since it is not required for the main program.
 
- -- Alexandre Fayolle <afayolle@debian.org>, Thu, 15 Dec 2005 17:27:50 +0100
+ -- Alexandre Fayolle <afayolle@debian.org>, mer, 15 fév 2006 16:47:07 +0100
