@@ -32,7 +32,7 @@ Based on the konsole code from Lars Doelle.
 
 XXX review singleton aspect
 """
-__revision__ = '$Id: procctrl.py,v 1.8 2005-12-27 16:53:22 syt Exp $'
+__revision__ = '$Id: procctrl.py,v 1.9 2006-02-15 10:09:11 alf Exp $'
 
 import os
 import errno
@@ -135,7 +135,7 @@ class ProcessController(qt.QObject):
         #sigprocmask( SIG_SETMASK, &oldset, 0 )
 
 
-    def sigCHLDHandler(self, signal, frame):
+    def sigCHLDHandler(self, sig, frame):
         """SIGCHLD handler
         
         :signal: int
@@ -151,6 +151,8 @@ class ProcessController(qt.QObject):
         found = False
         # iterating the list doesn't perform any system call
         for process in self.process_list:
+            if process.pid is None:
+                continue
             if not process.running:
                 continue
             try:
@@ -164,7 +166,7 @@ class ProcessController(qt.QObject):
                 found = True
         if (not found and
             not self.old_sigCHLDHandler in (signal.SIG_IGN, signal.SIG_DFL)):
-            self.old_sigCHLDHandler(signal) # call the old handler
+            self.old_sigCHLDHandler(sig) # call the old handler
         # handle the rest
         # XXX
         os.write(self.fd[1], struct.pack('II', 0, 0)) # delayed waitpid()
