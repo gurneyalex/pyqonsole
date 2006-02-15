@@ -1,9 +1,9 @@
 pyqonsole (0.2.0-1) unstable; urgency=low
 
   * New upstream release
-  * Initial Debian upload (closes: )
+  * Initial Debian upload (closes: 352953)
 
- --
+ -- Alexandre Fayolle <afayolle@debian.org>  Wed, 15 Feb 2006 16:34:56 +0100
 
 pyqonsole (0.1.0-1) unstable; urgency=low
 
