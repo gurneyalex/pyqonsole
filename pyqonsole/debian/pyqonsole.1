@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH PYQONSOLE SECTION "décembre 15, 2005"
+.TH PYQONSOLE 1 "February 15, 2006"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -16,44 +16,35 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
-pyqonsole \- program to do something
+pyqonsole \- VT102 emulator written in Python and PyQt3
 .SH SYNOPSIS
 .B pyqonsole
-.RI [ options ] " files" ...
+.RI [ executable ] 
 .br
-.B bar
-.RI [ options ] " files" ...
 .SH DESCRIPTION
-This manual page documents briefly the
-.B pyqonsole
-and
-.B bar
-commands.
+.B pyqonsole 
+is a VT-102 emulator which can be used as a replacement for
+an X terminal emulator, though it will be slower and use more memory than a
+traditional X terminal emulator. Its main purpose is to provide a
+VT-102 emulator widget for Python programmers. 
+
+By default, it will launch the current user's shell (based on
+/etc/passwd) or bash, if no information is available in
+/etc/passwd. An executable name can be specified on the command line,
+in which case, it will be run in the emulator. 
+
 .PP
-.\" TeX users may be more comfortable with the \fB<whatever>\fP and
-.\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
-.\" respectively.
-\fBpyqonsole\fP is a program that...
 .SH OPTIONS
-These programs follow the usual GNU command line syntax, with long
-options starting with two dashes (`-').
-A summary of options is included below.
-For a complete description, see the Info files.
-.TP
-.B \-h, \-\-help
-Show summary of options.
-.TP
-.B \-v, \-\-version
-Show version of program.
-.SH SEE ALSO
-.BR bar (1),
-.BR baz (1).
-.br
-The programs are documented fully by
-.IR "The Rise and Fall of a Fooish Bar" ,
-available via the Info system.
+.B pyqonsole
+accepts a few options, mainly for development and debugging
+purposes. Use -h to see them. 
+
 .SH AUTHOR
-pyqonsole was written by <upstream author>.
+.B pyqonsole 
+was written by Sylvain Thenault
+<sylvain.thenault@logilab.fr>, based on 
+.B konsole 
+written by Lars Doelle <lars.doelle@on-line.de>.
 .PP
 This manual page was written by Alexandre Fayolle <afayolle@debian.org>,
 for the Debian project (but may be used by others).
