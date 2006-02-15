@@ -1,9 +1,10 @@
 # Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 CEA Grenoble 
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the CECILL license, available at
-# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V2.pdf
 #
 """Provides the Session class. Sessions are combinations of PtyProcess and
 Emulation.
@@ -22,7 +23,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = '$Id: session.py,v 1.12 2006-01-10 10:01:44 syt Exp $'
+__revision__ = '$Id: session.py,v 1.13 2006-02-15 10:24:01 alf Exp $'
 
 import os
 

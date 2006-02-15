@@ -1,9 +1,10 @@
-# Copyright (c) 2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 CEA Grenoble 
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the CECILL license, available at
-# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V2.pdf
 #
 """Provides the History class.
 
@@ -27,13 +28,13 @@ Based on the konsole code from Lars Doelle.
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
 @author: Sylvain Thenault
-@copyright: 2003, 2005
+@copyright: 2003, 2005, 2006
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CECILL
 """
 
-__revision__ = '$Id: history.py,v 1.9 2005-12-27 13:21:45 syt Exp $'
+__revision__ = '$Id: history.py,v 1.10 2006-02-15 10:24:01 alf Exp $'
     
     
 class HistoryTypeNone(object):

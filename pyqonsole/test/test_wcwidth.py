@@ -1,6 +1,14 @@
 #!/usr/bin/env python2.4
+# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 CEA Grenoble 
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V2.pdf
+#
 
-__revision__ = '$Id: test_wcwidth.py,v 1.6 2005-12-15 10:09:54 alf Exp $'
+__revision__ = '$Id: test_wcwidth.py,v 1.7 2006-02-15 10:24:02 alf Exp $'
 
 
 ## http://www.cl.cam.ac.uk/~mgk25/ucs/scw-proposal.html is the right place

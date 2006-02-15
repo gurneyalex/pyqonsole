@@ -1,7 +1,15 @@
 # pylint: disable-msg=W0142,W0403,W0404,E0611,W0613,W0622,W0622,W0704,R0904
+# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 CEA Grenoble 
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V2.pdf
+#
 """ Generic Setup script, takes package info from __pkginfo__.py file """
 
-__revision__ = '$Id: setup.py,v 1.4 2005-12-27 16:53:23 syt Exp $'
+__revision__ = '$Id: setup.py,v 1.5 2006-02-15 10:24:01 alf Exp $'
 
 import os
 import sys

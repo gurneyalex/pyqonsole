@@ -1,10 +1,18 @@
+# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 CEA Grenoble 
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the CECILL license, available at
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V2.pdf
+#
 # pylint: disable-msg=W0622
 """pyqonsole packaging information"""
 
-__revision__ = '$Id: __pkginfo__.py,v 1.7 2006-01-10 09:51:16 syt Exp $'
+__revision__ = '$Id: __pkginfo__.py,v 1.8 2006-02-15 10:24:01 alf Exp $'
 
 modname = "pyqonsole"
-numversion = (0, 1, 0)
+numversion = (0, 2, 0)
 version = '.'.join([str(num) for num in numversion])
 license = 'CeCILL'
 copyright = '''Copyright (c) 2006 LOGILAB S.A. (Paris, FRANCE)

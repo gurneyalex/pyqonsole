@@ -1,9 +1,10 @@
 # Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2006 CEA Grenoble 
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the CECILL license, available at
-# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V1.pdf
+# http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V2.pdf
 #
 """ Provide the Screen class.
 
@@ -37,7 +38,7 @@ Based on the konsole code from Lars Doelle.
 @license: CECILL
 """
 
-__revision__ = "$Id: screen.py,v 1.31 2006-01-10 10:01:41 syt Exp $"
+__revision__ = "$Id: screen.py,v 1.32 2006-02-15 10:24:01 alf Exp $"
 
 from pyqonsole.ca import *
 from pyqonsole.helpers import wcWidth
