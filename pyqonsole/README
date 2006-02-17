@@ -1,17 +1,21 @@
 pyqonsole
 =========
 
-Pyqonsole is a X Window terminal written in Python. The code is based
-on konsole, and it uses the qt toolkit. It is mainly meant for use by
-Python application developpers who would like to embed a terminal in
-their application, but it can be used as a not blazingly fast XTerm
-replacement.
+Pyqonsole_ is a X Window terminal written in Python. The code is based
+on konsole_, and it uses the PyQt_ graphical library. It is mainly
+meant for use by Python application developpers who would like to
+embed a terminal in their application, but it can be used as a not
+blazingly fast XTerm replacement.
 
 The development was initially funded by CEA Grenoble, and the project
-is released under the CeCILL_ license.
+is released under the CeCILL_ license. Many thanks to konsole's
+maintainer Lars Doelle for helping us during the porting effort.
 
 If you have any questions about pyqonsole, please ask them on
 Logilab's `Python Projects`_ mailing list (needs subscription).
 
+.. _pyqonsole: http://www.logilab.org/projects/pyqonsole
+.. _konsole: http://konsole.kde.org/
+.. _PyQt: http://www.riverbankcomputing.co.uk/pyqt/index.php
 .. _CeCILL: http://www.inria.fr/valorisation/logiciels/Licence.CeCILL-V2.pdf
 .. _Python Projects: http://www.logilab.org/mailinglists/python_projects
