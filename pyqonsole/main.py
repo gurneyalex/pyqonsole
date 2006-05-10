@@ -25,7 +25,7 @@ import signal
 import os
 import pwd
 
-import qt
+from pyqonsole.qtwrapper import qt, Qt
 
 from pyqonsole.widget import Widget
 from pyqonsole.session import Session
@@ -74,7 +74,7 @@ def main(argv):
     te.setScrollbarLocation(2)
     te.setMinimumSize(150, 70)
     te.setFocus()
-    te.setBackgroundMode(qt.Qt.PaletteBackground)
+    te.setBackgroundMode(Qt.PaletteBackground)
     setFont(te, 4) # medium
     te.resize(te.calcSize(80, 25))
     appli.setMainWidget(te)

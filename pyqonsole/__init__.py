@@ -11,6 +11,9 @@ widget
 """
 __revision__ = "$Id: __init__.py,v 1.6 2006-02-15 10:24:01 alf Exp $"
 
+def qtconfig():
+    return 4
+
 def CTRL(c):
     """return the code of the given character when typed with the control
     button enabled

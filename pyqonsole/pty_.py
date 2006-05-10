@@ -51,7 +51,7 @@ from resource import getrlimit, RLIMIT_NOFILE
 from termios import tcgetattr, tcsetattr, VINTR, VQUIT, VERASE, \
      TIOCSPGRP, TCSANOW, TIOCSWINSZ, TIOCSCTTY
 
-import qt
+from pyqonsole.qtwrapper import QObject, QSocketNotifier, SIGNAL, QTimer
 
 from pyqonsole import CTRL, Signalable, procctrl
 
@@ -66,7 +66,7 @@ class Job:
         return self.start == len(self.string)
 
     
-class PtyProcess(Signalable, qt.QObject):
+class PtyProcess(Signalable, QObject):
     """fork a process using a controlling terminal
 
     Ptys provide a pseudo terminal connection to a program, with child process
@@ -187,9 +187,9 @@ class PtyProcess(Signalable, qt.QObject):
         """"""
         self._pending_send_jobs.append(Job(string))
         if not self._pending_send_job_timer:
-            self._pending_send_job_timer = qt.QTimer()
+            self._pending_send_job_timer = QTimer()
             self._pending_send_job_timer.connect(self._pending_send_job_timer,
-                                                 qt.SIGNAL('timeout()'),
+                                                 SIGNAL('timeout()'),
                                                  self.doSendJobs)
         self._pending_send_job_timer.start(0)
 

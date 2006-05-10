@@ -62,7 +62,7 @@ Based on the konsole code from Lars Doelle.
 
 __revision__ = '$Id: emulation.py,v 1.25 2006-02-15 10:24:01 alf Exp $'
 
-import qt
+from pyqonsole.qtwrapper import qt
 
 from pyqonsole import Signalable, keytrans
 from pyqonsole.screen import Screen
@@ -76,7 +76,7 @@ NOTIFYSILENCE = 3
 BULK_TIMEOUT = 20
 
 
-class Emulation(Signalable, qt.QObject):
+class Emulation(Signalable, QObject):
     """This class acts as the controler between the Screen class (Model) and
     Widget class (View). It's actually a common abstract base class for
     different terminal implementations, and so should be subclassed.
@@ -104,10 +104,10 @@ class Emulation(Signalable, qt.QObject):
         self._key_trans = None
         self.setKeymap(0)
         # bulk handling
-        self._bulk_timer = qt.QTimer(self)
+        self._bulk_timer = QTimer(self)
         self._bulk_nl_cnt = 0 # bulk new line counter
         self._bulk_in_cnt = 0 # bulk counter
-        self._bulk_timer.connect(self._bulk_timer, qt.SIGNAL("timeout()"),
+        self._bulk_timer.connect(self._bulk_timer, SIGNAL("timeout()"),
                                  self._showBulk)
         gui.myconnect("changedImageSizeSignal", self.onImageSizeChange)
         gui.myconnect("changedHistoryCursor", self.onHistoryCursorChange)
@@ -241,9 +241,9 @@ class Emulation(Signalable, qt.QObject):
     def _setCodec(self, c):
         """coded number, 0=locale, 1=utf8"""
         if c:
-            self._codec = qt.QTextCodec.codecForName("utf8")
+            self._codec = QTextCodec.codecForName("utf8")
         else:
-            self._codec = qt.QTextCodec.codecForLocale()
+            self._codec = QTextCodec.codecForLocale()
         self._decoder = self._codec.makeDecoder()
         
     def _setColumns(self, columns):
