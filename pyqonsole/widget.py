@@ -139,8 +139,8 @@ VT100_GRAPHICS = [
 class Widget(Signalable, qt.QFrame):
     """a widget representing attributed text"""
                 
-    def __init__(self, qapp, parent=None, name=''):
-        super(Widget, self).__init__(parent, name)
+    def __init__(self, qapp, parent=None):
+        super(Widget, self).__init__(parent)
         # application object
         self._qapp = qapp
         # current session in this widget
