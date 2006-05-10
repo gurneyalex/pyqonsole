@@ -28,16 +28,17 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 __revision__ = '$Id: emuVt102.py,v 1.23 2006-02-15 10:24:01 alf Exp $'
 
 import os
-import qt
+
+from pyqonsole.qtwrapper import qt, QEvent
 
 import pyqonsole.keytrans as kt
 from pyqonsole.emulation import Emulation, NOTIFYBELL, NOTIFYNORMAL
 from pyqonsole import CTRL, screen, widget, ca
 
 # Qt chars shortcuts
-ControlButton = qt.QEvent.ControlButton
-ShiftButton = qt.QEvent.ShiftButton
-AltButton = qt.QEvent.AltButton
+ControlButton = QEvent.ControlButton
+ShiftButton = QEvent.ShiftButton
+AltButton = QEvent.AltButton
 
 # VT102 modes
 MODE_AppScreen = screen.MODES_SCREEN+0
@@ -882,9 +883,9 @@ class EmuVt102(Emulation):
         
         # Revert to non-history when typing
         if self._scr.hist_cursor != self._scr.getHistLines() and not ev.text().isEmpty() or \
-           ev.key() == qt.QEvent.Key_Down or ev.key() == qt.QEvent.Key_Up or \
-           ev.key() == qt.QEvent.Key_Left or ev.key() == qt.QEvent.Key_Right or \
-           ev.key() == qt.QEvent.Key_PageUp or ev.key() == qt.QEvent.Key_PageDown:
+           ev.key() == QEvent.Key_Down or ev.key() == QEvent.Key_Up or \
+           ev.key() == QEvent.Key_Left or ev.key() == QEvent.Key_Right or \
+           ev.key() == QEvent.Key_PageUp or ev.key() == QEvent.Key_PageDown:
             self._scr.hist_cursor = self._scr.getHistLines()
             
         if cmd == kt.CMD_send:

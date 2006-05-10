@@ -45,7 +45,7 @@ Based on the konsole code from Lars Doelle.
 
 __revision__ = '$Id: widget.py,v 1.40 2006-02-15 10:24:01 alf Exp $'
 
-import qt
+from pyqonsole.qtwrapper import *
 
 from pyqonsole import Signalable
 from pyqonsole.ca import DCA, RE_CURSOR, RE_BLINK, RE_UNDERLINE, \
@@ -154,9 +154,9 @@ class Widget(Signalable, qt.QFrame):
         # hide cursor in paintEvent
         self.cursor_blinking = False
         # active when self.has_blinker
-        self.blink_t = qt.QTimer(self)
+        self.blink_t = QTimer(self)
         # active when self.has_blinking_cursor
-        self.blink_cursor_t = qt.QTimer(self)
+        self.blink_cursor_t = QTimer(self)
         # require Ctrl key for drag
         self.ctrldrag = False
         # do we antialias or not
@@ -204,11 +204,11 @@ class Widget(Signalable, qt.QFrame):
         self._cursor_rect = None #for quick changing of cursor
 
         cb = qt.QApplication.clipboard()
-        self.connect(cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
-        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
+        self.connect(cb, SIGNAL('selectionChanged()'), self.onClearSelection)
+        self.connect(self.scrollbar, SIGNAL('valueChanged(int)'),
                      self.scrollChanged)
-        self.connect(self.blink_t, qt.SIGNAL('timeout()'), self.blinkEvent)
-        self.connect(self.blink_cursor_t, qt.SIGNAL('timeout()'),
+        self.connect(self.blink_t, SIGNAL('timeout()'), self.blinkEvent)
+        self.connect(self.blink_cursor_t, SIGNAL('timeout()'),
                      self.blinkCursorEvent)
 
         self.setMouseMarks(True)
@@ -256,12 +256,12 @@ class Widget(Signalable, qt.QFrame):
         self.update()
 
     def setScroll(self, cursor, lines):
-        self.disconnect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
+        self.disconnect(self.scrollbar, SIGNAL('valueChanged(int)'),
                         self.scrollChanged)
         self.scrollbar.setRange(0, lines)
         self.scrollbar.setSteps(1, self.lines)
         self.scrollbar.setValue(cursor)
-        self.connect(self.scrollbar, qt.SIGNAL('valueChanged(int)'),
+        self.connect(self.scrollbar, SIGNAL('valueChanged(int)'),
                      self.scrollChanged)
 
     def doScroll(self, lines):
@@ -292,15 +292,15 @@ class Widget(Signalable, qt.QFrame):
         if appendReturn:
             text.append("\r")
         if not text.isEmpty():
-            text.replace(qt.QRegExp("\n"), "\r")
-        ev = qt.QKeyEvent(qt.QEvent.KeyPress, 0, -1, 0, text)
+            text.replace(QRegExp("\n"), "\r")
+        ev = qt.QKeyEvent(QEvent.KeyPress, 0, -1, 0, text)
         self.myemit('keyPressedSignal', (ev,)) # expose as a big fat keypress event
         self.myemit('clearSelectionSignal')
         qt.QApplication.clipboard().setSelectionMode(False)
   
     def emitText(self,  text):
         if not text.isEmpty():
-            ev = qt.QKeyEvent(qt.QEvent.KeyPress, 0, -1, 0, text)
+            ev = qt.QKeyEvent(QEvent.KeyPress, 0, -1, 0, text)
             self.myemit('keyPressedSignal', (ev,)) # expose as a big fat keypress event
 
     def setImage(self, newimg, lines, columns):
@@ -352,12 +352,12 @@ class Widget(Signalable, qt.QFrame):
                         (cal is ocal or cal == ocal)):
                         break
                     disstrU.append(c)
-                unistr = qt.QString(u''.join(disstrU))
+                unistr = QString(u''.join(disstrU))
                 self.drawAttrStr(paint,
-                                 qt.QRect(self.bX+tLx+self.font_w*x,
-                                          self.bY+tLy+self.font_h*y,
-                                          self.font_w*xlen,
-                                          self.font_h),
+                                 QRect(self.bX+tLx+self.font_w*x,
+                                       self.bY+tLy+self.font_h*y,
+                                       self.font_w*xlen,
+                                       self.font_h),
                                  unistr, ca, pm != None, True)
                 x += xlen
         self._image = newimg
@@ -388,9 +388,9 @@ class Widget(Signalable, qt.QFrame):
                 l.addWidget(self.m_resize_label, 1, self.AlignCenter)
                 widget.setMinimumWidth(self.m_resize_label.fontMetrics().width("Size: XXX x XXX")+20)
                 widget.setMinimumHeight(self.m_resize_label.sizeHint().height()+20)
-                self.m_resize_timer = qt.QTimer(self)
-                self.connect(self.m_resize_timer, qt.SIGNAL('timeout()'), widget.hide)
-            sizeStr = qt.QString("Size: %1 x %2").arg(columns).arg(lines)
+                self.m_resize_timer = QTimer(self)
+                self.connect(self.m_resize_timer, SIGNAL('timeout()'), widget.hide)
+            sizeStr = QString("Size: %1 x %2").arg(columns).arg(lines)
             self.m_resize_label.setText(sizeStr)
             widget.move((self.width()-widget.width())/2,
                                       (self.height()-widget.height())/2)
@@ -438,7 +438,7 @@ class Widget(Signalable, qt.QFrame):
             scw = 0
         else:
             scw = self.scrollbar.width()
-        return qt.QSize(self.font_w*cols + 2*rimX + frw + scw + 2, self.font_h*lins + 2*rimY + frh + 2)
+        return QSize(self.font_w*cols + 2*rimX + frw + scw + 2, self.font_h*lins + 2*rimY + frh + 2)
 
 
     def sizeHint(self):
@@ -449,18 +449,18 @@ class Widget(Signalable, qt.QFrame):
             qt.QApplication.beep()
         if self.bell_mode == BELLVISUAL:
             self._swapColorTable()
-            qt.QTimer.singleShot(200, self._swapColorTable)
+            QTimer.singleShot(200, self._swapColorTable)
 
 
     def setSelection(self, t):
         # Disconnect signal while WE set the clipboard
         cb = qt.QApplication.clipboard()
-        self.disconnect(cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
+        self.disconnect(cb, SIGNAL('selectionChanged()'), self.onClearSelection)
         cb.setSelectionMode(True)
         cb.setText(t)
         cb.setSelectionMode(False)
         cb.setText(t)
-        self.connect(cb, qt.SIGNAL('selectionChanged()'), self.onClearSelection)
+        self.connect(cb, SIGNAL('selectionChanged()'), self.onClearSelection)
 
 
     def setFont(self, font):
@@ -509,15 +509,15 @@ class Widget(Signalable, qt.QFrame):
         For auto-hide, we need to get keypress-events, but we only get them when
         we have focus.
         """
-        if (e.type() == qt.QEvent.Accel or
-            e.type() == qt.QEvent.AccelAvailable) and self._qapp.focusWidget() == self:
+        if (e.type() == QEvent.Accel or
+            e.type() == QEvent.AccelAvailable) and self._qapp.focusWidget() == self:
             e.ignore()
             return True
         if obj != self and obj != self.parent(): # when embedded / when standalone
             return False # not us
-        if e.type() == qt.QEvent.Wheel:
+        if e.type() == QEvent.Wheel:
             qt.QApplication.sendEvent(self.scrollbar, e)
-        if e.type() == qt.QEvent.KeyPress:
+        if e.type() == QEvent.KeyPress:
             self._act_sel = 0 # Key stroke implies a screen update, so TEWidget won't
                              # know where the current selection is.
             if self.has_blinking_cursor:
@@ -535,12 +535,12 @@ class Widget(Signalable, qt.QFrame):
             # activates also the global event filter) . That's why we stop propagation
             # here.
             return True
-        if e.type() == qt.QEvent.IMStart:
+        if e.type() == QEvent.IMStart:
             self._compose_length = 0
             e.accept()
             return False
-        if e.type() == qt.QEvent.IMCompose:
-            text = qt.QString()
+        if e.type() == QEvent.IMCompose:
+            text = QString()
             if self._compose_length:
                 text.setLength(self._compose_length)
                 for i in xrange(self._compose_length):
@@ -548,32 +548,32 @@ class Widget(Signalable, qt.QFrame):
             self._compose_length = e.text().length()
             text += e.text()
             if not text.isEmpty():
-                ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1, 0, text)
+                ke = qt.QKeyEvent(QEvent.KeyPress, 0,-1, 0, text)
                 self.myemit('keyPressedSignal', (ke,))
             e.accept()
             return False
-        if e.type() == qt.QEvent.IMEnd:
-            text = qt.QString()
+        if e.type() == QEvent.IMEnd:
+            text = QString()
             if self._compose_length:
                 text.setLength(self._compose_length)
                 for i in xrange(self._compose_length):
                     text[i] = '\010'
             text += e.text()
             if not text.isEmpty():
-                ke = qt.QKeyEvent(qt.QEvent.KeyPress, 0,-1, 0, text)
+                ke = qt.QKeyEvent(QEvent.KeyPress, 0,-1, 0, text)
                 self.myemit('keyPressedSignal', (ke,))
             e.accept()
             return False
-        if e.type() == qt.QEvent.Enter:
+        if e.type() == QEvent.Enter:
             cb = qt.QApplication.clipboard()
             try:
-                self.disconnect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
+                self.disconnect(cb, SIGNAL('dataChanged()'), self.onClearSelection)
             except RuntimeError:
                 # slot isn't connected
                 pass
-        elif e.type() == qt.QEvent.Leave:
+        elif e.type() == QEvent.Leave:
             cb = qt.QApplication.clipboard()
-            self.connect(cb, qt.SIGNAL('dataChanged()'), self.onClearSelection)
+            self.connect(cb, SIGNAL('dataChanged()'), self.onClearSelection)
         return qt.QFrame.eventFilter(self, obj, e)
 
     def drawAttrStr(self, paint, rect, qstr, attr, pm, clear):
@@ -671,9 +671,9 @@ class Widget(Signalable, qt.QFrame):
                     xlen += 1
                 if (x+xlen < self.columns) and (not image[y][x+xlen].c):
                     xlen += 1 # Adjust for trailing part of multi-column char
-                unistr = qt.QString(u''.join(disstrU))
+                unistr = QString(u''.join(disstrU))
                 self.drawAttrStr(paint,
-                                 qt.QRect(self.bX+tLx+self.font_w*x, self.bY+tLy+self.font_h*y, self.font_w*xlen, self.font_h),
+                                 QRect(self.bX+tLx+self.font_w*x, self.bY+tLy+self.font_h*y, self.font_w*xlen, self.font_h),
                                  unistr, ca, pm != None, False)
                 x += xlen
         self.drawFrame(paint)
@@ -753,14 +753,14 @@ class Widget(Signalable, qt.QFrame):
             self.myemit('mouseSignal', (0, x+1, y+1)) # left button
             return
         self.myemit('clearSelectionSignal')
-        self.i_pnt_sel = qt.QPoint(x, y + self.scrollbar.value())
+        self.i_pnt_sel = QPoint(x, y + self.scrollbar.value())
         self._word_selection_mode = True
         self._act_sel = 2 # within selection
         self.myemit('beginSelectionSignal', self._wordStart(x, y))
         self.myemit('extendSelectionSignal', self._wordEnd(x, y))
         self.myemit('endSelectionSignal', (self.preserve_line_breaks,))
         self._possible_triple_click = True
-        qt.QTimer.singleShot(qt.QApplication.doubleClickInterval(), self._tripleClickTimeout)
+        QTimer.singleShot(qt.QApplication.doubleClickInterval(), self._tripleClickTimeout)
     
     def mousePressEvent(self, ev):
         if self._possible_triple_click and ev.button() == self.LeftButton:
@@ -774,7 +774,7 @@ class Widget(Signalable, qt.QFrame):
         if ev.button() == self.LeftButton:
             topleft  = self.contentsRect().topLeft()
             # XXX: this is the only place where we add self.font_w/2, why ?
-            pos = qt.QPoint((ev.x()-topleft.x()-self.bX+(self.font_w/2)) / self.font_w, y)
+            pos = QPoint((ev.x()-topleft.x()-self.bX+(self.font_w/2)) / self.font_w, y)
             self.myemit('isBusySelecting', (True,)) # Keep it steady...
             # Drag only when the Control key is hold
             selected = [False]
@@ -866,7 +866,7 @@ class Widget(Signalable, qt.QFrame):
         # the mouse cursor will kept catched within the bounds of the text in
         # self widget.
         # Adjust position within text area bounds. See FIXME above.
-        pos = qt.QPoint(ev.pos())
+        pos = QPoint(ev.pos())
         if pos.x() < topleftx+self.bX:
             pos.setX(topleftx+self.bX)
         if pos.x() > topleftx+self.bX+self.columns*self.font_w-1:
@@ -963,12 +963,12 @@ class Widget(Signalable, qt.QFrame):
         if self._act_sel < 2 or swapping:
             self.myemit('beginSelectionSignal', (ohere[0]-1-offset, ohere[1]))
         self._act_sel = 2 # within selection
-        self.pnt_sel = qt.QPoint(here[0], here[1] + self.scrollbar.value())
+        self.pnt_sel = QPoint(here[0], here[1] + self.scrollbar.value())
         self.myemit('extendSelectionSignal', (here[0] + offset, here[1]))
         
     def mouseTripleClickEvent(self, ev):
         x, y = self._evXY(ev)
-        self.i_pnt_sel = qt.QPoint(x, y)
+        self.i_pnt_sel = QPoint(x, y)
         self.myemit('clearSelectionSignal')
         self._line_selection_mode = True
         self._word_selection_mode = False
@@ -1027,7 +1027,7 @@ class Widget(Signalable, qt.QFrame):
         elif self.scroll_loc ==  SCRRIGHT:
             self.bX = 1
             self.columns = (self.contentsRect().width()  - 2 * rimX - self.scrollbar.width()) / self.font_w
-            self.scrollbar.move(self.contentsRect().topRight() - qt.QPoint(self.scrollbar.width()-1, 0))
+            self.scrollbar.move(self.contentsRect().topRight() - QPoint(self.scrollbar.width()-1, 0))
             self.scrollbar.show()
         if self.columns < 1:
             self.columns = 1

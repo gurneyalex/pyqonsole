@@ -27,13 +27,13 @@ __revision__ = '$Id: session.py,v 1.13 2006-02-15 10:24:01 alf Exp $'
 
 import os
 
-import qt
+from pyqonsole.qtwrapper import qt, QObject, SIGNAL, QTimer
 
 from pyqonsole import Signalable, pty_, emulation, emuVt102
 
 
 
-class Session(Signalable, qt.QObject):
+class Session(Signalable, QObject):
     """A Session is a combination of one PTyProcess and one Emulation instances
     """
 
@@ -62,7 +62,7 @@ class Session(Signalable, qt.QObject):
         self.cwd = cwd
         self.sh = pty_.PtyProcess()
         self.em = emuVt102.EmuVt102(self.te)
-        self.monitor_timer = qt.QTimer(self)
+        self.monitor_timer = QTimer(self)
         self.sh.setSize(self.te.lines, self.te.columns)
         self.sh.myconnect('block_in', self.em.onRcvBlock)
         self.sh.myconnect('done', self.done)
@@ -70,7 +70,7 @@ class Session(Signalable, qt.QObject):
         self.em.myconnect('sndBlock', self.sh.sendBytes)
         self.em.myconnect('changeTitle', self.setUserTitle)
         self.em.myconnect('notifySessionState', self.notifySessionState)
-        self.connect(self.monitor_timer, qt.SIGNAL('timeout()'), self.monitorTimerDone)
+        self.connect(self.monitor_timer, SIGNAL('timeout()'), self.monitorTimerDone)
 
     def __del__(self):
         self.sh.mydisconnect('done', self.done)
