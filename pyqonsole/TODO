@@ -11,7 +11,7 @@ Is there an example on how to embed pyqonsole in an application?
 
 ----------------
 
-targets Makefile
+targets Makefile: ajouter une cible build et une cible install au Makefile pour les gens qui n'ont pas l'habitude de Python
 
 ----------------
 
