@@ -62,7 +62,7 @@ Based on the konsole code from Lars Doelle.
 
 __revision__ = '$Id: emulation.py,v 1.25 2006-02-15 10:24:01 alf Exp $'
 
-from pyqonsole.qtwrapper import qt
+from pyqonsole.qtwrapper import *
 
 from pyqonsole import Signalable, keytrans
 from pyqonsole.screen import Screen

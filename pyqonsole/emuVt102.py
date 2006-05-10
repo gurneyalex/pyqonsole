@@ -29,16 +29,12 @@ __revision__ = '$Id: emuVt102.py,v 1.23 2006-02-15 10:24:01 alf Exp $'
 
 import os
 
-from pyqonsole.qtwrapper import qt, QEvent
+from pyqonsole.qtwrapper import qt, QEvent, ControlButton, ShiftButton, AltButton
 
 import pyqonsole.keytrans as kt
 from pyqonsole.emulation import Emulation, NOTIFYBELL, NOTIFYNORMAL
 from pyqonsole import CTRL, screen, widget, ca
 
-# Qt chars shortcuts
-ControlButton = QEvent.ControlButton
-ShiftButton = QEvent.ShiftButton
-AltButton = QEvent.AltButton
 
 # VT102 modes
 MODE_AppScreen = screen.MODES_SCREEN+0

@@ -310,9 +310,9 @@ class PtyProcess(Signalable, QObject):
         """
         os.close(self.out[1])
         # fcntl(out[0], F_SETFL, O_NONBLOCK))
-        self._outnot = qt.QSocketNotifier(self.out[0],
-                                          qt.QSocketNotifier.Read, self)
-        self.connect(self._outnot, qt.SIGNAL('activated(int)'),
+        self._outnot = QSocketNotifier(self.out[0],
+                                          QSocketNotifier.Read, self)
+        self.connect(self._outnot, SIGNAL('activated(int)'),
                      self.slotChildOutput)
         self.suspend()
 
