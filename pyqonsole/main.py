@@ -25,6 +25,7 @@ import signal
 import os
 import pwd
 
+from pyqonsole import qtconfig
 from pyqonsole.qtwrapper import qt, Qt
 
 from pyqonsole.widget import Widget
@@ -74,10 +75,12 @@ def main(argv):
     te.setScrollbarLocation(2)
     te.setMinimumSize(150, 70)
     te.setFocus()
-    te.setBackgroundMode(Qt.PaletteBackground)
+    if qtconfig() == 3:
+        te.setBackgroundMode(Qt.PaletteBackground)
     setFont(te, 4) # medium
     te.resize(te.calcSize(80, 25))
-    appli.setMainWidget(te)
+    if qtconfig() == 3:
+        appli.setMainWidget(te)
     te.show()
     if len(argv) > 1:
         progname = findExecutablePath(argv[1])
@@ -95,7 +98,10 @@ def main(argv):
     session.myconnect('done', quit)
     # XXX dunno why I've to do that to make Ctrl-C in the original term working 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    appli.exec_loop()
+    if qtconfig() == 3:
+        appli.exec_loop()
+    else:
+        appli.exec_()
 
 def profile(argv):
     from hotshot import Profile
