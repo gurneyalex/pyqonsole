@@ -30,6 +30,7 @@ from os.path import basename, dirname, splitext, join, isfile
 import os
 
 from pyqonsole.qtwrapper import Qt
+from pyqonsole import qtconfig
 
 for _path in [dirname(__file__),
               join(sys.exec_prefix, 'share/pyqonsole'),
@@ -229,10 +230,8 @@ KEY_SYMS = {
   "Up":           Qt.Key_Up          ,
   "Right":        Qt.Key_Right       ,
   "Down":         Qt.Key_Down        ,
-#  "Prior":        Qt.Key_Prior       ,
-  "Prior":         Qt.Key_PageUp      ,
-#  "Next":         Qt.Key_Next        ,
-  "Next":         Qt.Key_PageDown    ,
+  "Prior":         None      ,
+  "Next":         None    ,
   "Shift":        Qt.Key_Shift       ,
   "Control":      Qt.Key_Control     ,
   "Meta":         Qt.Key_Meta        ,
@@ -351,6 +350,17 @@ KEY_SYMS = {
   "BraceRight":   Qt.Key_BraceRight  ,
   "AsciiTilde":   Qt.Key_AsciiTilde  ,
     }
+
+# Special handling for keys which have changed symbolic names
+# in the Qt3/4 migration
+if qtconfig() == 3:
+    KEY_SYMS.update({"Prior": Qt.Key_Prior,
+                     "Next": Qt.Key_Next,
+                     })
+else:
+    KEY_SYMS.update({"Prior": Qt.Key_PageUp,
+                     "Next": Qt.Key_PageDown,
+                     })
 
 KEY_DEF_SPLIT_RGX = re.compile('[+-]?\W*\w+')
 

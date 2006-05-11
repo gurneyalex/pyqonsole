@@ -11,8 +11,29 @@ widget
 """
 __revision__ = "$Id: __init__.py,v 1.6 2006-02-15 10:24:01 alf Exp $"
 
+_QT_VERSION=3
+
+def require_qt(version):
+    """Use this function to specify which version of Qt and PyQt you
+    want to use to run pyqonsole. Supported versions are 3 and 4.
+
+    Warning: do not change the version after qtconfig() has been
+    called to query the version. Assume that any module in the
+    pyqonsole package besides the __init__ module may call qtconfig
+    when imported. Therefore the safe practise is to use the following
+    in your code:
+
+    >>> from pyqonsole import require_qt
+    >>> require_qt(3) # or 4
+    >>> from pyqonsole.widget import Widget
+    """
+    assert version in (3,4), "Supported versions are 3 and 4"
+    global _QT_VERSION
+    _QT_VERSION = version
+    
 def qtconfig():
-    return 3
+    """return the current required Qt version"""
+    return _QT_VERSION
 
 def CTRL(c):
     """return the code of the given character when typed with the control
