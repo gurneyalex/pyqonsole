@@ -11,11 +11,14 @@ Is there an example on how to embed pyqonsole in an application?
 
 ----------------
 
-targets Makefile: ajouter une cible build et une cible install au Makefile pour les gens qui n'ont pas l'habitude de Python
+DONE: targets Makefile: ajouter une cible build et une cible install
+au Makefile pour les gens qui n'ont pas l'habitude de Python
 
 ----------------
 
-As I am currently porting eric3 to PyQt4 I would like to know, if you have any plans to port pyqonsole to PyQt4 as well. The answer might influence my decision, whether to include it into eric 3.9.
+As I am currently porting eric3 to PyQt4 I would like to know, if you
+have any plans to port pyqonsole to PyQt4 as well. The answer might
+influence my decision, whether to include it into eric 3.9.
 
 -----------------
 
@@ -23,9 +26,25 @@ I would like to see the capability to change the history size during runtime.
 
 -----------------
 
-Timing: The konsole source does not contain an automatic timing adjustment, so one needs to tune this manually. This is the magic BULK_TIMEOUT constant. You can try 'mc', keep pressing <arrow down> in some directory view and see how the cursor responds. Likely experiment with 'vi' for instance, continuously scrolling through some source. BULK_TIMEOUT should be adjusted for smooth or at least continuous scrolling experience. You might want to try to 'cat' some huge source file or do a 'ls -l --colors /usr/lib' as yet another experiments. The bulk_nl_count trigger might be another place to tweak. It might be, that python is just too slow for this, but i doubt, and hope, that the timing might only be a bit out of balance. A missadjusted timing can result in a likely experience in C++, too.
+Timing: The konsole source does not contain an automatic timing
+adjustment, so one needs to tune this manually. This is the magic
+BULK_TIMEOUT constant. You can try 'mc', keep pressing <arrow down> in
+some directory view and see how the cursor responds. Likely experiment
+with 'vi' for instance, continuously scrolling through some
+source. BULK_TIMEOUT should be adjusted for smooth or at least
+continuous scrolling experience. You might want to try to 'cat' some
+huge source file or do a 'ls -l --colors /usr/lib' as yet another
+experiments. The bulk_nl_count trigger might be another place to
+tweak. It might be, that python is just too slow for this, but i
+doubt, and hope, that the timing might only be a bit out of balance. A
+missadjusted timing can result in a likely experience in C++, too.
 
 ---------------
 
-Color Scheme: default foreground should better not be intensive. Though color schemes are a bit of personal taste and context, the color scheme is best modeled after the regular (VGA) linux console when running on dark background. xterm normally uses bright X11 colors, while text terminal are more dim, gamma corrected colors. The later makes the eyes tired less quickly.
+Color Scheme: default foreground should better not be
+intensive. Though color schemes are a bit of personal taste and
+context, the color scheme is best modeled after the regular (VGA)
+linux console when running on dark background. xterm normally uses
+bright X11 colors, while text terminal are more dim, gamma corrected
+colors. The later makes the eyes tired less quickly.
 
