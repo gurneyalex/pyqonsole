@@ -165,7 +165,7 @@ class PtyProcess(Signalable, QObject):
         ioctl(self.master_fd, TIOCSWINSZ, pack('4H', lines, columns, 0, 0))
         
     def setupCommunication(self):
-        """overriden from Process"""
+        """overridden from Process"""
         self.out[0] = self.master_fd
         self.out[1] = os.dup(2) # Dummy
         
