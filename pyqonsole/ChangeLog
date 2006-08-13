@@ -1,11 +1,11 @@
 ChangeLog for pyqonsole
 =======================
 
- --
+2006-02-12  -- 0.2.0
 	* fix bug when resizing
 	* fix monitor silence
 	* fix unit tests
-
+	* fix default color
 	
 2006-01-05 -- 0.1.0
 	* initial release

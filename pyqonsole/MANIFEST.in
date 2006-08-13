@@ -4,3 +4,5 @@ include default.keytab
 include bin/pyqonsole
 include Makefile
 include ChangeLog
+include TODO
+include man/pyqonsole.1
