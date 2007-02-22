@@ -51,7 +51,11 @@ def waitChildren():
     """
     while 1:
         try:
-            yield os.waitpid(-1, os.WNOHANG)
+            answ = os.waitpid(-1, os.WNOHANG)
+            if answ == (0,0):
+                break
+            else:
+                yield answ
         except OSError, ex:
             if ex.errno == errno.ECHILD:
                 break
