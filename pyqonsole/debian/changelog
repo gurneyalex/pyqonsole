@@ -1,3 +1,12 @@
+pyqonsole (0.2.0-2) unstable; urgency=low
+
+  * Updated to new python policy
+  * fixed short description (closes: #359334)
+  * fixed long description to warn about memory consumption (closes:
+    #360641)
+
+ -- Alexandre Fayolle <afayolle@debian.org>  Wed, 14 Jun 2006 18:11:12 +0200
+
 pyqonsole (0.2.0-1) unstable; urgency=low
 
   * New upstream release
