@@ -9,9 +9,6 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-
-
-
 CFLAGS = -Wall -g
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
@@ -20,14 +17,10 @@ else
 	CFLAGS += -O2
 endif
 
-configure: configure-stamp
-configure-stamp:
-	dh_testdir
-	touch configure-stamp
 
 build: build-stamp
 
-build-stamp: configure-stamp 
+build-stamp: 
 	dh_testdir
 	python setup.py build
 	touch build-stamp
@@ -56,6 +49,8 @@ binary-arch: build install
 	dh_installdocs
 	dh_installexamples
 	dh_installman debian/pyqonsole.1
+	dh_pycentral 
+	dh_python
 	dh_strip
 	dh_compress
 	dh_fixperms
@@ -66,5 +61,7 @@ binary-arch: build install
 	dh_md5sums
 	dh_builddeb
 
-binary: binary-indep binary-arch
+binary-indep:
+
+binary: binary-arch
 .PHONY: build clean binary-indep binary-arch binary install configure
