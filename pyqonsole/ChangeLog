@@ -1,11 +1,16 @@
 ChangeLog for pyqonsole
 =======================
 
+ -- 
+        * fix infinite loop when used as a widget
+        * test widget._cursor_rect is set before trying to repaint it,
+          avoiding some bug when used with a parent widget
+        
 2006-02-12  -- 0.2.0
-	* fix bug when resizing
-	* fix monitor silence
-	* fix unit tests
-	* fix default color
-	
+        * fix bug when resizing
+        * fix monitor silence
+        * fix unit tests
+        * fix default color
+        
 2006-01-05 -- 0.1.0
-	* initial release
+        * initial release
