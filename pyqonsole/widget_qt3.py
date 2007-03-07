@@ -1,4 +1,4 @@
-# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2007 LOGILAB S.A. (Paris, FRANCE).
 # Copyright (c) 2005-2006 CEA Grenoble 
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
@@ -37,13 +37,11 @@ Based on the konsole code from Lars Doelle.
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
 @author: Sylvain Thenault
-@copyright: 2003, 2005-2006
+@copyright: 2003, 2005-2007
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CeCILL
 """
-
-__revision__ = '$Id: widget.py,v 1.40 2006-02-15 10:24:01 alf Exp $'
 
 from pyqonsole.qtwrapper import *
 
@@ -985,11 +983,13 @@ class Widget(Signalable, qt.QFrame):
 
     def focusInEvent(self, ev):
         """*do* erase area, to get rid of the hollow cursor rectangle"""
-        self.repaint(self._cursor_rect, True)
+        if not self._cursor_rect is None:
+            self.repaint(self._cursor_rect, True)
         
     def focusOutEvent(self, ev):
         """don't erase area"""
-        self.repaint(self._cursor_rect, False)
+        if not self._cursor_rect is None:
+            self.repaint(self._cursor_rect, False)
 
     def scrollChanged(self, value):
         self.myemit('changedHistoryCursor', (value,))
@@ -1001,7 +1001,8 @@ class Widget(Signalable, qt.QFrame):
 
     def blinkCursorEvent(self):
         self.cursor_blinking = not self.cursor_blinking
-        self.repaint(self._cursor_rect, False)
+        if not self._cursor_rect is None:
+            self.repaint(self._cursor_rect, False)
 
     # private #################################################################
 
