@@ -1,4 +1,4 @@
-# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2007 LOGILAB S.A. (Paris, FRANCE).
 # Copyright (c) 2005-2006 CEA Grenoble 
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
@@ -18,12 +18,10 @@ Based on the konsole code from Lars Doelle.
 
 @author: Lars Doelle
 @author: Sylvain Thenault
-@copyright: 2003, 2005-2006
+@copyright: 2003, 2005-2007
 @organization: Logilab
 @license: CECILL
 """
-
-__revision__ = '$Id: session.py,v 1.13 2006-02-15 10:24:01 alf Exp $'
 
 import os
 
