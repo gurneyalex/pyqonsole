@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2007 LOGILAB S.A. (Paris, FRANCE).
 # Copyright (c) 2005-2006 CEA Grenoble 
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
@@ -19,13 +19,11 @@ CSI: Control Sequence Introducer (introduced by 'ESC]')
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
 @author: Sylvain Thenault
-@copyright: 2003, 2005, 2006
+@copyright: 2003, 2005-2007
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CECILL
 """
-
-__revision__ = '$Id: emuVt102.py,v 1.23 2006-02-15 10:24:01 alf Exp $'
 
 import os
 

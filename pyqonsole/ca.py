@@ -1,4 +1,4 @@
-# Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2005-2007 LOGILAB S.A. (Paris, FRANCE).
 # Copyright (c) 2005-2006 CEA Grenoble 
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
@@ -15,13 +15,11 @@ Based on the konsole code from Lars Doelle.
 @author: Frederic Mantegazza
 @author: Cyrille Boullier
 @author: Sylvain Thenault
-@copyright: 2003, 2005-2006
+@copyright: 2003, 2005-2007
 @organization: CEA-Grenoble
 @organization: Logilab
 @license: CECILL
 """
-
-__revision__ = "$Id: ca.py,v 1.16 2006-02-15 10:24:01 alf Exp $"
 
 BASE_COLORS = 2+8
 _INTENSITIES = 2
