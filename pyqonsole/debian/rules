@@ -30,6 +30,7 @@ clean:
 	dh_testroot
 	rm -f build-stamp configure-stamp
 	rm -rf build 
+	rm -f *.pyc
 	dh_clean 
 
 install: build
